@@ -1,0 +1,193 @@
+Workflows (how people use the system)
+1) New user flow (normal user)
+
+User registers / logs in
+
+User sees My Workspaces
+
+User selects a workspace → sees Projects list
+
+User opens a project → sees Tasks list
+
+User opens a task → can:
+
+change status (if allowed)
+
+comment
+
+see history/changes
+
+see who is assigned
+
+2) Workspace Owner / Admin flow
+
+Admin does everything a user can, plus:
+
+A) Setup workspace
+
+Create workspace
+
+Create workspace roles (Admin / Manager / Member / Viewer)
+
+Assign permissions to each role
+
+B) Manage members
+
+Invite user by email
+
+User accepts invite → becomes member
+
+Admin can change member role
+
+Admin can disable/remove member
+
+C) Manage projects
+
+Create project
+
+Decide visibility:
+
+Public (all workspace members)
+
+Private (only project members)
+
+Add/remove project members (if private)
+
+3) Manager flow (typical)
+
+Creates projects (if allowed)
+
+Creates tasks
+
+Assigns tasks to members
+
+Moves tasks across workflow (Ready → In Progress → In Review → Done)
+
+Uses reports:
+
+overdue tasks
+
+completed tasks per user
+
+4) Viewer flow (read-only)
+
+Can open projects/tasks
+
+Can view comments/history
+
+Cannot create/edit/delete anything
+
+Requirements (clear + “what the system must do”)
+A) Membership & Isolation (critical)
+
+A user must only access data inside workspaces they belong to.
+
+Every request must validate:
+
+user is member of workspace
+
+user has permission for action
+
+B) Roles & Permissions (workspace-specific ✅)
+
+Each workspace can create its own roles (Admin/Manager/etc.)
+
+Each role has permissions like:
+
+project.create, project.delete
+
+member.invite, member.remove
+
+task.assign, task.change_status
+
+Each member has 1 role inside that workspace.
+
+C) Projects
+
+Project belongs to workspace
+
+Optional: project visibility
+
+Public: all workspace members can access
+
+Private: only project members can access
+
+D) Tasks
+
+Task belongs to project
+
+Task has:
+
+status, priority, due date
+
+assigned_to_user_id (one person)
+
+Task workflow (harder version):
+
+Backlog → Ready → In Progress → In Review → Done (+ optional Blocked/Cancelled)
+
+Only allowed status transitions.
+
+E) Comments & Mentions
+
+Users can comment on tasks (if allowed)
+
+Detect @username mentions → notify mentioned users
+
+F) Notifications
+
+In-app notifications saved in DB
+
+Optional email notifications
+
+Use queue for sending email/notifications
+
+G) Audit / History
+
+Store task history when important fields change:
+
+status, assignee, due date, priority, title
+
+Store activity logs for events (project created, member invited, etc.)
+
+H) Reports (basic but strong)
+
+Overdue tasks list
+
+Completed tasks per user in date range
+
+Optional: cycle time (Ready → Done)
+
+Tables (minimal + pro)
+
+Must-have
+
+users
+
+workspaces
+
+workspace_members
+
+workspace_roles
+
+permissions
+
+workspace_role_permissions
+
+workspace_invites (optional but recommended)
+
+projects
+
+tasks
+
+task_comments
+
+notifications
+
+Pro
+
+project_members (if you do private projects)
+
+task_history
+
+activity_logs
