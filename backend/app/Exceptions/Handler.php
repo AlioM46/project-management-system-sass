@@ -2,77 +2,69 @@
 
 namespace App\Exceptions;
 
+use App\Shared\Exceptions\BusinessException;
+use App\Shared\Http\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
-    public function render($request, Throwable $e): JsonResponse|\Symfony\Component\HttpFoundation\Response
+    public function register(): void
     {
-        // Only format JSON API responses (api/* or expectsJson)
-        if ($request->expectsJson() || $request->is('api/*')) {
+        $this->renderable(function (Throwable $e, $request) {
+            if (! ($request->expectsJson() || $request->is('api/*'))) {
+                return null;
+            }
 
-            // 422 Validation
+            if ($e instanceof BusinessException) {
+                return ApiResponse::error(
+                    code: $e->errorCode,
+                    message: $e->getMessage(),
+                    meta: $e->meta,
+                    status: $e->status
+                );
+            }
+
             if ($e instanceof ValidationException) {
-                return response()->json([
-                    'isSuccess' => false,
-                    'data' => null,
-                    'message' => 'Validation error',
-                    'errors' => $e->errors(),
-                ], 422);
+                return ApiResponse::error(
+                    code: 'VALIDATION_ERROR',
+                    message: 'Validation error',
+                    meta: ['errors' => $e->errors()],
+                    status: 422
+                );
             }
 
-            // 401 Unauthenticated
             if ($e instanceof AuthenticationException) {
-                return response()->json([
-                    'isSuccess' => false,
-                    'data' => null,
-                    'message' => 'Unauthenticated',
-                    'errors' => null,
-                ], 401);
+                return ApiResponse::error(
+                    code: 'UNAUTHENTICATED',
+                    message: 'Unauthenticated',
+                    status: 401
+                );
             }
 
-            // HTTP exceptions (403/404/etc)
-            if ($e instanceof HttpExceptionInterface) {
-                $status = $e->getStatusCode();
+            $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;
+            $message = $e->getMessage();
 
-                $defaultMessage = match ($status) {
-                    403 => 'Forbidden',
-                    404 => 'Not Found',
-                    405 => 'Method Not Allowed',
-                    429 => 'Too Many Requests',
-                    default => 'Request failed',
-                };
-
-                return response()->json([
-                    'isSuccess' => false,
-                    'data' => null,
-                    'message' => $e->getMessage() ?: $defaultMessage,
-                    'errors' => null,
-                ], $status);
+            if ($message === '') {
+                $message = $status >= 500 ? 'Server error' : 'Request failed';
+            } elseif ($status >= 500 && ! config('app.debug')) {
+                $message = 'Server error';
             }
 
-            // 500 Unknown / server errors
-            // In production: hide real exception details
-            $isDebug = config('app.debug');
+            $meta = [];
+            if (config('app.debug') && $status >= 500) {
+                $meta = ['exception' => class_basename($e)];
+            }
 
-            return response()->json([
-                'isSuccess' => false,
-                'data' => null,
-                'message' => $isDebug ? $e->getMessage() : 'Server error',
-                'errors' => $isDebug ? [
-                    'exception' => class_basename($e),
-                    // You can remove trace for security if you want
-                    // 'trace' => collect($e->getTrace())->take(5),
-                ] : null,
-            ], 500);
-        }
-
-        // Non-API requests -> default Laravel behavior
-        return parent::render($request, $e);
+            return ApiResponse::error(
+                code: 'UNEXPECTED_ERROR',
+                message: $message,
+                meta: $meta,
+                status: $status
+            );
+        });
     }
-}
+};
