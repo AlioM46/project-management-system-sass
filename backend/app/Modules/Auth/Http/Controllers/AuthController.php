@@ -8,6 +8,8 @@ use App\Modules\Auth\Actions\Auth\LoginUser as LoginAction;
 use App\Modules\Auth\Actions\Auth\LogoutUser as LogoutAction;
 use App\Modules\Auth\Actions\Auth\RegisterUser as RegisterAction;
 use App\Modules\Auth\Actions\Auth\MeUser as MeAction;
+use App\Modules\Auth\Actions\Auth\RefreshTokenUser as RefreshTokenAction;
+use App\Modules\Auth\Services\AuthService;
 // Requests
 use App\Modules\Auth\Http\Requests\LoginRequest;
 use App\Modules\Auth\Http\Requests\RegisterRequest;
@@ -23,9 +25,9 @@ class AuthController extends Controller
     {
         $result = $action->execute($request->validated());
 
-        return ApiResponse::success(
+        return $this->respondWithRefreshTokenCookie(
             message: 'Register successful.',
-            data: $result,
+            result: $result,
             status: 201
         );
     }
@@ -34,9 +36,22 @@ class AuthController extends Controller
     {
         $result = $action->execute($request->validated());
 
-        return ApiResponse::success(
+        return $this->respondWithRefreshTokenCookie(
             message: 'Login successful.',
-            data: $result,
+            result: $result,
+            status: 200
+        );
+
+
+    }
+
+    public function refreshToken(Request $request, RefreshTokenAction $action): JsonResponse
+    {
+        $result = $action->execute($request->cookie(AuthService::REFRESH_TOKEN_COOKIE));
+
+        return $this->respondWithRefreshTokenCookie(
+            message: 'Token refreshed successfully.',
+            result: $result,
             status: 200
         );
     }
@@ -59,6 +74,15 @@ class AuthController extends Controller
         return ApiResponse::success(
             message: 'Logout successful.',
             status: 200
-        );
+        )->withCookie(AuthService::forgetRefreshTokenCookie());
+    }
+
+    private function respondWithRefreshTokenCookie(string $message, array $result, int $status): JsonResponse
+    {
+        return ApiResponse::success(
+            message: $message,
+            data: $result['data'],
+            status: $status
+        )->withCookie(AuthService::makeRefreshTokenCookie($result['refresh_token_cookie']));
     }
 }

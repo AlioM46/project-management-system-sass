@@ -12,59 +12,60 @@ use Throwable;
 
 class Handler extends ExceptionHandler
 {
-    public function register(): void
+    protected function shouldReturnJson($request, Throwable $e): bool
     {
-        $this->renderable(function (Throwable $e, $request) {
-            if (! ($request->expectsJson() || $request->is('api/*'))) {
-                return null;
-            }
-
-            if ($e instanceof BusinessException) {
-                return ApiResponse::error(
-                    code: $e->errorCode,
-                    message: $e->getMessage(),
-                    meta: $e->meta,
-                    status: $e->status
-                );
-            }
-
-            if ($e instanceof ValidationException) {
-                return ApiResponse::error(
-                    code: 'VALIDATION_ERROR',
-                    message: 'Validation error',
-                    meta: ['errors' => $e->errors()],
-                    status: 422
-                );
-            }
-
-            if ($e instanceof AuthenticationException) {
-                return ApiResponse::error(
-                    code: 'UNAUTHENTICATED',
-                    message: 'Unauthenticated',
-                    status: 401
-                );
-            }
-
-            $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;
-            $message = $e->getMessage();
-
-            if ($message === '') {
-                $message = $status >= 500 ? 'Server error' : 'Request failed';
-            } elseif ($status >= 500 && ! config('app.debug')) {
-                $message = 'Server error';
-            }
-
-            $meta = [];
-            if (config('app.debug') && $status >= 500) {
-                $meta = ['exception' => class_basename($e)];
-            }
-
-            return ApiResponse::error(
-                code: 'UNEXPECTED_ERROR',
-                message: $message,
-                meta: $meta,
-                status: $status
-            );
-        });
+        return $request->expectsJson() || $request->is('api/*');
     }
+
+  public function register(): void
+{
+    $this->renderable(function (Throwable $e, $request) {
+        if ($e instanceof BusinessException) {
+            return ApiResponse::error(
+                code: $e->errorCode,
+                message: $e->getMessage(),
+                meta: $e->meta,
+                status: $e->status
+            );
+        }
+
+        if ($e instanceof ValidationException) {
+            return ApiResponse::error(
+                code: 'VALIDATION_ERROR',
+                message: 'Validation error',
+                meta: ['errors' => $e->errors()],
+                status: 422
+            );
+        }
+
+        if ($e instanceof AuthenticationException) {
+            return ApiResponse::error(
+                code: 'UNAUTHENTICATED11',
+                message: 'Unauthenticated',
+                status: 401
+            );
+        }
+
+        $status = $e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500;
+        $message = $e->getMessage();
+
+        if ($message === '') {
+            $message = $status >= 500 ? 'Server error' : 'Request failed';
+        } elseif ($status >= 500 && ! config('app.debug')) {
+            $message = 'Server error';
+        }
+
+        $meta = [];
+        if (config('app.debug') && $status >= 500) {
+            $meta = ['exception' => class_basename($e)];
+        }
+
+        return ApiResponse::error(
+            code: 'UNEXPECTED_ERROR',
+            message: $message,
+            meta: $meta,
+            status: $status
+        );
+    });
+}
 };
