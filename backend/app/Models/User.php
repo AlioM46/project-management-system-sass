@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -20,15 +20,15 @@ class User extends Authenticatable implements JWTSubject
         'status',
         'last_login_at',
         'last_login_ip',
-        "refresh_token",
-        "refresh_token_expiration",
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $hidden = [
         'password',
         'deleted_at',
-        "refresh_token",
-        "refresh_token_expiration",
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $casts = [
@@ -40,7 +40,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function setPasswordAttribute($value): void
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             $this->attributes['password'] = password_get_info($value)['algo'] !== null
                 ? $value
                 : Hash::make($value);

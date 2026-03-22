@@ -2,19 +2,22 @@
 
 namespace App\Modules\Auth\Actions\Auth;
 
-use App\Modules\Auth\Services\AuthService;
 use App\Models\User;
+use App\Modules\Auth\Events\UserRegistered;
+use App\Modules\Auth\Services\AuthService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class RegisterUser
 {
-    public function execute(array $data)
+    public function execute(array $data): array
     {
-                $user = User::create([
+        $user = null;
+
+        $result = DB::transaction(function () use ($data, &$user) {
+            $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),
+                'password' => $data['password'],
             ]);
 
             $accessToken = AuthService::generateAccessToken($user);
@@ -26,6 +29,7 @@ class RegisterUser
             $user->save();
 
             $user->refresh();
+
             return [
                 'data' => [
                     'user' => $user,
@@ -36,5 +40,10 @@ class RegisterUser
                 ],
                 'refresh_token_cookie' => $refreshToken,
             ];
+        });
+
+        event(new UserRegistered($user));
+
+        return $result;
     }
 }
