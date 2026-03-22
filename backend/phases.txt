@@ -2,11 +2,13 @@
 preparing Auth Module
 create the archeticture of Auth Module
 
-03/xx/2026:
+03/22/2026:
 Implement Auth Module
  - Auth Logic (login,logout,register)
  - Token Logic (Issue Token, RefreshToken)
+
+
+03/xx/2026:
  - Email Logic 
  - Password Logic (Change Password, Reset Password,Password Reset Link)
-etc..
 

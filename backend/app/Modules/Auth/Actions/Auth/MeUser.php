@@ -2,10 +2,14 @@
 
 namespace App\Modules\Auth\Actions\Auth;
 
+use App\Models\User;
+
 class MeUser
 {
-    public function execute($user)
+    public function execute(User $user): array
     {
-        return $user;
+        return [
+            'user' => $user->fresh(),
+        ];
     }
 }
