@@ -8,7 +8,9 @@ Implement Auth Module
  - Token Logic (Issue Token, RefreshToken)
 
 
+03/23/2026:
+ - Email Verification 
+
 03/xx/2026:
- - Email Logic 
  - Password Logic (Change Password, Reset Password,Password Reset Link)
 

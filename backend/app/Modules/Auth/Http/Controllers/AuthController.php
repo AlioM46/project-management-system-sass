@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 // Actions
 use App\Modules\Auth\Actions\Auth\LoginUser as LoginAction;
 use App\Modules\Auth\Actions\Auth\LogoutUser as LogoutAction;
-use App\Modules\Auth\Actions\Auth\RegisterUser as RegisterAction;
 use App\Modules\Auth\Actions\Auth\MeUser as MeAction;
 use App\Modules\Auth\Actions\Auth\RefreshTokenUser as RefreshTokenAction;
-use App\Modules\Auth\Services\AuthService;
-// Requests
+use App\Modules\Auth\Actions\Auth\RegisterUser as RegisterAction;
 use App\Modules\Auth\Http\Requests\LoginRequest;
+// Requests
 use App\Modules\Auth\Http\Requests\RegisterRequest;
+use App\Modules\Auth\Services\AuthService;
 // Shared
 use App\Shared\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -20,13 +20,12 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-
     public function register(RegisterRequest $request, RegisterAction $action): JsonResponse
     {
         $result = $action->execute($request->validated());
 
         return $this->respondWithRefreshTokenCookie(
-            message: 'Register successful.',
+            message: 'Register successful. Please verify your email address.',
             result: $result,
             status: 201
         );
@@ -41,7 +40,6 @@ class AuthController extends Controller
             result: $result,
             status: 200
         );
-
 
     }
 
