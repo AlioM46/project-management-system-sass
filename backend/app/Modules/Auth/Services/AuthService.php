@@ -12,6 +12,8 @@ class AuthService
 {
     public const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
+    private const REFRESH_TOKEN_TTL_DAYS = 30;
+
     public static function generateAccessToken(User $user): string
     {
         return JWTAuth::fromUser($user);
@@ -58,6 +60,6 @@ class AuthService
 
     private static function refreshTokenLifetimeDays(): int
     {
-        return (int) env('refreshExpirationTime', 30);
+        return self::REFRESH_TOKEN_TTL_DAYS;
     }
 }
