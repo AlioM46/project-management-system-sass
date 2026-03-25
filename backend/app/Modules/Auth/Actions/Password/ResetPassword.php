@@ -4,6 +4,8 @@ namespace App\Modules\Auth\Actions\Password;
 
 use App\Models\PasswordResetToken;
 use App\Models\User;
+use App\Modules\Auth\Exceptions\InvalidPasswordResetTokenException;
+use App\Modules\Auth\Exceptions\PasswordReuseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,10 +13,7 @@ class ResetPassword
 {
     public function execute(array $data)
     {
-
         $password = $data["password"];
-        $passwordConfirmation = $data["password_confirmation"];
-
         $email = strtolower(trim($data["email"]));
         $hashedToken = hash('sha256', $data["plain_token"]);
 
@@ -25,40 +24,30 @@ class ResetPassword
             ->first();
 
         if (!$reset) {
-            // throw InvalidResetLinkResponse();
-            throw new \Exception('ASD1');
-
+            throw new InvalidPasswordResetTokenException();
         }
 
         if ($reset->expires_at->isPast()) {
-            // throw ResetLinkExpiredResponse();
-            throw new \Exception('ASD Expired');
+            throw new InvalidPasswordResetTokenException();
         }
+
         $user = User::where('email', $email)->first();
 
-
         if (!$user) {
-            // throw InvalidResetLinkResponse();
-            throw new \Exception('ASD');
-
+            throw new InvalidPasswordResetTokenException();
         }
 
-
         if (Hash::check($password, $user->password)) {
-            // throw NewPasswordSameAsOldResponse();
-            throw new \Exception('ASD Matched Passwords');
-
+            throw new PasswordReuseException();
         }
 
         DB::transaction(function () use ($user, $reset, $email, $password) {
             $user->password = Hash::make($password);
             $user->save();
 
-
             PasswordResetToken::where('email', $email)
                 ->whereNull('used_at')
                 ->update(['used_at' => now()]);
-
         });
     }
 }
