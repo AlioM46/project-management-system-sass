@@ -13,4 +13,5 @@ Implement Auth Module
 
 03/xx/2026:
  - Password Logic (Change Password, Reset Password,Password Reset Link)
-
+ - write Email Tests
+ - write Register/Login/logout tests

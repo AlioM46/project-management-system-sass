@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Modules\Auth\Actions\Auth;
+namespace App\Modules\Auth\Actions\Password;
 
 use App\Models\PasswordResetToken;
 use App\Models\User;
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Pest\Support\Str;
+use App\Modules\Auth\Exceptions\InvalidPasswordResetEmail;
+use App\Modules\Auth\Mail\ResetPasswordLink;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SendPasswordResetLink
 {
@@ -17,7 +16,7 @@ class SendPasswordResetLink
 
     $user = User::where("email", $email)->first();
     if (!$user) {
-     //   throw new \InvalidPasswordResetEmail('Invalid email address.');
+        throw new InvalidPasswordResetEmail();
     }
 
         PasswordResetToken::where('email', $email)->delete();
@@ -31,7 +30,10 @@ class SendPasswordResetLink
 
         $resetUrl = url('/reset-password?email=' . urlencode($email) . '&token=' . urlencode($plainToken));
         
-    
+        Mail::to($email)->send(new ResetPasswordLink($user, $resetUrl));
+
+        return $resetUrl;
+
     }
 
 }
