@@ -38,9 +38,18 @@ class User extends Authenticatable implements JWTSubject
         'deleted_at' => 'datetime',
     ];
 
+
+    /*
+    ⚙️ Why it works
+    Laravel detects methods like:
+    set{AttributeName}Attribute
+    So:
+    setPasswordAttribute
+    = “Whenever password is set → run this”
+    */
     public function setPasswordAttribute($value): void
     {
-        if (! empty($value)) {
+        if (!empty($value)) {
             $this->attributes['password'] = password_get_info($value)['algo'] !== null
                 ? $value
                 : Hash::make($value);
