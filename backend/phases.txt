@@ -11,7 +11,10 @@ Implement Auth Module
 03/23/2026:
  - Email Verification 
 
-03/xx/2026:
+03/25/2026:
  - Password Logic (Change Password, Reset Password,Password Reset Link)
- - write Email Tests
+
+03/xx/2026:
  - write Register/Login/logout tests
+ - write Email Tests
+ - write Password tests

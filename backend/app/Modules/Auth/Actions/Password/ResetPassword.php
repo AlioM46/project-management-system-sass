@@ -4,6 +4,7 @@ namespace App\Modules\Auth\Actions\Password;
 
 use App\Models\PasswordResetToken;
 use App\Models\User;
+use App\Modules\Auth\Events\PasswordChanged;
 use App\Modules\Auth\Exceptions\InvalidPasswordResetTokenException;
 use App\Modules\Auth\Exceptions\PasswordReuseException;
 use Illuminate\Support\Facades\DB;
@@ -49,5 +50,7 @@ class ResetPassword
                 ->whereNull('used_at')
                 ->update(['used_at' => now()]);
         });
+
+        event(new PasswordChanged($user->fresh()));
     }
 }

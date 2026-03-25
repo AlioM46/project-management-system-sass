@@ -2,7 +2,9 @@
 
 namespace App\Modules\Auth;
 
+use App\Modules\Auth\Events\PasswordChanged;
 use App\Modules\Auth\Events\UserRegistered;
+use App\Modules\Auth\Listeners\SendPasswordChangedEmail;
 use App\Modules\Auth\Listeners\SendVerificationEmail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +27,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
         Event::listen(UserRegistered::class, SendVerificationEmail::class);
+        Event::listen(PasswordChanged::class, SendPasswordChangedEmail::class);
         $this->mapApiRoutes();
     }
 
