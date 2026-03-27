@@ -11,6 +11,8 @@ class CreateWorkspace
 {
     public function execute(array $data, User $user): Workspace
     {
+
+
         return DB::transaction(function () use ($data, $user) {
             $workspace = Workspace::query()->create([
                 'name' => $data['name'],
@@ -28,6 +30,7 @@ class CreateWorkspace
                 'owner:id,name,email',
                 'members.user:id,name,email',
             ])->loadCount('members');
+
         });
     }
 }

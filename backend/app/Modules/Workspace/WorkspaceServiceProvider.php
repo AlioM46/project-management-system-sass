@@ -2,6 +2,7 @@
 
 namespace App\Modules\Workspace;
 
+use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,7 +13,9 @@ class WorkspaceServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(WorkspaceContextService::class, function () {
+            return new WorkspaceContextService();
+        });
     }
 
     /**
