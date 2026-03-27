@@ -18,3 +18,14 @@ Implement Auth Module
  - write Register/Login/logout tests
  - write Email Tests
  - write Password tests
+
+
+---- Workspaces
+
+03/26/2026
+ - Context Workspace Middleware + Service
+ - now each Tenant Related tables can use the middleware for validation
+
+03/27/2026
+- Automatic Tenant Scoping
+- Enhance Roles (Templates-When workspace has created, + permissions)

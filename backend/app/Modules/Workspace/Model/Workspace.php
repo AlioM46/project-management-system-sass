@@ -3,6 +3,7 @@
 namespace App\Modules\Workspace\Model;
 
 use App\Models\User;
+use App\Modules\Epic\Model\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,11 @@ class Workspace extends Model
     public function members(): HasMany
     {
         return $this->hasMany(Workspace_Members::class, 'workspace_id');
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class, 'workspace_id');
     }
 
     public function scopeAccessibleTo(Builder $query, int $userId): Builder
