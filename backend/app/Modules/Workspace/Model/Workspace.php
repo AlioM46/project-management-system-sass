@@ -3,7 +3,7 @@
 namespace App\Modules\Workspace\Model;
 
 use App\Models\User;
-use App\Modules\Epic\Model\Role;
+use App\Modules\RolesPermissions\Model\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
