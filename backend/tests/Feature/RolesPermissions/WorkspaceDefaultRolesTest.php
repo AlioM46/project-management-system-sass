@@ -4,13 +4,48 @@ use App\Models\User;
 use App\Modules\RolesPermissions\Actions\ListPermissions;
 use App\Modules\RolesPermissions\Model\Permission;
 use App\Modules\RolesPermissions\Model\Role;
-use App\Modules\RolesPermissions\Services\WorkspaceRoleProvisioningService;
 use App\Modules\Workspace\Actions\CreateWorkspace;
 use App\Modules\Workspace\Model\Workspace_Members;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
+
+function makeRolesPermissionsUser(string $email): User
+{
+    return User::query()->create([
+        'name' => 'Ali Omar',
+        'email' => $email,
+        'password' => Hash::make('password123'),
+        'email_verified_at' => now(),
+    ]);
+}
+
+function createWorkspaceForUser(User $user, string $name = 'Delivery Workspace')
+{
+    return app(CreateWorkspace::class)->execute([
+        'name' => $name,
+    ], $user);
+}
+
+function workspaceRolesFor(int $workspaceId)
+{
+    return Role::query()
+        ->withoutGlobalScopes()
+        ->where('workspace_id', $workspaceId)
+        ->with(['permissions' => fn ($query) => $query->orderBy('key')])
+        ->orderBy('name')
+        ->get()
+        ->keyBy('name');
+}
+
+function workspaceMembershipFor(int $workspaceId, int $userId): Workspace_Members
+{
+    return Workspace_Members::query()
+        ->where('workspace_id', $workspaceId)
+        ->where('user_id', $userId)
+        ->firstOrFail();
+}
 
 function expectedGranularPermissionKeys(): array
 {
@@ -59,97 +94,15 @@ it('syncs the predefined system permissions catalog', function () {
 });
 
 it('creates default workspace roles and assigns the creator as owner', function () {
-    $user = User::query()->create([
-        'name' => 'Ali Omar',
-        'email' => 'owner@example.com',
-        'password' => Hash::make('password123'),
-        'email_verified_at' => now(),
-    ]);
+    $user = makeRolesPermissionsUser('owner@example.com');
 
-    $workspace = app(CreateWorkspace::class)->execute([
-        'name' => 'Delivery Workspace',
-    ], $user);
+    $workspace = createWorkspaceForUser($user);
 
-    $roles = Role::query()
-        ->withoutGlobalScopes()
-        ->where('workspace_id', $workspace->id)
-        ->with([
-            'permissions' => fn ($query) => $query->orderBy('key'),
-        ])
-        ->orderBy('name')
-        ->get()
-        ->keyBy('name');
-
-    $membership = Workspace_Members::query()
-        ->where('workspace_id', $workspace->id)
-        ->where('user_id', $user->id)
-        ->firstOrFail();
+    $roles = workspaceRolesFor($workspace->id);
+    $membership = workspaceMembershipFor($workspace->id, $user->id);
 
     expect($roles->keys()->all())->toBe(['Admin', 'Member', 'Owner'])
         ->and($roles['Owner']->is_system)->toBeTrue()
         ->and($roles['Owner']->permissions->pluck('key')->all())->toBe(expectedGranularPermissionKeys())
         ->and($membership->role_id)->toBe($roles['Owner']->id);
-});
-
-it('replaces legacy wildcard permissions and mappings during reprovisioning', function () {
-    $user = User::query()->create([
-        'name' => 'Ali Omar',
-        'email' => 'legacy-owner@example.com',
-        'password' => Hash::make('password123'),
-        'email_verified_at' => now(),
-    ]);
-
-    $workspace = app(CreateWorkspace::class)->execute([
-        'name' => 'Legacy Workspace',
-    ], $user);
-
-    $ownerRole = Role::query()
-        ->withoutGlobalScopes()
-        ->where('workspace_id', $workspace->id)
-        ->where('name', 'Owner')
-        ->firstOrFail();
-
-    $membership = Workspace_Members::query()
-        ->where('workspace_id', $workspace->id)
-        ->where('user_id', $user->id)
-        ->firstOrFail();
-
-    foreach ([
-        'workspace.*',
-        'member.*',
-        'role.*',
-        'project.*',
-        'task.*',
-        'comment.*',
-        'audit.*',
-        'report.*',
-    ] as $legacyKey) {
-        Permission::query()->create([
-            'key' => $legacyKey,
-            'name' => 'Legacy '.$legacyKey,
-            'description' => 'Legacy wildcard permission.',
-        ]);
-    }
-
-    $ownerRole->permissions()->sync(
-        Permission::query()
-            ->where('key', 'like', '%.*')
-            ->get()
-            ->mapWithKeys(fn (Permission $permission): array => [
-                $permission->id => ['permission_key' => $permission->key],
-            ])
-            ->all()
-    );
-
-    app(WorkspaceRoleProvisioningService::class)->provisionForWorkspace($workspace);
-
-    $ownerRole->refresh()->load([
-        'permissions' => fn ($query) => $query->orderBy('key'),
-    ]);
-    $membership->refresh();
-
-    expect(Permission::query()->where('key', 'like', '%.*')->exists())->toBeFalse()
-        ->and($ownerRole->id)->toBe($membership->role_id)
-        ->and($ownerRole->permissions->pluck('key')->all())->toBe(expectedGranularPermissionKeys())
-        ->and($ownerRole->rolePermissions()->where('permission_key', 'like', '%.*')->count())->toBe(0);
 });

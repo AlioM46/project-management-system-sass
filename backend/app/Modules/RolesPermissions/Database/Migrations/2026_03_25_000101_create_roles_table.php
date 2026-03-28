@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Workspace roles.
+     *
+     * Example rows:
+     * - Owner for workspace 1
+     * - Admin for workspace 1
+     * - Member for workspace 1
+     */
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
@@ -22,6 +30,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Drop the roles table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('roles');

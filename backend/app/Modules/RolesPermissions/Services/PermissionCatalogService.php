@@ -3,12 +3,33 @@
 namespace App\Modules\RolesPermissions\Services;
 
 use App\Modules\RolesPermissions\Model\Permission;
-use App\Modules\RolesPermissions\Model\RolePermission;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
+/**
+ * Central source of truth for Roles & Permissions.
+ *
+ * What this service owns:
+ * - the list of system permissions
+ * - the default workspace roles
+ * - syncing the permission catalog into the database
+ *
+ * What this service does NOT own:
+ * - creating workspace roles for a specific workspace
+ * - assigning the creator to the owner role
+ */
 class PermissionCatalogService
 {
+    /**
+     * Permission matrix grouped by resource.
+     *
+     * Example:
+     * - "task" => ["view", "create", "assign"]
+     *
+     * Resulting permission keys:
+     * - task.view
+     * - task.create
+     * - task.assign
+     */
     private const PERMISSION_MATRIX = [
         'workspace' => ['view', 'update', 'delete'],
         'member' => ['view', 'invite', 'update', 'remove'],
@@ -20,6 +41,13 @@ class PermissionCatalogService
         'report' => ['view', 'create', 'export'],
     ];
 
+    /**
+     * Human labels used in generated names/descriptions.
+     *
+     * Example:
+     * - resource "audit" becomes "audit logs"
+     * - permission name becomes "View audit logs"
+     */
     private const RESOURCE_LABELS = [
         'workspace' => 'workspace',
         'member' => 'members',
@@ -31,6 +59,13 @@ class PermissionCatalogService
         'report' => 'reports',
     ];
 
+    /**
+     * Human verbs used in generated names/descriptions.
+     *
+     * Example:
+     * - action "assign" becomes "Assign"
+     * - permission name becomes "Assign tasks"
+     */
     private const ACTION_LABELS = [
         'view' => 'View',
         'create' => 'Create',
@@ -45,6 +80,11 @@ class PermissionCatalogService
         'change_status' => 'Change',
     ];
 
+    /**
+     * Metadata for the default system roles.
+     *
+     * The permission list for each role is built later in defaultRoleDefinitions().
+     */
     private const DEFAULT_ROLE_KEYS = [
         'owner' => [
             'name' => 'Owner',
@@ -60,6 +100,15 @@ class PermissionCatalogService
         ],
     ];
 
+    /**
+     * Member is intentionally restricted to collaboration-level permissions.
+     *
+     * Result example:
+     * - can view workspace
+     * - can work on projects/tasks/comments
+     * - cannot delete workspace
+     * - cannot manage roles or members
+     */
     private const MEMBER_PERMISSION_KEYS = [
         'workspace.view',
         'member.view',
@@ -77,25 +126,54 @@ class PermissionCatalogService
         'report.view',
     ];
 
+    /**
+     * Build the full permission catalog from the matrix above.
+     *
+     * When it is used:
+     * - before syncing permissions to the database
+     * - when another class needs to know all available system permissions
+     *
+     * Why it exists:
+     * - to keep one source of truth for permission definitions
+     *
+     * Result example:
+     * [
+     *   ['key' => 'audit.export', 'name' => 'Export audit logs', ...],
+     *   ['key' => 'audit.view', 'name' => 'View audit logs', ...],
+     *   ['key' => 'comment.create', 'name' => 'Create comments', ...],
+     * ]
+     */
     public function definitions(): array
     {
-        return collect(self::PERMISSION_MATRIX)
-            ->flatMap(function (array $actions, string $resource): array {
-                return array_map(function (string $action) use ($resource): array {
-                    $key = "{$resource}.{$action}";
+        $definitions = [];
 
-                    return [
-                        'key' => $key,
-                        'name' => $this->permissionName($resource, $action),
-                        'description' => $this->permissionDescription($resource, $action),
-                    ];
-                }, $actions);
-            })
-            ->sortBy('key')
-            ->values()
-            ->all();
+        foreach (self::PERMISSION_MATRIX as $resource => $actions) {
+            foreach ($actions as $action) {
+                $definitions[] = $this->buildPermissionDefinition($resource, $action);
+            }
+        }
+
+        usort($definitions, fn(array $left, array $right): int => $left['key'] <=> $right['key']);
+
+        return $definitions;
     }
 
+    /**
+     * Build the default workspace roles with their permission keys.
+     *
+     * When it is used:
+     * - when provisioning default roles for a workspace
+     *
+     * Why it exists:
+     * - to keep role templates in one place
+     *
+     * Result example:
+     * [
+     *   ['key' => 'owner', 'name' => 'Owner', 'permissions' => ['workspace.view', ...]],
+     *   ['key' => 'admin', 'name' => 'Admin', 'permissions' => ['workspace.view', ...]],
+     *   ['key' => 'member', 'name' => 'Member', 'permissions' => ['workspace.view', ...]],
+     * ]
+     */
     public function defaultRoleDefinitions(): array
     {
         $allPermissionKeys = $this->permissionKeys();
@@ -105,47 +183,43 @@ class PermissionCatalogService
         ));
 
         return [
-            [
-                'key' => 'owner',
-                'name' => self::DEFAULT_ROLE_KEYS['owner']['name'],
-                'description' => self::DEFAULT_ROLE_KEYS['owner']['description'],
-                'permissions' => $allPermissionKeys,
-            ],
-            [
-                'key' => 'admin',
-                'name' => self::DEFAULT_ROLE_KEYS['admin']['name'],
-                'description' => self::DEFAULT_ROLE_KEYS['admin']['description'],
-                'permissions' => $adminPermissionKeys,
-            ],
-            [
-                'key' => 'member',
-                'name' => self::DEFAULT_ROLE_KEYS['member']['name'],
-                'description' => self::DEFAULT_ROLE_KEYS['member']['description'],
-                'permissions' => self::MEMBER_PERMISSION_KEYS,
-            ],
+            $this->buildRoleDefinition('owner', $allPermissionKeys),
+            $this->buildRoleDefinition('admin', $adminPermissionKeys),
+            $this->buildRoleDefinition('member', self::MEMBER_PERMISSION_KEYS),
         ];
     }
 
+    /**
+     * Return only the permission keys from definitions().
+     *
+     * Result example:
+     * ['audit.export', 'audit.view', 'comment.create', ...]
+     */
     public function permissionKeys(): array
     {
         return array_column($this->definitions(), 'key');
     }
 
-    public function expandLegacyPermissionKey(string $key): array
-    {
-        if (!str_ends_with($key, '.*')) {
-            return in_array($key, $this->permissionKeys(), true) ? [$key] : [];
-        }
-
-        $resource = explode('.', $key)[0];
-        $actions = self::PERMISSION_MATRIX[$resource] ?? [];
-
-        return array_map(
-            fn (string $action): string => "{$resource}.{$action}",
-            $actions
-        );
-    }
-
+    /**
+     * Sync the system permission catalog into the permissions table.
+     *
+     * When it is used:
+     * - before listing permissions
+     * - before provisioning workspace roles
+     *
+     * Why it exists:
+     * - to guarantee the permissions table always contains the system catalog
+     *
+     * Result:
+     * - database rows are inserted/updated
+     * - returns a collection keyed by permission key
+     *
+     * Result example:
+     * collect([
+     *   'task.assign' => Permission {...},
+     *   'workspace.view' => Permission {...},
+     * ])
+     */
     public function syncSystemPermissions(): Collection
     {
         $permissions = [];
@@ -162,68 +236,7 @@ class PermissionCatalogService
             $permissions[$permission->key] = $permission;
         }
 
-        $this->migrateLegacyRolePermissions(collect($permissions));
-        $this->purgeLegacyWildcardPermissions();
-
         return collect($permissions);
-    }
-
-    private function migrateLegacyRolePermissions(Collection $permissionsByKey): void
-    {
-        $legacyRolePermissions = RolePermission::query()
-            ->with('permission:id,key')
-            ->get();
-
-        foreach ($legacyRolePermissions as $rolePermission) {
-            $legacyKey = $rolePermission->permission_key;
-
-            if ($legacyKey === null && $rolePermission->permission) {
-                $legacyKey = $rolePermission->permission->key;
-            }
-
-            if ($legacyKey === null || !str_ends_with($legacyKey, '.*')) {
-                continue;
-            }
-
-            foreach ($this->expandLegacyPermissionKey($legacyKey) as $expandedKey) {
-                $permission = $permissionsByKey->get($expandedKey);
-
-                if (!$permission) {
-                    continue;
-                }
-
-                RolePermission::query()->updateOrCreate(
-                    [
-                        'role_id' => $rolePermission->role_id,
-                        'permission_id' => $permission->id,
-                    ],
-                    [
-                        'permission_key' => $permission->key,
-                    ]
-                );
-            }
-        }
-    }
-
-    private function purgeLegacyWildcardPermissions(): void
-    {
-        RolePermission::query()
-            ->where('permission_key', 'like', '%.*')
-            ->delete();
-
-        $legacyPermissionIds = Permission::query()
-            ->where('key', 'like', '%.*')
-            ->pluck('id');
-
-        if ($legacyPermissionIds->isNotEmpty()) {
-            RolePermission::query()
-                ->whereIn('permission_id', $legacyPermissionIds)
-                ->delete();
-        }
-
-        Permission::query()
-            ->where('key', 'like', '%.*')
-            ->delete();
     }
 
     private function permissionName(string $resource, string $action): string
@@ -232,13 +245,11 @@ class PermissionCatalogService
             return 'Change task status';
         }
 
-        return self::ACTION_LABELS[$action].' '.self::RESOURCE_LABELS[$resource];
+        return self::ACTION_LABELS[$action] . ' ' . $this->resourceLabel($resource);
     }
 
     private function permissionDescription(string $resource, string $action): string
     {
-        $label = Arr::get(self::RESOURCE_LABELS, $resource, $resource);
-
         if ($action === 'change_status') {
             return 'Allows the user to change task status within the workspace.';
         }
@@ -246,7 +257,31 @@ class PermissionCatalogService
         return sprintf(
             'Allows the user to %s %s within the workspace.',
             strtolower(self::ACTION_LABELS[$action]),
-            $label
+            $this->resourceLabel($resource)
         );
+    }
+
+    private function buildPermissionDefinition(string $resource, string $action): array
+    {
+        return [
+            'key' => "{$resource}.{$action}",
+            'name' => $this->permissionName($resource, $action),
+            'description' => $this->permissionDescription($resource, $action),
+        ];
+    }
+
+    private function buildRoleDefinition(string $roleKey, array $permissions): array
+    {
+        return [
+            'key' => $roleKey,
+            'name' => self::DEFAULT_ROLE_KEYS[$roleKey]['name'],
+            'description' => self::DEFAULT_ROLE_KEYS[$roleKey]['description'],
+            'permissions' => $permissions,
+        ];
+    }
+
+    private function resourceLabel(string $resource): string
+    {
+        return self::RESOURCE_LABELS[$resource] ?? $resource;
     }
 }
