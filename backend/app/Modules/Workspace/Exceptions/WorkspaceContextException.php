@@ -45,4 +45,27 @@ class WorkspaceContextException extends BusinessException
             meta: ['workspace_id' => $workspaceId]
         );
     }
+
+    public static function missingScopedModelContext(string $modelName): self
+    {
+        return new self(
+            message: "Workspace context is required to access {$modelName}.",
+            errorCode: 'WORKSPACE_CONTEXT_REQUIRED',
+            status: 400,
+            meta: ['model' => $modelName]
+        );
+    }
+
+    public static function workspaceMismatch(int $providedWorkspaceId, int $currentWorkspaceId): self
+    {
+        return new self(
+            message: 'The provided workspace_id does not match the active workspace context.',
+            errorCode: 'WORKSPACE_CONTEXT_MISMATCH',
+            status: 409,
+            meta: [
+                'workspace_id' => $providedWorkspaceId,
+                'current_workspace_id' => $currentWorkspaceId,
+            ]
+        );
+    }
 }

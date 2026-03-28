@@ -19,7 +19,7 @@ Route::middleware(['auth:api', 'workspace.context'])->get('/_test/workspace-cont
         message: 'Workspace context resolved successfully.',
         data: [
             'context' => $workspaceContext->context(),
-            'request_workspace_id' => $request->attributes->get('workspace_id'),
+            'request_workspace_id' => $workspaceContext->currentWorkspaceId(),
         ]
     );
 });
