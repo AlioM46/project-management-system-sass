@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Modules\Epic;
+namespace App\Modules\RolesPermissions;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
-class EpicServiceProvider extends ServiceProvider
+class RolesPermissionsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
