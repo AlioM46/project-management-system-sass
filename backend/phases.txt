@@ -23,9 +23,11 @@ Implement Auth Module
 ---- Workspaces
 
 03/26/2026
- - Context Workspace Middleware + Service
+ -2.3 Context Workspace Middleware + Service
  - now each Tenant Related tables can use the middleware for validation
 
 03/27/2026
-- Automatic Tenant Scoping
+-2.4 Automatic Tenant Scoping using Traits & Scopes
+
+
 - Enhance Roles (Templates-When workspace has created, + permissions)

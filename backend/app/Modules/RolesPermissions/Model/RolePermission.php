@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Epic\Model;
+namespace App\Modules\RolesPermissions\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

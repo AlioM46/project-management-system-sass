@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Modules\Epic\Model;
+namespace App\Modules\RolesPermissions\Model;
 
 use App\Modules\Workspace\Model\Workspace;
+use App\Modules\Workspace\Model\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
 {
+    use BelongsToWorkspace;
+
     protected $table = 'roles';
 
     protected $fillable = [
