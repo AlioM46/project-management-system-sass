@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Global permission definitions.
+     *
+     * Example rows:
+     * - workspace.view
+     * - task.assign
+     * - report.export
+     */
     public function up(): void
     {
         Schema::create('permissions', function (Blueprint $table) {
@@ -17,6 +25,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Drop the permissions table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('permissions');

@@ -9,15 +9,27 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 uses(RefreshDatabase::class);
 
-it('returns the granular permission catalog through the public endpoint', function () {
-    app(ListPermissions::class)->execute();
-
-    $user = User::query()->create([
+function makeRolesPermissionsApiUser(string $email): User
+{
+    return User::query()->create([
         'name' => 'Ali Omar',
-        'email' => 'permissions-api@example.com',
+        'email' => $email,
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
     ]);
+}
+
+function createApiWorkspace(User $user, string $name = 'API Workspace')
+{
+    return app(CreateWorkspace::class)->execute([
+        'name' => $name,
+    ], $user);
+}
+
+it('returns the granular permission catalog through the public endpoint', function () {
+    app(ListPermissions::class)->execute();
+
+    $user = makeRolesPermissionsApiUser('permissions-api@example.com');
 
     $response = $this->withToken(JWTAuth::fromUser($user))
         ->getJson('/api/roles-permissions/permissions');
@@ -29,16 +41,9 @@ it('returns the granular permission catalog through the public endpoint', functi
 });
 
 it('returns granular workspace roles for the active workspace', function () {
-    $user = User::query()->create([
-        'name' => 'Ali Omar',
-        'email' => 'roles-api@example.com',
-        'password' => Hash::make('password123'),
-        'email_verified_at' => now(),
-    ]);
+    $user = makeRolesPermissionsApiUser('roles-api@example.com');
 
-    $workspace = app(CreateWorkspace::class)->execute([
-        'name' => 'API Workspace',
-    ], $user);
+    $workspace = createApiWorkspace($user);
 
     $response = $this->withToken(JWTAuth::fromUser($user))
         ->withHeader('X-Workspace-Id', (string) $workspace->id)

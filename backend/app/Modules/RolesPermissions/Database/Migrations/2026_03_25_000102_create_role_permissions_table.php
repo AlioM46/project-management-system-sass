@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Pivot table between workspace roles and global permissions.
+     *
+     * Example row:
+     * - role_id: 3
+     * - permission_id: 21
+     * - permission_key: "task.assign"
+     */
     public function up(): void
     {
         Schema::create('role_permissions', function (Blueprint $table) {
@@ -26,6 +34,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Drop the role_permissions table.
+     */
     public function down(): void
     {
         Schema::dropIfExists('role_permissions');
