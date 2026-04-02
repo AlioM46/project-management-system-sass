@@ -37,6 +37,16 @@ class WorkspaceRoleProvisioningService
     public function provisionForWorkspace(Workspace $workspace): array
     {
         $permissionsByKey = $this->permissionCatalogService->syncSystemPermissions();
+
+
+
+            /*  
+            'key' => "owner",
+            'name' => self::DEFAULT_ROLE_KEYS[$roleKey]['name'] = "Owner",
+            'description' => self::DEFAULT_ROLE_KEYS[$roleKey]['description'] = "Full Control....",
+            'permissions' => $permissions = [workspace.view,......],
+            */
+
         $defaultRoleDefinitions = $this->permissionCatalogService->defaultRoleDefinitions();
         $roles = [];
         $systemRoleNames = collect($defaultRoleDefinitions)
@@ -49,7 +59,7 @@ class WorkspaceRoleProvisioningService
 
             $role->permissions()->sync($permissionSyncData);
             $role->load([
-                'permissions' => fn ($query) => $query->orderBy('key'),
+                'permissions' => fn($query) => $query->orderBy('key'),
             ]);
 
             $roles[$definition['key']] = $role;
@@ -79,6 +89,30 @@ class WorkspaceRoleProvisioningService
     private function upsertWorkspaceRole(Workspace $workspace, array $definition): Role
     {
         return Role::query()
+        // Why removing the global scope?: 
+        // if I create workspace, the x-workspace-id is null, 
+        // so the global scope would throw an error, because it always runs and looking up for x-workspace-id, 
+        // so I have to stop it, and provide the workspace-id Manually.
+      
+        // additional:
+
+        // Why remove the global scope?
+        // When creating/provisioning a new workspace, there may be no current
+        // X-Workspace-Id header yet.
+        //
+        // If the Role model still uses WorkspaceTenantScope, any query like
+        // updateOrCreate() will automatically try to resolve the current workspace
+        // from the header/context.
+        //
+        // Since X-Workspace-Id is null at that moment, the scope throws a
+        // missing workspace context error.
+        //
+        // So for provisioning, we disable the global scope and pass workspace_id
+        // explicitly in the query.
+        //
+        // In short:
+        // - normal app flow => use tenant scope + X-Workspace-Id
+        // - provisioning/system flow => bypass tenant scope + set workspace_id manually
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->updateOrCreate(
                 [
