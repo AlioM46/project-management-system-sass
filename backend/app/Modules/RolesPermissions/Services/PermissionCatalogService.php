@@ -176,12 +176,14 @@ class PermissionCatalogService
      */
     public function defaultRoleDefinitions(): array
     {
+        // 1. Owner Permissions: all permissions
         $allPermissionKeys = $this->permissionKeys();
+        // 2. Admin Permissions: all except workspace.delete
         $adminPermissionKeys = array_values(array_filter(
             $allPermissionKeys,
-            fn (string $key): bool => $key !== 'workspace.delete'
+            fn(string $key): bool => $key !== 'workspace.delete'
         ));
-
+        // 3. Member Permissions: defined in MEMBER_PERMISSION_KEYS constant
         return [
             $this->buildRoleDefinition('owner', $allPermissionKeys),
             $this->buildRoleDefinition('admin', $adminPermissionKeys),
@@ -234,6 +236,11 @@ class PermissionCatalogService
             );
 
             $permissions[$permission->key] = $permission;
+            /* EG:
+             * {key: audit.export, name: Export audit logs, description: Allows the user to export audit logs within the workspace.}
+             * {key: audit.view, name: View audit logs, description: Allows the user to view audit logs within the workspace.}
+             * 
+             */
         }
 
         return collect($permissions);

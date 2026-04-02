@@ -30,7 +30,9 @@ class CreateWorkspace
     {
         return DB::transaction(function () use ($data, $user) {
             $workspace = $this->createWorkspaceRecord($data, $user);
+
             $defaultRoles = $this->workspaceRoleProvisioningService->provisionForWorkspace($workspace);
+
             $this->createOwnerMembership($workspace, $user, $defaultRoles['owner']->id);
 
             return $workspace->load([
