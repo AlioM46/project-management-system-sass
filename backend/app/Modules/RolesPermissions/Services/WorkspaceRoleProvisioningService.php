@@ -36,6 +36,7 @@ class WorkspaceRoleProvisioningService
      */
     public function provisionForWorkspace(Workspace $workspace): array
     {
+        // Ensure the database have the default full list of system permissions before provisioning the default roles.
         $permissionsByKey = $this->permissionCatalogService->syncSystemPermissions();
 
 
@@ -56,8 +57,43 @@ class WorkspaceRoleProvisioningService
         foreach ($defaultRoleDefinitions as $definition) {
             $role = $this->upsertWorkspaceRole($workspace, $definition);
             $permissionSyncData = $this->buildPermissionSyncData($definition['permissions'], $permissionsByKey);
+            /* result example:
+            [
+                10 => ['permission_key' => 'workspace.view'],
+                21 => ['permission_key' => 'task.assign'],
+            ]       */
 
+
+                /* what is sync() do?
+                The sync method is used to synchronize the intermediate table with a list of IDs or ID and
+                another words: used to attach the new permissions data into roles, means:
+                it will affect the M-M relation in the role_permissions table, 
+                it will insert new rows if the permission id is not exist in the relation,
+                and delete the rows if the permission id is not exist in the sync data,
+                and keep the rows if the permission id exist in the sync data.
+                */
+                // Summary: ->permissions() -> is the M-M relation
+                // Summary: ->sync() -> means to handle the M-M relation using the $permissionSyncData Ids
             $role->permissions()->sync($permissionSyncData);
+            // sync:
+            // What it does internally:
+            // 
+            // ✅ attaches new permission IDs
+            // ❌ removes old ones not in the list
+            // 🔁 updates pivot data (permission_key)
+
+
+
+            /*
+            Why is it needed?
+            After sync():
+            The database is updated ✅
+            But the $role object in memory may still have:
+            old permissions
+            or no permissions loaded at all
+            So load() ensures:
+            “Give me the latest ordered permissions from the DB and attach them to this $role object.”
+            */
             $role->load([
                 'permissions' => fn($query) => $query->orderBy('key'),
             ]);
@@ -65,6 +101,17 @@ class WorkspaceRoleProvisioningService
             $roles[$definition['key']] = $role;
         }
 
+        /*so the process happen is:
+        -> permissions is the M-M relation
+        -> sync() -> handle the M-M relation by attach the new ids of permissions into the associative table.
+        Load() -> IDK?
+        */
+
+        //“For this workspace, any old system role 
+        // that is no longer in today's default role list should stop being marked as a system role.”
+        // eg: previous default roles were Owner/Admin/Member, 
+        // but now we changed the default list to Owner/Collaborator, so the old Admin/Member 
+        // roles should be unmarked as system roles, because they are no longer in the default list.
         Role::query()
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
@@ -138,11 +185,19 @@ class WorkspaceRoleProvisioningService
      *   21 => ['permission_key' => 'task.assign'],
      * ]
      */
-    private function buildPermissionSyncData(array $permissionKeys, \Illuminate\Support\Collection $permissionsByKey): array
+    private function buildPermissionSyncData(array $permissionKeysPerDefaultRole, \Illuminate\Support\Collection $permissionsByKey): array
     {
+        /*
+        permissionKeysPerDefaultRole = ['workspace.view', 'task.assign']
+        permissionsByKey = {
+            'workspace.view' => Permission { id: 10, key: 'workspace.view', name: 'View Workspace' },
+            'task.assign' => Permission { id: 21, key: 'task.assign', name: 'Assign Task' },
+            ...
+        }
+        */
         $permissionSyncData = [];
 
-        foreach ($permissionKeys as $permissionKey) {
+        foreach ($permissionKeysPerDefaultRole as $permissionKey) {
             $permission = $permissionsByKey->get($permissionKey);
 
             if (!$permission) {

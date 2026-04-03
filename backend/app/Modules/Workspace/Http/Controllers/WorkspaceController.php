@@ -5,10 +5,12 @@ namespace App\Modules\Workspace\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Workspace\Actions\CreateWorkspace;
 use App\Modules\Workspace\Actions\ListUserWorkspaces;
+use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Http\Requests\CreateWorkspaceRequest;
 use App\Modules\Workspace\Http\Requests\StoreWorkspaceMemberRequest;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Shared\Http\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +18,8 @@ use Illuminate\Http\Request;
 
 class WorkspaceController extends Controller
 {
+
+
 
     public function create(CreateWorkspaceRequest $request, CreateWorkspace $action): JsonResponse
     {
@@ -43,71 +47,79 @@ class WorkspaceController extends Controller
                 'count' => count($workspaces),
                 'workspaces' => $workspaces,
             ],
+        );
+    }
+
+    public function members(Request $request, WorkspaceContextService $workspaceContextService): JsonResponse
+    {
+        $workspace = $workspaceContextService->currentWorkspace();
+
+        if ($workspace === null) {
+            throw WorkspaceContextException::missingScopedModelContext('Workspace');
+        }
+
+        $this->ensureWorkspaceAccess($workspace, $request->user()->id);
+
+        $members = $workspace->members()
+            ->with([
+                'user:id,name,email',
+                'role:id,workspace_id,name,description,is_system',
+            ])
+            ->orderByDesc('joined_at')
+            ->get();
+
+        return ApiResponse::success(
+            message: 'Workspace members retrieved successfully.',
+            data: ['members' => $members],
             status: 200
         );
     }
 
-    // public function members(Workspace $workspace, Request $request): JsonResponse
-    // {
-    //     $this->ensureWorkspaceAccess($workspace, $request->user()->id);
+    public function addMember(
+        Workspace $workspace,
+        StoreWorkspaceMemberRequest $request
+    ): JsonResponse {
+        $this->ensureWorkspaceManagement($workspace, $request->user()->id);
 
-    //     $members = $workspace->members()
-    //         ->with('user:id,name,email')
-    //         ->orderByDesc('joined_at')
-    //         ->get();
+        $payload = $request->validated();
 
-    //     return ApiResponse::success(
-    //         message: 'Workspace members retrieved successfully.',
-    //         data: ['members' => $members],
-    //         status: 200
-    //     );
-    // }
+        $member = Workspace_Members::query()->firstOrNew([
+            'workspace_id' => $workspace->id,
+            'user_id' => $payload['user_id'],
+        ]);
 
-    // public function addMember(
-    //     Workspace $workspace,
-    //     StoreWorkspaceMemberRequest $request
-    // ): JsonResponse {
-    //     $this->ensureWorkspaceManagement($workspace, $request->user()->id);
+        if (array_key_exists('role_id', $payload)) {
+            $member->role_id = $payload['role_id'];
+        }
 
-    //     $payload = $request->validated();
+        if (!$member->exists) {
+            $member->joined_at = $payload['joined_at'] ?? now();
+        } elseif (array_key_exists('joined_at', $payload)) {
+            $member->joined_at = $payload['joined_at'];
+        }
 
-    //     $member = Workspace_Members::query()->firstOrNew([
-    //         'workspace_id' => $workspace->id,
-    //         'user_id' => $payload['user_id'],
-    //     ]);
+        $member->save();
 
-    //     if (array_key_exists('role_id', $payload)) {
-    //         $member->role_id = $payload['role_id'];
-    //     }
+        $member->load('user:id,name,email');
 
-    //     if (!$member->exists) {
-    //         $member->joined_at = $payload['joined_at'] ?? now();
-    //     } elseif (array_key_exists('joined_at', $payload)) {
-    //         $member->joined_at = $payload['joined_at'];
-    //     }
+        return ApiResponse::success(
+            message: 'Workspace member saved successfully.',
+            data: ['member' => $member],
+            status: 200
+        );
+    }
 
-    //     $member->save();
+    private function ensureWorkspaceAccess(Workspace $workspace, int $userId): void
+    {
+        if (!$workspace->containsUser($userId)) {
+            throw new AuthorizationException('You are not allowed to access this workspace.');
+        }
+    }
 
-    //     $member->load('user:id,name,email');
-
-    //     return ApiResponse::success(
-    //         message: 'Workspace member saved successfully.',
-    //         data: ['member' => $member],
-    //         status: 200
-    //     );
-    // }
-
-    // private function ensureWorkspaceAccess(Workspace $workspace, int $userId): void
-    // {
-    //     if (!$workspace->containsUser($userId)) {
-    //         throw new AuthorizationException('You are not allowed to access this workspace.');
-    //     }
-    // }
-
-    // private function ensureWorkspaceManagement(Workspace $workspace, int $userId): void
-    // {
-    //     if (!$workspace->isManagedBy($userId)) {
-    //         throw new AuthorizationException('Only the workspace owner can manage members.');
-    //     }
-    // }
+    private function ensureWorkspaceManagement(Workspace $workspace, int $userId): void
+    {
+        if (!$workspace->isManagedBy($userId)) {
+            throw new AuthorizationException('Only the workspace owner can manage members.');
+        }
+    }
 }

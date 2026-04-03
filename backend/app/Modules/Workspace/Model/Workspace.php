@@ -38,6 +38,8 @@ class Workspace extends Model
         return $this->hasMany(Role::class, 'workspace_id');
     }
 
+
+    // Scopes and helpers
     public function scopeAccessibleTo(Builder $query, int $userId): Builder
     {
         return $query->where(function (Builder $builder) use ($userId) {

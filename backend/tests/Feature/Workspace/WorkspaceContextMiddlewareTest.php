@@ -110,3 +110,38 @@ it('returns a business error when the user is not a workspace member', function 
         ->assertJsonPath('error.message', 'You are not a member of this workspace.')
         ->assertJsonPath('error.meta.workspace_id', $workspace->id);
 });
+
+it('returns members for the active workspace', function () {
+    $owner = makeWorkspaceContextUser('Owner User', 'owner@example.com');
+    $member = makeWorkspaceContextUser('Member User', 'member@example.com');
+
+    $workspace = Workspace::query()->create([
+        'name' => 'Delivery Workspace',
+        'created_by_user_id' => $owner->id,
+    ]);
+
+    Workspace_Members::query()->create([
+        'workspace_id' => $workspace->id,
+        'user_id' => $owner->id,
+        'role_id' => null,
+        'joined_at' => now()->subDay(),
+    ]);
+
+    Workspace_Members::query()->create([
+        'workspace_id' => $workspace->id,
+        'user_id' => $member->id,
+        'role_id' => null,
+        'joined_at' => now(),
+    ]);
+
+    $response = $this->withToken(JWTAuth::fromUser($owner))
+        ->withHeader('X-Workspace-Id', (string) $workspace->id)
+        ->getJson('/api/workspaces/members');
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Workspace members retrieved successfully.')
+        ->assertJsonCount(2, 'data.members')
+        ->assertJsonPath('data.members.0.user.email', 'member@example.com')
+        ->assertJsonPath('data.members.1.user.email', 'owner@example.com');
+});

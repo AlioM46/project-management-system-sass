@@ -10,8 +10,11 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
     Route::get('/', [WorkspaceController::class, 'listUserWorkspaces']);
     Route::post('/', [WorkspaceController::class, 'create']);
     // Route::get('/{workspace}', [WorkspaceController::class, 'show']);
-    // Route::get('/{workspace}/members', [WorkspaceController::class, 'members']);
-    // Route::post('/{workspace}/members', [WorkspaceController::class, 'addMember']);
+    Route::middleware(['workspace.context'])->group(function () {
+        Route::get('/members', [WorkspaceController::class, 'members']);
+        Route::post('/{workspace}/members', [WorkspaceController::class, 'addMember']);
+    });
+
 });
 
 Route::middleware(['auth:api', 'workspace.context'])->get('/_test/workspace-context', function (Request $request, WorkspaceContextService $workspaceContext) {

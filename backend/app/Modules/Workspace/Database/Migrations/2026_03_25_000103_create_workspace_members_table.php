@@ -6,6 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Workspace members.
+     *
+     * Important:
+     * This migration runs after the roles migrations so `role_id`
+     * can be a real foreign key to the `roles` table.
+     */
     public function up(): void
     {
         Schema::create('workspace_members', function (Blueprint $table) {
@@ -16,13 +23,14 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
-            $table->unsignedBigInteger('role_id')->nullable();
+            $table->foreignId('role_id')
+                ->nullable()
+                ->constrained('roles')
+                ->nullOnDelete();
             $table->timestamp('joined_at')->nullable();
             $table->timestamps();
 
             $table->unique(['workspace_id', 'user_id']);
-            $table->index('user_id');
-            $table->index('role_id');
         });
     }
 

@@ -15,7 +15,7 @@ class StoreWorkspaceMemberRequest extends FormRequest
     {
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'role_id' => ['nullable', 'integer', 'min:1'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'joined_at' => ['nullable', 'date'],
         ];
     }

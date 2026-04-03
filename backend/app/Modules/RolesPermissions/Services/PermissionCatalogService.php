@@ -237,8 +237,8 @@ class PermissionCatalogService
 
             $permissions[$permission->key] = $permission;
             /* EG:
-             * {key: audit.export, name: Export audit logs, description: Allows the user to export audit logs within the workspace.}
-             * {key: audit.view, name: View audit logs, description: Allows the user to view audit logs within the workspace.}
+             * 'workspace.view' => Permission { id: 10, key: 'workspace.view', name: 'View workspace', description: 'Allows the user to view the workspace and its contents.' }
+             * 'workspace.view' => Permission { id: 10, key: 'workspace.view', name: 'View workspace', description: 'Allows the user to view the workspace and its contents.' }
              * 
              */
         }
