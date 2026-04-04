@@ -6,11 +6,14 @@ use App\Models\User;
 use App\Modules\RolesPermissions\Model\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Workspace extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'workspaces';
 
     protected $fillable = [
@@ -21,6 +24,7 @@ class Workspace extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function owner(): BelongsTo
@@ -51,6 +55,23 @@ class Workspace extends Model
         });
     }
 
+    public function containsRole(int $roleId): bool
+    {
+        return $this->roles()
+            ->where('id', $roleId)
+            ->exists();
+    }
+
+    public function weakestRole(): ?Role
+    {
+        return $this->roles()
+            ->where('name', '!=', 'Owner')
+            ->withCount('permissions')
+            ->orderBy('permissions_count', 'asc')
+            ->orderBy('id', 'asc')
+            ->first();
+    }
+    
     public function containsUser(int $userId): bool
     {
         if ((int) $this->created_by_user_id === $userId) {

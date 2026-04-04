@@ -15,7 +15,18 @@ class WorkspaceContextException extends BusinessException
             meta: ['header' => $headerName]
         );
     }
+    public static function workspaceNotManagedByUser(string $username, int $workspaceId): self
+    {
+        return new self(
+            message: "User {$username} is not the owner of the current workspace.",
+            errorCode: 'WORKSPACE_CONTEXT_NOT_MANAGED_BY_USER',
+            status: 403,
+            meta: ['username' => $username, 'workspace_id' => $workspaceId]
+        );
 
+    }
+
+    
     public static function invalidHeader(string $headerName): self
     {
         return new self(
@@ -32,6 +43,85 @@ class WorkspaceContextException extends BusinessException
             message: 'Workspace not found.',
             errorCode: 'WORKSPACE_CONTEXT_NOT_FOUND',
             status: 404,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function workspaceNotArchived(int $workspaceId): self
+    {
+        return new self(
+            message: 'Workspace is not archived.',
+            errorCode: 'WORKSPACE_CONTEXT_NOT_ARCHIVED',
+            status: 409,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function invalidSuccessorMember(int $successorMemberId, int $workspaceId): self
+    {
+        return new self(
+            message: 'The selected successor member is invalid for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVALID_SUCCESSOR_MEMBER',
+            status: 422,
+            meta: [
+                'successor_member_id' => $successorMemberId,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function noEligibleSuccessor(int $workspaceId): self
+    {
+        return new self(
+            message: 'No eligible successor member was found for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_NO_ELIGIBLE_SUCCESSOR',
+            status: 409,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function workspaceRoleNotFound(string $roleName, int $workspaceId): self
+    {
+        return new self(
+            message: "Workspace role {$roleName} not found.",
+            errorCode: 'WORKSPACE_CONTEXT_ROLE_NOT_FOUND',
+            status: 409,
+            meta: [
+                'role_name' => $roleName,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function invalidInviteRole(int $roleId, int $workspaceId): self
+    {
+        return new self(
+            message: 'The selected role is invalid for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVALID_INVITE_ROLE',
+            status: 422,
+            meta: [
+                'role_id' => $roleId,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function ownerRoleCannotBeAssigned(int $workspaceId): self
+    {
+        return new self(
+            message: 'The Owner role cannot be assigned through workspace invitations.',
+            errorCode: 'WORKSPACE_CONTEXT_OWNER_ROLE_NOT_ASSIGNABLE',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function inviteRoleUnavailable(int $workspaceId): self
+    {
+        return new self(
+            message: 'No assignable role is available for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVITE_ROLE_UNAVAILABLE',
+            status: 409,
             meta: ['workspace_id' => $workspaceId]
         );
     }

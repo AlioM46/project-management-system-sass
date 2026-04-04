@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Workspace\Actions;
+namespace App\Modules\Workspace\Actions\WorkspaceActions;
 
 use App\Models\User;
 use App\Modules\RolesPermissions\Services\WorkspaceRoleProvisioningService;

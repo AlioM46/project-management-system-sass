@@ -3,16 +3,17 @@
 namespace App\Modules\Workspace\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Workspace\Actions\CreateWorkspace;
-use App\Modules\Workspace\Actions\ListUserWorkspaces;
-use App\Modules\Workspace\Exceptions\WorkspaceContextException;
+use App\Modules\Workspace\Actions\WorkspaceActions\CreateWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\DeleteCurrentWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\LeaveCurrentWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\ListUserWorkspaces;
+use App\Modules\Workspace\Actions\WorkspaceActions\RestoreWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\ShowCurrentWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\UpdateCurrentWorkspace;
 use App\Modules\Workspace\Http\Requests\CreateWorkspaceRequest;
-use App\Modules\Workspace\Http\Requests\StoreWorkspaceMemberRequest;
-use App\Modules\Workspace\Model\Workspace;
-use App\Modules\Workspace\Model\Workspace_Members;
-use App\Modules\Workspace\Services\WorkspaceContextService;
+use App\Modules\Workspace\Http\Requests\LeaveCurrentWorkspaceRequest;
+use App\Modules\Workspace\Http\Requests\UpdateWorkspaceRequest;
 use App\Shared\Http\ApiResponse;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,7 +21,16 @@ class WorkspaceController extends Controller
 {
 
 
+        // WorkspaceController.php handles the workspace itself:
+        // create workspace
+        // list my workspaces
+        // show current workspace
+        // update current workspace
+        // delete current workspace
+        // restore archived workspace
+        // leave current workspace
 
+        
     public function create(CreateWorkspaceRequest $request, CreateWorkspace $action): JsonResponse
     {
         $workspace = $action->execute(
@@ -37,89 +47,56 @@ class WorkspaceController extends Controller
 
     public function listUserWorkspaces(Request $request, ListUserWorkspaces $action): JsonResponse
     {
-
         $workspaces = $action->execute($request->user());
-
 
         return ApiResponse::success(
             message: 'Workspace retrieved successfully.',
             data: [
                 'count' => count($workspaces),
                 'workspaces' => $workspaces,
-            ],
+            ]
         );
     }
 
-    public function members(Request $request, WorkspaceContextService $workspaceContextService): JsonResponse
+    public function showCurrent(ShowCurrentWorkspace $action): JsonResponse
     {
-        $workspace = $workspaceContextService->currentWorkspace();
-
-        if ($workspace === null) {
-            throw WorkspaceContextException::missingScopedModelContext('Workspace');
-        }
-
-        $this->ensureWorkspaceAccess($workspace, $request->user()->id);
-
-        $members = $workspace->members()
-            ->with([
-                'user:id,name,email',
-                'role:id,workspace_id,name,description,is_system',
-            ])
-            ->orderByDesc('joined_at')
-            ->get();
-
         return ApiResponse::success(
-            message: 'Workspace members retrieved successfully.',
-            data: ['members' => $members],
-            status: 200
+            message: 'Workspace retrieved successfully.',
+            data: $action->execute()
         );
     }
 
-    public function addMember(
-        Workspace $workspace,
-        StoreWorkspaceMemberRequest $request
-    ): JsonResponse {
-        $this->ensureWorkspaceManagement($workspace, $request->user()->id);
-
-        $payload = $request->validated();
-
-        $member = Workspace_Members::query()->firstOrNew([
-            'workspace_id' => $workspace->id,
-            'user_id' => $payload['user_id'],
-        ]);
-
-        if (array_key_exists('role_id', $payload)) {
-            $member->role_id = $payload['role_id'];
-        }
-
-        if (!$member->exists) {
-            $member->joined_at = $payload['joined_at'] ?? now();
-        } elseif (array_key_exists('joined_at', $payload)) {
-            $member->joined_at = $payload['joined_at'];
-        }
-
-        $member->save();
-
-        $member->load('user:id,name,email');
-
+    public function updateCurrent(UpdateWorkspaceRequest $request, UpdateCurrentWorkspace $action): JsonResponse
+    {
         return ApiResponse::success(
-            message: 'Workspace member saved successfully.',
-            data: ['member' => $member],
-            status: 200
+            message: 'Workspace update endpoint scaffolded. Logic not implemented yet.',
+            data: $action->execute($request->validated())
         );
     }
 
-    private function ensureWorkspaceAccess(Workspace $workspace, int $userId): void
+    public function deleteCurrent(Request $request, DeleteCurrentWorkspace $action): JsonResponse
     {
-        if (!$workspace->containsUser($userId)) {
-            throw new AuthorizationException('You are not allowed to access this workspace.');
-        }
+        return ApiResponse::success(
+            message: 'Workspace archived successfully.',
+            data: $action->execute($request->user())
+        );
     }
 
-    private function ensureWorkspaceManagement(Workspace $workspace, int $userId): void
+    public function restore(Request $request, int $workspace, RestoreWorkspace $action): JsonResponse
     {
-        if (!$workspace->isManagedBy($userId)) {
-            throw new AuthorizationException('Only the workspace owner can manage members.');
-        }
+        return ApiResponse::success(
+            message: 'Workspace restored successfully.',
+            data: $action->execute($workspace, $request->user())
+        );
     }
+
+    public function leaveCurrent(LeaveCurrentWorkspaceRequest $request, LeaveCurrentWorkspace $action): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Workspace leave processed successfully.',
+            data: $action->execute($request->user(), $request->validated())
+        );
+    }
+
+    // public function removeMember() {}
 }
