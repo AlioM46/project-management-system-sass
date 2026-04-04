@@ -2,17 +2,22 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
+use App\Modules\Workspace\Mail\WorkspaceInviteMail;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
+use App\Modules\Workspace\Services\WorkspaceInvitationService;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class InviteWorkspaceMember
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
-        private readonly WorkspaceMembersService $workspaceMembersService
+        private readonly WorkspaceMembersService $workspaceMembersService,
+        private readonly WorkspaceInvitationService $workspaceInvitationService
     ) {
     }
 
@@ -24,16 +29,80 @@ class InviteWorkspaceMember
             throw WorkspaceContextException::missingScopedModelContext('Workspace');
         }
 
-        $currentMemberShip = $this->workspaceContextService->currentMembership();
+        $currentMembership = $this->workspaceContextService->currentMembership();
 
-        if ($currentMemberShip === null) {
+        if ($currentMembership === null) {
             throw WorkspaceContextException::notAMember($currentWorkspace->id);
         }
 
-        $this->handleRoles($currentWorkspace, $data);
+        $inviteeEmail = $this->workspaceInvitationService->normalizeEmail((string) $data['email']);
+        $inviterEmail = $this->workspaceInvitationService->normalizeEmail((string) ($currentMembership->user?->email ?? ''));
 
-        // TODO: Create a workspace invitation record and dispatch the invitation email.
-        return ['invitation' => null];
+        if ($inviteeEmail === $inviterEmail && $inviterEmail !== '') {
+            throw WorkspaceContextException::cannotInviteSelf($currentWorkspace->id);
+        }
+
+        if ($this->workspaceMembersService->isUserEmailMemberOfWorkspace($currentWorkspace, $inviteeEmail)) {
+            throw WorkspaceContextException::inviteEmailAlreadyMember($inviteeEmail, $currentWorkspace->id);
+        }
+
+        $invitedUserRole = $this->handleRoles($currentWorkspace, $data);
+        $plainToken = $this->workspaceInvitationService->generatePlainToken();
+        $tokenHash = $this->workspaceInvitationService->hashToken($plainToken);
+        $expiresAt = $this->workspaceInvitationService->defaultExpiryAt();
+        $inviteMessage = isset($data['message']) ? trim((string) $data['message']) : null;
+
+        $invitation = DB::transaction(function () use (
+            $currentWorkspace,
+            $inviteeEmail,
+            $currentMembership,
+            $inviteMessage,
+            $invitedUserRole,
+            $tokenHash,
+            $expiresAt,
+            $plainToken
+        ) {
+            $invitation = $this->workspaceInvitationService->upsertPendingInvitation(
+                workspace: $currentWorkspace,
+                email: $inviteeEmail,
+                role: $invitedUserRole,
+                invitedByUserId: (int) $currentMembership->user_id,
+                message: $inviteMessage,
+                tokenHash: $tokenHash,
+                expiresAt: $expiresAt
+            );
+
+            $acceptUrl = $this->workspaceInvitationService->buildAcceptUrl($invitation->id, $plainToken);
+
+            Mail::to($inviteeEmail)->send(
+                new WorkspaceInviteMail(
+                    workspaceName: (string) $currentWorkspace->name,
+                    roleName: (string) $invitedUserRole->name,
+                    inviteeEmail: $inviteeEmail,
+                    inviterName: (string) ($currentMembership->user?->name ?? 'A workspace member'),
+                    acceptUrl: $acceptUrl,
+                    expiresAt: $expiresAt,
+                    message: $inviteMessage
+                )
+            );
+
+            $invitation->sent_at = now();
+            $invitation->save();
+
+            return $invitation;
+        });
+
+        return [
+            'invitation' => [
+                'id' => $invitation->id,
+                'workspace_id' => $invitation->workspace_id,
+                'email' => $invitation->email,
+                'role_id' => $invitation->role_id,
+                'status' => $invitation->status,
+                'expires_at' => $invitation->expires_at,
+                'sent_at' => $invitation->sent_at,
+            ],
+        ];
     }
 
     private function handleRoles(Workspace $workspace, array $data): Role

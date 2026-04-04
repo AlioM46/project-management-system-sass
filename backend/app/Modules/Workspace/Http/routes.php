@@ -18,6 +18,9 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
         ->whereNumber('workspace')
         ->name('workspaces.restore');
 
+    Route::post('/members/accept-invite', [WorkspaceMemberController::class, 'acceptInvite'])
+        ->name('workspaces.members.invite.accept');
+
     // The workspace-specific endpoints below depend on X-Workspace-Id.
     Route::middleware('workspace.context')->group(function () {
         Route::get('/current', [WorkspaceController::class, 'showCurrent'])
@@ -39,10 +42,6 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             ->name('workspaces.members.index');
 
         Route::post('/members/send-invite', [WorkspaceMemberController::class, 'sendInvite'])
-            ->name('workspaces.members.invite');
-
-                    
-        Route::post('/members/accept-invite', [WorkspaceMemberController::class, 'sendInvite'])
             ->name('workspaces.members.invite');
 
         Route::patch('/members/{member}', [WorkspaceMemberController::class, 'update'])

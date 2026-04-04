@@ -3,10 +3,12 @@
 namespace App\Modules\Workspace\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\AcceptWorkspaceInvite;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\InviteWorkspaceMember;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\ListWorkspaceMembers;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\RemoveWorkspaceMember;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\UpdateWorkspaceMember;
+use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\AcceptWorkspaceInviteRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\InviteWorkspaceMemberRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\UpdateWorkspaceMemberRequest;
 use App\Modules\Workspace\Model\Workspace_Members;
@@ -30,13 +32,20 @@ class WorkspaceMemberController extends Controller
         );
     }
 
-    public function sendInvite(InviteWorkspaceMemberRequest $request , InviteWorkspaceMember $action,  ): JsonResponse
+    public function sendInvite(InviteWorkspaceMemberRequest $request, InviteWorkspaceMember $action): JsonResponse
     {
-
         return ApiResponse::success(
-            message: 'Workspace invitation endpoint scaffolded. Logic not implemented yet.',
+            message: 'Workspace invitation sent successfully.',
             data: $action->execute($request->validated()),
             status: 202
+        );
+    }
+
+    public function acceptInvite(AcceptWorkspaceInviteRequest $request, AcceptWorkspaceInvite $action): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Workspace invitation accepted successfully.',
+            data: $action->execute($request->user(), $request->validated())
         );
     }
 

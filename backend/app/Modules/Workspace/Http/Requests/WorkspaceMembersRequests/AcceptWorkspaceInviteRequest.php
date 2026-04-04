@@ -4,7 +4,7 @@ namespace App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class InviteWorkspaceMemberRequest extends FormRequest
+class AcceptWorkspaceInviteRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +14,8 @@ class InviteWorkspaceMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'role_id' => ['nullable', 'integer'],
-            'message' => ['nullable', 'string', 'max:1000'],
+            'invitation_id' => ['required', 'integer', 'exists:workspace_invitations,id'],
+            'token' => ['required', 'string', 'max:255'],
         ];
     }
 }
