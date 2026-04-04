@@ -30,6 +30,8 @@ class Role extends Model
         'name',
         'description',
         'is_system',
+        // PermissionsCount or Power of this role 
+        // to help developer infers which is default role to assign when inviting a member without specifying a role.
     ];
 
     protected $casts = [
@@ -52,6 +54,18 @@ class Role extends Model
         return $this->hasMany(RolePermission::class, 'role_id');
     }
 
+    public function WeakestRole() {
+        return $this->query()
+        ->withCount("permissions")
+        ->orderBy('permissions_count', 'asc')
+        ->first();
+    }
+     public function StrongestRole() {
+        return $this->query()
+        ->withCount("permissions")
+        ->orderBy('permissions_count', 'desc')
+        ->first();
+    }
     /**
      * Permission models attached to this role.
      *
