@@ -126,6 +126,74 @@ class WorkspaceContextException extends BusinessException
         );
     }
 
+    public static function inviteEmailAlreadyMember(string $email, int $workspaceId): self
+    {
+        return new self(
+            message: 'This user is already a member of the workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVITE_EMAIL_ALREADY_MEMBER',
+            status: 409,
+            meta: [
+                'email' => $email,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function cannotInviteSelf(int $workspaceId): self
+    {
+        return new self(
+            message: 'You cannot invite yourself to this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVITE_SELF_FORBIDDEN',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function invalidInvitationToken(): self
+    {
+        return new self(
+            message: 'Invitation token is invalid.',
+            errorCode: 'WORKSPACE_INVITE_INVALID_TOKEN',
+            status: 403
+        );
+    }
+
+    public static function invitationExpired(int $invitationId, int $workspaceId): self
+    {
+        return new self(
+            message: 'Invitation has expired.',
+            errorCode: 'WORKSPACE_INVITE_EXPIRED',
+            status: 410,
+            meta: [
+                'invitation_id' => $invitationId,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function invitationAlreadyHandled(int $invitationId, string $status): self
+    {
+        return new self(
+            message: 'Invitation is no longer pending.',
+            errorCode: 'WORKSPACE_INVITE_ALREADY_HANDLED',
+            status: 409,
+            meta: [
+                'invitation_id' => $invitationId,
+                'status' => $status,
+            ]
+        );
+    }
+
+    public static function invitationEmailMismatch(int $invitationId): self
+    {
+        return new self(
+            message: 'This invitation is for a different email address.',
+            errorCode: 'WORKSPACE_INVITE_EMAIL_MISMATCH',
+            status: 403,
+            meta: ['invitation_id' => $invitationId]
+        );
+    }
+
     public static function notAMember(int $workspaceId): self
     {
         return new self(
