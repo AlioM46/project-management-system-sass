@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->prefix('workspaces')->group(function () {
+    
     Route::get('/', [WorkspaceController::class, 'listUserWorkspaces'])
         ->name('workspaces.index');
 
@@ -39,13 +40,14 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             // WorkspaceMemberController routes
 
         Route::get('/members', [WorkspaceMemberController::class, 'members'])
-            ->name('workspaces.members.index');
+            ->name('workspaces.members.index')
+            ->middleware('hasPermission:member.view');
 
         Route::post('/members/send-invite', [WorkspaceMemberController::class, 'sendInvite'])
             ->name('workspaces.members.invite');
 
-        Route::patch('/members/{member}', [WorkspaceMemberController::class, 'update'])
-            ->name('workspaces.members.update');
+        Route::patch('/members/{member}', [WorkspaceMemberController::class, 'changeMemberRole'])
+            ->name('workspaces.members.changeMemberRole');
 
         Route::delete('/members/{member}', [WorkspaceMemberController::class, 'remove'])
             ->name('workspaces.members.destroy');
