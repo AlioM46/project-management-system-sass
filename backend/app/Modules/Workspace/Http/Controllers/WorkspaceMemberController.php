@@ -7,7 +7,7 @@ use App\Modules\Workspace\Actions\WorkspaceMemberActions\AcceptWorkspaceInvite;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\InviteWorkspaceMember;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\ListWorkspaceMembers;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\RemoveWorkspaceMember;
-use App\Modules\Workspace\Actions\WorkspaceMemberActions\UpdateWorkspaceMember;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\ChangeWorkspaceMemberRole;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\AcceptWorkspaceInviteRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\InviteWorkspaceMemberRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\UpdateWorkspaceMemberRequest;
@@ -49,7 +49,7 @@ class WorkspaceMemberController extends Controller
         );
     }
 
-    public function update(Workspace_Members $member, UpdateWorkspaceMemberRequest $request, UpdateWorkspaceMember $action): JsonResponse
+    public function changeMemberRole(Workspace_Members $member, UpdateWorkspaceMemberRequest $request, ChangeWorkspaceMemberRole $action): JsonResponse
     {
         return ApiResponse::success(
             message: 'Workspace member update endpoint scaffolded. Logic not implemented yet.',

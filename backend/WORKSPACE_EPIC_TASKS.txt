@@ -1,0 +1,34 @@
+Workspace Epic - Remaining Tasks
+
+1) Implement Update Workspace Member action
+- File: app/Modules/Workspace/Actions/WorkspaceMemberActions/UpdateWorkspaceMember.php
+- Add role-change behavior
+- Enforce workspace/member ownership checks
+- Enforce Owner-role constraints and edge cases
+
+2) Implement Remove Workspace Member action
+- File: app/Modules/Workspace/Actions/WorkspaceMemberActions/RemoveWorkspaceMember.php
+- Add proper removal behavior
+- Handle self/owner/successor rules where needed
+
+3) Implement Workspace Update logic
+- File: app/Modules/Workspace/Http/Controllers/WorkspaceController.php
+- Complete PATCH /workspaces/current action flow
+
+4) Add Permission Checks (deferred)
+- Apply to invite/update/remove/workspace update/leave boundaries
+
+5) Add Feature Tests (deferred)
+- Invitation send/accept flow
+- Member update/remove flows
+- Workspace update/leave edge cases
+
+6) Run migrations + manual E2E API validation
+- send invite
+- accept invite
+- list members
+- update member
+- remove member
+
+7) Fix existing test suite blocker
+- File: tests/Feature/Auth/EmailVerificationTest.php (line 107 parse error)

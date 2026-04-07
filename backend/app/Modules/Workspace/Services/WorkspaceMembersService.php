@@ -174,7 +174,7 @@ class WorkspaceMembersService
             */
     }
 
-    private function roleIdByName(Workspace $workspace, string $roleName): ?int
+    public function roleIdByName(Workspace $workspace, string $roleName): ?int
     {
         return Role::query()
             ->withoutGlobalScope(WorkspaceTenantScope::class)

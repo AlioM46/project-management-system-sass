@@ -31,3 +31,18 @@ Implement Auth Module
 
 
 - Enhance Roles (Templates-When workspace has created, + permissions)
+
+
+
+// UPDATES:
+create the canDo middleware to check permissions of the new user 
+
+update all functions that requires specific role
+to not depend on role it self, but on permissions
+eg:
+on remove member:
+instead of isAdmin or isOwner
+use this:
+in route api.php
+check if the user have permission to remove the user
+route::delete(middleware:canDo("member.remove"))

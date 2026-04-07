@@ -8,7 +8,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Model\Workspace_Members;
-use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
@@ -20,14 +19,21 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'status',
-        'last_login_at', 'last_login_ip',
-        'refresh_token', 'refresh_token_expiration',
+        'name',
+        'email',
+        'password',
+        'status',
+        'last_login_at',
+        'last_login_ip',
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $hidden = [
-        'password', 'deleted_at', 
-        'refresh_token', 'refresh_token_expiration',
+        'password',
+        'deleted_at',
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $casts = [
@@ -37,6 +43,15 @@ class User extends Authenticatable implements JWTSubject
         'deleted_at' => 'datetime',
     ];
 
+
+    /*
+    ⚙️ Why it works
+    Laravel detects methods like:
+    set{AttributeName}Attribute
+    So:
+    setPasswordAttribute
+    = “Whenever password is set → run this”
+    */
     public function setPasswordAttribute($value): void
     {
         if (!empty($value)) {
@@ -88,42 +103,5 @@ class User extends Authenticatable implements JWTSubject
     public function acceptedWorkspaceInvitations(): HasMany
     {
         return $this->hasMany(WorkspaceInvitation::class, 'accepted_by_user_id');
-    }
-
-    /**
-     * Check if the user has a permission in a workspace.
-     */
-    public function hasPermission(string $permissionName, Workspace $workspace = null): bool
-    {
-        // Get current workspace from the context service if null
-        if ($workspace === null) {
-            $workspaceContext = app(WorkspaceContextService::class);
-            $workspace = $workspaceContext->currentWorkspace();
-
-            // If still null, cannot check
-            if (!$workspace) {
-                return false;
-            }
-        }
-
-        // Owner bypass: creator of workspace has all permissions
-        // if ($workspace->created_by_user_id === $this->id) {
-        //     return true;
-        // }
-
-        // Get membership
-        $membership = $this->workspaceMemberships()
-            ->where('workspace_id', $workspace->id)
-            ->first();
-
-        if (!$membership || !$membership->role) {
-            return false;
-        }
-
-      $isExist =    $membership->role->permissions()
-            ->where('key', $permissionName)
-            ->exists();
-        // Check role permissions
-        return $isExist;
     }
 }

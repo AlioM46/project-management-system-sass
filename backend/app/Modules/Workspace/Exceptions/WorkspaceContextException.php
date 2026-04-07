@@ -226,4 +226,24 @@ class WorkspaceContextException extends BusinessException
             ]
         );
     }
+
+    public static function ownerCannotBeRemoved(int $workspaceId): self
+    {
+        return new self(
+            message: 'The workspace owner cannot be removed.',
+            errorCode: 'WORKSPACE_CONTEXT_OWNER_CANNOT_BE_REMOVED',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function insufficientPermissionToRemove(int $workspaceId): self
+    {
+        return new self(
+            message: 'You do not have permission to remove this member.',
+            errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_REMOVE',
+            status: 403,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
 }
