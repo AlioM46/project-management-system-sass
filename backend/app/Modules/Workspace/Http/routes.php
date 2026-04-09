@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:api')->prefix('workspaces')->group(function () {
-    
+
     Route::get('/', [WorkspaceController::class, 'listUserWorkspaces'])
         ->name('workspaces.index');
 
@@ -25,13 +25,16 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
     // The workspace-specific endpoints below depend on X-Workspace-Id.
     Route::middleware('workspace.context')->group(function () {
         Route::get('/current', [WorkspaceController::class, 'showCurrent'])
-            ->name('workspaces.current.show');
+            ->name('workspaces.current.show')
+            ->middleware('hasPermission:workspace.view');
 
         Route::patch('/current', [WorkspaceController::class, 'updateCurrent'])
-            ->name('workspaces.current.update');
+            ->name('workspaces.current.update')
+            ->middleware('hasPermission:workspace.update');
 
         Route::delete('/current', [WorkspaceController::class, 'deleteCurrent'])
-            ->name('workspaces.current.destroy');
+            ->name('workspaces.current.destroy')
+            ->middleware('hasPermission:workspace.delete');
 
 // under Test......
         Route::post('/current/leave', [WorkspaceController::class, 'leaveCurrent'])
@@ -44,13 +47,16 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             ->middleware('hasPermission:member.view');
 
         Route::post('/members/send-invite', [WorkspaceMemberController::class, 'sendInvite'])
-            ->name('workspaces.members.invite');
+            ->name('workspaces.members.invite')
+            ->middleware('hasPermission:member.invite');
 
         Route::patch('/members/{member}', [WorkspaceMemberController::class, 'changeMemberRole'])
-            ->name('workspaces.members.changeMemberRole');
+            ->name('workspaces.members.changeMemberRole')
+            ->middleware('hasPermission:member.update');
 
         Route::delete('/members/{member}', [WorkspaceMemberController::class, 'remove'])
-            ->name('workspaces.members.destroy');
+            ->name('workspaces.members.destroy')
+            ->middleware('hasPermission:member.remove');
     });
 });
 

@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Mail;
 
 class EmailVerficationService
 {
+
+
     public function send(User $user): array
     {
         if ($this->isVerified($user)) {
