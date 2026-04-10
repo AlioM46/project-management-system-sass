@@ -1,0 +1,58 @@
+﻿03/20/2026:
+preparing Auth Module
+create the archeticture of Auth Module
+
+03/22/2026:
+Implement Auth Module
+ - Auth Logic (login,logout,register)
+ - Token Logic (Issue Token, RefreshToken)
+
+
+03/23/2026:
+ - Email Verification 
+
+03/25/2026:
+ - Password Logic (Change Password, Reset Password,Password Reset Link)
+
+03/xx/2026:
+ - write Register/Login/logout tests
+ - write Email Tests
+ - write Password tests
+
+
+---- Workspaces
+
+03/26/2026
+ -2.3 Context Workspace Middleware + Service
+ - now each Tenant Related tables can use the middleware for validation
+
+03/27/2026
+-2.4 Automatic Tenant Scoping using Traits & Scopes
+
+
+- Enhance Roles (Templates-When workspace has created, + permissions)
+
+
+
+// UPDATES:
+create the canDo middleware to check permissions of the new user 
+
+update all functions that requires specific role
+to not depend on role it self, but on permissions
+eg:
+on remove member:
+instead of isAdmin or isOwner
+use this:
+in route api.php
+check if the user have permission to remove the user
+route::delete(middleware:canDo("member.remove"))
+
+
+-- Today:
+-- Test Change Member Role
+
+If full CRUD is required, you still need:
+create role
+update role
+delete role
+assign role permissions
