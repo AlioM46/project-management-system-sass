@@ -50,8 +50,8 @@ class WorkspaceRoleProvisioningService
 
         $defaultRoleDefinitions = $this->permissionCatalogService->defaultRoleDefinitions();
         $roles = [];
-        $systemRoleNames = collect($defaultRoleDefinitions)
-            ->pluck('name')
+        $systemRoleSlugs = collect($defaultRoleDefinitions)
+            ->pluck('slug')
             ->all();
 
         foreach ($defaultRoleDefinitions as $definition) {
@@ -116,8 +116,12 @@ class WorkspaceRoleProvisioningService
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('is_system', true)
-            ->whereNotIn('name', $systemRoleNames)
-            ->update(['is_system' => false]);
+            ->whereNotIn('slug', $systemRoleSlugs)
+            ->update([
+                'is_system' => false,
+                'is_editable' => true,
+                'is_deletable' => true,
+            ]);
 
         return $roles;
     }
@@ -164,11 +168,15 @@ class WorkspaceRoleProvisioningService
             ->updateOrCreate(
                 [
                     'workspace_id' => $workspace->id,
-                    'name' => $definition['name'],
+                    'slug' => $definition['slug'],
                 ],
                 [
+                    'name' => $definition['name'],
+                    'slug' => $definition['slug'],
                     'description' => $definition['description'],
-                    'is_system' => true,
+                    'is_system' => (bool) $definition['is_system'],
+                    'is_editable' => (bool) $definition['is_editable'],
+                    'is_deletable' => (bool) $definition['is_deletable'],
                 ]
             );
     }

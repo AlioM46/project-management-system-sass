@@ -16,7 +16,29 @@ Route::prefix('roles-permissions')->middleware('auth:api')->group(function () {
     Route::get('/permissions', [RolesPermissionsController::class, 'permissions']);
 
     Route::middleware('workspace.context')->group(function () {
-        Route::get('/roles', [RolesPermissionsController::class, 'roles']);
-        Route::post('/defaults/sync', [RolesPermissionsController::class, 'syncDefaults']);
+        Route::get('/roles', [RolesPermissionsController::class, 'roles'])
+            ->middleware('hasPermission:role.view');
+
+        Route::post('/roles', [RolesPermissionsController::class, 'createRole'])
+            ->middleware('hasPermission:role.create');
+
+        Route::get('/roles/{roleId}', [RolesPermissionsController::class, 'showRole'])
+            ->whereNumber('roleId')
+            ->middleware('hasPermission:role.view');
+
+        Route::patch('/roles/{roleId}', [RolesPermissionsController::class, 'updateRole'])
+            ->whereNumber('roleId')
+            ->middleware('hasPermission:role.update');
+
+        Route::delete('/roles/{roleId}', [RolesPermissionsController::class, 'deleteRole'])
+            ->whereNumber('roleId')
+            ->middleware('hasPermission:role.delete');
+
+        Route::put('/roles/{roleId}/permissions', [RolesPermissionsController::class, 'updateRolePermissions'])
+            ->whereNumber('roleId')
+            ->middleware('hasPermission:role.assign');
+ 
+        Route::post('/defaults/sync', [RolesPermissionsController::class, 'syncDefaults'])
+            ->middleware('hasPermission:role.update');
     });
 });

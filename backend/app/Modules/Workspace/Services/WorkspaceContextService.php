@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Http\Request;
 
 class WorkspaceContextService
@@ -38,6 +39,7 @@ class WorkspaceContextService
         }
 
         $membership = Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('user_id', $user->id)
             ->first();

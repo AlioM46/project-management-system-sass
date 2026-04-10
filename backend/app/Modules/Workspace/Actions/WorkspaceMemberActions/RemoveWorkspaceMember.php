@@ -35,9 +35,10 @@ class RemoveWorkspaceMember
      * 4. Delete membership record
      * 5. Return removed member data
      */
-    public function execute(Workspace_Members $member): array
+    public function execute(int $memberId): array
     {
         $this->validateAndInitialize();
+        $member = $this->workspaceMembersService->resolveWorkspaceMember($this->workspace, $memberId);
         $this->validateMemberNotOwner($member);
         $this->validateRemovalPermission($member);
 
@@ -81,8 +82,8 @@ class RemoveWorkspaceMember
         $this->workspaceOwnerId = (int) $workspace->created_by_user_id;
         $this->currentUserId = (int) $currentMembership->user_id;
         
-        $this->ownerRoleId = (int) ($this->workspaceMembersService->RoleIdByName($workspace, 'Owner') ?? 0);
-        $this->adminRoleId = (int) ($this->workspaceMembersService->RoleIdByName($workspace, 'Admin') ?? 0);
+        $this->ownerRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, \App\Modules\RolesPermissions\Model\Role::OWNER_SLUG) ?? 0);
+        $this->adminRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, \App\Modules\RolesPermissions\Model\Role::ADMIN_SLUG) ?? 0);
     }
 
     /**

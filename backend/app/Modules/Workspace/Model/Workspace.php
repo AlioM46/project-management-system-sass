@@ -4,6 +4,7 @@ namespace App\Modules\Workspace\Model;
 
 use App\Models\User;
 use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -34,7 +35,8 @@ class Workspace extends Model
 
     public function members(): HasMany
     {
-        return $this->hasMany(Workspace_Members::class, 'workspace_id');
+        return $this->hasMany(Workspace_Members::class, 'workspace_id')
+            ->withoutGlobalScope(WorkspaceTenantScope::class);
     }
 
     public function roles(): HasMany
@@ -65,7 +67,10 @@ class Workspace extends Model
     public function weakestRole(): ?Role
     {
         return $this->roles()
-            ->where('name', '!=', 'Owner')
+            ->where(function (Builder $query): void {
+                $query->where('slug', '!=', Role::OWNER_SLUG)
+                    ->orWhereNull('slug');
+            })
             ->withCount('permissions')
             ->orderBy('permissions_count', 'asc')
             ->orderBy('id', 'asc')

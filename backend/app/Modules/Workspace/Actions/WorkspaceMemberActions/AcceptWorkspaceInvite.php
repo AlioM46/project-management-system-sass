@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceInvitationService;
 use Illuminate\Support\Facades\DB;
 
@@ -56,7 +57,9 @@ class AcceptWorkspaceInvite
                 throw WorkspaceContextException::invitationEmailMismatch($invitation->id);
             }
 
-            $member = Workspace_Members::query()->firstOrCreate(
+            $member = Workspace_Members::query()
+                ->withoutGlobalScope(WorkspaceTenantScope::class)
+                ->firstOrCreate(
                 [
                     'workspace_id' => $invitation->workspace_id,
                     'user_id' => $user->id,
