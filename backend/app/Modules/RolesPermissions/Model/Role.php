@@ -23,19 +23,34 @@ class Role extends Model
 {
     use BelongsToWorkspace;
 
+    public const OWNER_SLUG = 'owner';
+    public const ADMIN_SLUG = 'admin';
+    public const MEMBER_SLUG = 'member';
+
+    public const RESERVED_SLUGS = [
+        self::OWNER_SLUG,
+        self::ADMIN_SLUG,
+        self::MEMBER_SLUG,
+    ];
+
     protected $table = 'roles';
 
     protected $fillable = [
         'workspace_id',
         'name',
+        'slug',
         'description',
         'is_system',
+        'is_editable',
+        'is_deletable',
         // PermissionsCount or Power of this role 
         // to help developer infers which is default role to assign when inviting a member without specifying a role.
     ];
 
     protected $casts = [
         'is_system' => 'boolean',
+        'is_editable' => 'boolean',
+        'is_deletable' => 'boolean',
     ];
 
     /**
@@ -52,6 +67,11 @@ class Role extends Model
     public function rolePermissions(): HasMany
     {
         return $this->hasMany(RolePermission::class, 'role_id');
+    }
+
+    public function workspaceMembers(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Workspace\Model\Workspace_Members::class, 'role_id');
     }
 
     public function WeakestRole() {
@@ -80,5 +100,25 @@ class Role extends Model
             'role_id',
             'permission_id'
         )->withPivot('permission_key')->withTimestamps();
+    }
+
+    public function isOwnerRole(): bool
+    {
+        return $this->slug === self::OWNER_SLUG;
+    }
+
+    public function isAdminRole(): bool
+    {
+        return $this->slug === self::ADMIN_SLUG;
+    }
+
+    public function isMemberRole(): bool
+    {
+        return $this->slug === self::MEMBER_SLUG;
+    }
+
+    public function isProtectedSystemRole(): bool
+    {
+        return $this->is_system && (!$this->is_editable || !$this->is_deletable);
     }
 }

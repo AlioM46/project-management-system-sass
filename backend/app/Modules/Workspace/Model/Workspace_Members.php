@@ -4,11 +4,14 @@ namespace App\Modules\Workspace\Model;
 
 use App\Models\User;
 use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Workspace\Model\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Workspace_Members extends Model
 {
+    use BelongsToWorkspace;
+
     protected $table = 'workspace_members';
 
     protected $fillable = [

@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Workspace\Actions\WorkspaceActions\CreateWorkspace;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -115,22 +118,20 @@ it('returns members for the active workspace', function () {
     $owner = makeWorkspaceContextUser('Owner User', 'owner@example.com');
     $member = makeWorkspaceContextUser('Member User', 'member@example.com');
 
-    $workspace = Workspace::query()->create([
+    $workspace = app(CreateWorkspace::class)->execute([
         'name' => 'Delivery Workspace',
-        'created_by_user_id' => $owner->id,
-    ]);
+    ], $owner);
 
-    Workspace_Members::query()->create([
-        'workspace_id' => $workspace->id,
-        'user_id' => $owner->id,
-        'role_id' => null,
-        'joined_at' => now()->subDay(),
-    ]);
+    $memberRoleId = Role::query()
+        ->withoutGlobalScope(WorkspaceTenantScope::class)
+        ->where('workspace_id', $workspace->id)
+        ->where('name', 'Member')
+        ->value('id');
 
     Workspace_Members::query()->create([
         'workspace_id' => $workspace->id,
         'user_id' => $member->id,
-        'role_id' => null,
+        'role_id' => $memberRoleId,
         'joined_at' => now(),
     ]);
 
@@ -141,7 +142,10 @@ it('returns members for the active workspace', function () {
     $response->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Workspace members retrieved successfully.')
-        ->assertJsonCount(2, 'data.members')
-        ->assertJsonPath('data.members.0.user.email', 'member@example.com')
-        ->assertJsonPath('data.members.1.user.email', 'owner@example.com');
+        ->assertJsonCount(2, 'data.members');
+
+    expect(collect($response->json('data.members'))
+        ->pluck('user.email')
+        ->all())
+        ->toEqualCanonicalizing(['member@example.com', 'owner@example.com']);
 });

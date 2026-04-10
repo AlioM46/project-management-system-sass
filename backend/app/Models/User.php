@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -70,7 +71,8 @@ class User extends Authenticatable implements JWTSubject
 
     public function workspaceMemberships(): HasMany
     {
-        return $this->hasMany(Workspace_Members::class, 'user_id');
+        return $this->hasMany(Workspace_Members::class, 'user_id')
+            ->withoutGlobalScope(WorkspaceTenantScope::class);
     }
 
     public function workspaces(): BelongsToMany
@@ -93,7 +95,7 @@ class User extends Authenticatable implements JWTSubject
     /**
      * Check if the user has a permission in a workspace.
      */
-    public function hasPermission(string $permissionName, Workspace $workspace = null): bool
+    public function hasPermission(string $permissionName, ?Workspace $workspace = null): bool
     {
         // Get current workspace from the context service if null
         if ($workspace === null) {

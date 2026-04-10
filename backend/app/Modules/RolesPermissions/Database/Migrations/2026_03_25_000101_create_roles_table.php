@@ -22,11 +22,15 @@ return new class extends Migration
                 ->constrained('workspaces')
                 ->cascadeOnDelete();
             $table->string('name', 150);
+            $table->string('slug', 150);
             $table->text('description')->nullable();
             $table->boolean('is_system')->default(false);
+            $table->boolean('is_editable')->default(true);
+            $table->boolean('is_deletable')->default(true);
             $table->timestamps();
 
             $table->unique(['workspace_id', 'name']);
+            $table->unique(['workspace_id', 'slug']);
         });
     }
 

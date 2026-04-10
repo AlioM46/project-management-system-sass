@@ -47,8 +47,12 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/",
-              "host": ["{{base_url}}"],
-              "path": [""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
             }
           }
         }
@@ -64,27 +68,87 @@
               "name": "Register",
               "request": {
                 "method": "POST",
-                "header": [{"key": "Content-Type", "value": "application/json"}],
-                "body": {"mode": "raw","raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"},
-                "url": {"raw": "{{base_url}}/auth/register","host": ["{{base_url}}"],"path": ["auth","register"]}
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
               }
             },
             {
               "name": "Login",
               "request": {
                 "method": "POST",
-                "header": [{"key": "Content-Type", "value": "application/json"}],
-                "body": {"mode": "raw","raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"},
-                "url": {"raw": "{{base_url}}/auth/login","host": ["{{base_url}}"],"path": ["auth","login"]}
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
               }
             },
             {
               "name": "Me",
-              "request": {"method": "GET","header": [],"url": {"raw": "{{base_url}}/auth/me","host": ["{{base_url}}"],"path": ["auth","me"]}}
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                }
+              }
             },
             {
               "name": "Logout",
-              "request": {"method": "POST","header": [],"url": {"raw": "{{base_url}}/auth/logout","host": ["{{base_url}}"],"path": ["auth","logout"]}}
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                }
+              }
             }
           ]
         },
@@ -95,23 +159,73 @@
               "name": "Send Reset Link",
               "request": {
                 "method": "POST",
-                "header": [{"key": "Content-Type", "value": "application/json"}],
-                "body": {"mode": "raw","raw": "{\n  \"email\": \"user@example.com\"\n}"},
-                "url": {"raw": "{{base_url}}/auth/password/send-reset-link","host": ["{{base_url}}"],"path": ["auth","password","send-reset-link"]}
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/password/send-reset-link",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "send-reset-link"
+                  ]
+                }
               }
             },
             {
               "name": "Reset Password",
               "request": {
                 "method": "POST",
-                "header": [{"key": "Content-Type", "value": "application/json"}],
-                "body": {"mode": "raw","raw": "{\n  \"email\": \"user@example.com\",\n  \"token\": \"reset-token\",\n  \"password\": \"new-password123\"\n}"},
-                "url": {"raw": "{{base_url}}/auth/password/reset-password","host": ["{{base_url}}"],"path": ["auth","password","reset-password"]}
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"token\": \"reset-token\",\n  \"password\": \"new-password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/password/reset-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "reset-password"
+                  ]
+                }
               }
             },
             {
               "name": "Change Password",
-              "request": {"method": "POST","header": [],"url": {"raw": "{{base_url}}/auth/password/change-password","host": ["{{base_url}}"],"path": ["auth","password","change-password"]}}
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/change-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "change-password"
+                  ]
+                }
+              }
             }
           ]
         },
@@ -120,11 +234,41 @@
           "item": [
             {
               "name": "Verify Email",
-              "request": {"method": "GET","header": [],"url": {"raw": "{{base_url}}/auth/email/verify/:id/:hash","host": ["{{base_url}}"],"path": ["auth","email","verify",":id",":hash"]}}
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/verify/:id/:hash",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "verify",
+                    ":id",
+                    ":hash"
+                  ]
+                }
+              }
             },
             {
               "name": "Send Email Verification",
-              "request": {"method": "POST","header": [],"url": {"raw": "{{base_url}}/auth/email/send-verification","host": ["{{base_url}}"],"path": ["auth","email","send-verification"]}}
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/send-verification",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "send-verification"
+                  ]
+                }
+              }
             }
           ]
         }
@@ -138,7 +282,20 @@
           "item": [
             {
               "name": "List Permissions",
-              "request": {"method": "GET","header": [],"url": {"raw": "{{base_url}}/roles-permissions/permissions","host": ["{{base_url}}"],"path": ["roles-permissions","permissions"]}}
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "permissions"
+                  ]
+                }
+              }
             }
           ]
         },
@@ -147,11 +304,195 @@
           "item": [
             {
               "name": "List Roles",
-              "request": {"method": "GET","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/roles-permissions/roles","host": ["{{base_url}}"],"path": ["roles-permissions","roles"]}}
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Role",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Project Lead\",\n  \"slug\": \"project-lead\",\n  \"description\": \"Custom role for project leadership.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Show Role",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Role",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Project Manager\",\n  \"slug\": \"project-manager\",\n  \"description\": \"Updated custom role description.\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete Role",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Role Permissions",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"permissions\": [\n    \"project.view\",\n    \"project.create\",\n    \"task.view\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}",
+                    "permissions"
+                  ]
+                }
+              }
             },
             {
               "name": "Sync Role Defaults",
-              "request": {"method": "POST","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"},{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{}"},"url": {"raw": "{{base_url}}/roles-permissions/defaults/sync","host": ["{{base_url}}"],"path": ["roles-permissions","defaults","sync"]}}
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/defaults/sync",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "defaults",
+                    "sync"
+                  ]
+                }
+              }
             }
           ]
         }
@@ -165,19 +506,89 @@
           "item": [
             {
               "name": "List Workspaces",
-              "request": {"method": "GET","header": [],"url": {"raw": "{{base_url}}/workspaces","host": ["{{base_url}}"],"path": ["workspaces"]}}
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/workspaces",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces"
+                  ]
+                }
+              }
             },
             {
               "name": "Create Workspace",
-              "request": {"method": "POST","header": [{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{\n  \"name\": \"My Workspace\"\n}"},"url": {"raw": "{{base_url}}/workspaces","host": ["{{base_url}}"],"path": ["workspaces"]}}
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"My Workspace\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/workspaces",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces"
+                  ]
+                }
+              }
             },
             {
               "name": "Restore Workspace",
-              "request": {"method": "POST","header": [],"url": {"raw": "{{base_url}}/workspaces/{{workspace_restore_id}}/restore","host": ["{{base_url}}"],"path": ["workspaces","{{workspace_restore_id}}","restore"]}}
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/{{workspace_restore_id}}/restore",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "{{workspace_restore_id}}",
+                    "restore"
+                  ]
+                }
+              }
             },
             {
               "name": "Accept Workspace Invite",
-              "request": {"method": "POST","header": [{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{\n  \"token\": \"invitation_token_here\",\n  \"workspace_id\": \"{{workspace_id}}\"\n}"},"url": {"raw": "{{base_url}}/workspaces/members/accept-invite","host": ["{{base_url}}"],"path": ["workspaces","members","accept-invite"]}}
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"invitation_token_here\",\n  \"workspace_id\": \"{{workspace_id}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/accept-invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "accept-invite"
+                  ]
+                }
+              }
             }
           ]
         },
@@ -186,19 +597,100 @@
           "item": [
             {
               "name": "Show Current Workspace",
-              "request": {"method": "GET","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/workspaces/current","host": ["{{base_url}}"],"path": ["workspaces","current"]}}
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                }
+              }
             },
             {
               "name": "Update Current Workspace",
-              "request": {"method": "PATCH","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"},{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{\n  \"name\": \"Updated Workspace Name\"\n}"},"url": {"raw": "{{base_url}}/workspaces/current","host": ["{{base_url}}"],"path": ["workspaces","current"]}}
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Workspace Name\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                }
+              }
             },
             {
               "name": "Delete Current Workspace",
-              "request": {"method": "DELETE","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/workspaces/current","host": ["{{base_url}}"],"path": ["workspaces","current"]}}
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                }
+              }
             },
             {
               "name": "Leave Current Workspace",
-              "request": {"method": "POST","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/workspaces/current/leave","host": ["{{base_url}}"],"path": ["workspaces","current","leave"]}}
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current/leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current",
+                    "leave"
+                  ]
+                }
+              }
             }
           ]
         },
@@ -207,19 +699,110 @@
           "item": [
             {
               "name": "List Workspace Members",
-              "request": {"method": "GET","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/workspaces/members","host": ["{{base_url}}"],"path": ["workspaces","members"]}}
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members"
+                  ]
+                }
+              }
             },
             {
               "name": "Send Workspace Invite",
-              "request": {"method": "POST","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"},{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{\n  \"email\": \"newmember@example.com\",\n  \"role_id\": 2,\n  \"message\": \"Welcome to our workspace!\"\n}"},"url": {"raw": "{{base_url}}/workspaces/members/send-invite","host": ["{{base_url}}"],"path": ["workspaces","members","send-invite"]}}
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newmember@example.com\",\n  \"role_id\": 2,\n  \"message\": \"Welcome to our workspace!\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/send-invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "send-invite"
+                  ]
+                }
+              }
             },
             {
               "name": "Change Member Role",
-              "request": {"method": "PATCH","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"},{"key": "Content-Type", "value": "application/json"}],"body": {"mode": "raw","raw": "{\n  \"role_id\": 3\n}"},"url": {"raw": "{{base_url}}/workspaces/members/{{member_id}}","host": ["{{base_url}}"],"path": ["workspaces","members","{{member_id}}"]}}
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role_id\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                }
+              }
             },
             {
               "name": "Remove Workspace Member",
-              "request": {"method": "DELETE","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/workspaces/members/{{member_id}}","host": ["{{base_url}}"],"path": ["workspaces","members","{{member_id}}"]}}
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                }
+              }
             }
           ]
         }
@@ -230,7 +813,25 @@
       "item": [
         {
           "name": "Workspace Context",
-          "request": {"method": "GET","header": [{"key": "X-Workspace-Id", "value": "{{workspace_id}}"}],"url": {"raw": "{{base_url}}/_test/workspace-context","host": ["{{base_url}}"],"path": ["_test","workspace-context"]}}
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/_test/workspace-context",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "_test",
+                "workspace-context"
+              ]
+            }
+          }
         }
       ]
     }

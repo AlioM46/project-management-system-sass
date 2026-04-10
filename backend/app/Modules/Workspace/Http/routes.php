@@ -42,6 +42,11 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
 
             // WorkspaceMemberController routes
 
+                    Route::get('/members/{member}', [WorkspaceMemberController::class, 'showMember'])
+            ->whereNumber('member')
+            ->name('workspaces.members.show')
+            ->middleware('hasPermission:member.view');
+
         Route::get('/members', [WorkspaceMemberController::class, 'members'])
             ->name('workspaces.members.index')
             ->middleware('hasPermission:member.view');
@@ -51,10 +56,12 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             ->middleware('hasPermission:member.invite');
 
         Route::patch('/members/{member}', [WorkspaceMemberController::class, 'changeMemberRole'])
+            ->whereNumber('member')
             ->name('workspaces.members.changeMemberRole')
             ->middleware('hasPermission:member.update');
 
         Route::delete('/members/{member}', [WorkspaceMemberController::class, 'remove'])
+            ->whereNumber('member')
             ->name('workspaces.members.destroy')
             ->middleware('hasPermission:member.remove');
     });

@@ -2,7 +2,7 @@
 
 use App\Models\User;
 use App\Modules\RolesPermissions\Actions\ListPermissions;
-use App\Modules\Workspace\Actions\CreateWorkspace;
+use App\Modules\Workspace\Actions\WorkspaceActions\CreateWorkspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -51,9 +51,13 @@ it('returns granular workspace roles for the active workspace', function () {
 
     $response->assertOk()
         ->assertJsonPath('data.roles.0.name', 'Admin')
+        ->assertJsonPath('data.roles.0.slug', 'admin')
+        ->assertJsonPath('data.roles.0.is_system', true)
         ->assertJsonPath('data.roles.0.permissions.0.key', 'audit.export')
         ->assertJsonPath('data.roles.1.name', 'Member')
+        ->assertJsonPath('data.roles.1.slug', 'member')
         ->assertJsonPath('data.roles.1.permissions.0.key', 'comment.create')
         ->assertJsonPath('data.roles.2.name', 'Owner')
+        ->assertJsonPath('data.roles.2.slug', 'owner')
         ->assertJsonPath('data.roles.2.permissions.32.key', 'workspace.view');
 });

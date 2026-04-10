@@ -106,11 +106,34 @@ class WorkspaceContextException extends BusinessException
         );
     }
 
+    public static function invalidMemberRole(int $roleId, int $workspaceId): self
+    {
+        return new self(
+            message: 'The selected role is invalid for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVALID_MEMBER_ROLE',
+            status: 422,
+            meta: [
+                'role_id' => $roleId,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
     public static function ownerRoleCannotBeAssigned(int $workspaceId): self
     {
         return new self(
             message: 'The Owner role cannot be assigned through workspace invitations.',
             errorCode: 'WORKSPACE_CONTEXT_OWNER_ROLE_NOT_ASSIGNABLE',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function ownerRoleCannotBeAssignedThroughMemberUpdate(int $workspaceId): self
+    {
+        return new self(
+            message: 'The Owner role cannot be assigned through member role updates.',
+            errorCode: 'WORKSPACE_CONTEXT_OWNER_ROLE_NOT_ASSIGNABLE_THROUGH_MEMBER_UPDATE',
             status: 422,
             meta: ['workspace_id' => $workspaceId]
         );
@@ -237,6 +260,26 @@ class WorkspaceContextException extends BusinessException
         );
     }
 
+    public static function ownerRoleCannotBeChanged(int $workspaceId): self
+    {
+        return new self(
+            message: 'The workspace owner role cannot be changed here.',
+            errorCode: 'WORKSPACE_CONTEXT_OWNER_ROLE_CANNOT_BE_CHANGED',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function cannotChangeOwnRole(int $workspaceId): self
+    {
+        return new self(
+            message: 'You cannot change your own workspace role through this endpoint.',
+            errorCode: 'WORKSPACE_CONTEXT_CANNOT_CHANGE_OWN_ROLE',
+            status: 422,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
     public static function insufficientPermissionToRemove(int $workspaceId): self
     {
         return new self(
@@ -244,6 +287,29 @@ class WorkspaceContextException extends BusinessException
             errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_REMOVE',
             status: 403,
             meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function insufficientPermissionToChangeRole(int $workspaceId): self
+    {
+        return new self(
+            message: 'You do not have permission to change this member role.',
+            errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_CHANGE_ROLE',
+            status: 403,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function invalidWorkspaceMember(int $memberId, int $workspaceId): self
+    {
+        return new self(
+            message: 'The selected member is invalid for this workspace.',
+            errorCode: 'WORKSPACE_CONTEXT_INVALID_MEMBER',
+            status: 422,
+            meta: [
+                'member_id' => $memberId,
+                'workspace_id' => $workspaceId,
+            ]
         );
     }
 }

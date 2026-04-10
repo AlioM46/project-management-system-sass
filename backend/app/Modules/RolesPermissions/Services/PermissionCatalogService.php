@@ -19,6 +19,18 @@ use Illuminate\Support\Collection;
  */
 class PermissionCatalogService
 {
+    public const RESERVED_ROLE_SLUGS = [
+        'owner',
+        'admin',
+        'member',
+    ];
+
+    public const RESERVED_ROLE_NAMES = [
+        'Owner',
+        'Admin',
+        'Member',
+    ];
+
     /**
      * Permission matrix grouped by resource.
      *
@@ -87,14 +99,17 @@ class PermissionCatalogService
      */
     private const DEFAULT_ROLE_KEYS = [
         'owner' => [
+            'slug' => 'owner',
             'name' => 'Owner',
             'description' => 'Full control over the workspace and all its resources.',
         ],
         'admin' => [
+            'slug' => 'admin',
             'name' => 'Admin',
             'description' => 'Manage workspace settings, members, roles, projects, tasks, comments, audits, and reports.',
         ],
         'member' => [
+            'slug' => 'member',
             'name' => 'Member',
             'description' => 'Collaborate on workspace projects, tasks, comments, and reports.',
         ],
@@ -191,6 +206,26 @@ class PermissionCatalogService
         ];
     }
 
+    public function reservedRoleSlugs(): array
+    {
+        return self::RESERVED_ROLE_SLUGS;
+    }
+
+    public function reservedRoleNames(): array
+    {
+        return self::RESERVED_ROLE_NAMES;
+    }
+
+    public function isReservedRoleSlug(string $slug): bool
+    {
+        return in_array(strtolower($slug), self::RESERVED_ROLE_SLUGS, true);
+    }
+
+    public function isReservedRoleName(string $name): bool
+    {
+        return in_array(strtolower($name), array_map('strtolower', self::RESERVED_ROLE_NAMES), true);
+    }
+
     /**
      * Return only the permission keys from definitions().
      *
@@ -281,8 +316,12 @@ class PermissionCatalogService
     {
         return [
             'key' => $roleKey,
+            'slug' => self::DEFAULT_ROLE_KEYS[$roleKey]['slug'],
             'name' => self::DEFAULT_ROLE_KEYS[$roleKey]['name'],
             'description' => self::DEFAULT_ROLE_KEYS[$roleKey]['description'],
+            'is_system' => true,
+            'is_editable' => false,
+            'is_deletable' => false,
             'permissions' => $permissions,
         ];
     }

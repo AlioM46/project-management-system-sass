@@ -27,6 +27,7 @@ class ListWorkspaceRoles
     {
         return Role::query()
             ->with(['permissions' => fn ($query) => $query->orderBy('key')])
+            ->withCount(['workspaceMembers as member_count'])
             ->orderByDesc('is_system')
             ->orderBy('name')
             ->get();

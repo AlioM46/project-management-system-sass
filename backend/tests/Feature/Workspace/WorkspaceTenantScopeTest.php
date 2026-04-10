@@ -49,6 +49,7 @@ it('scopes role queries to the current workspace automatically', function () {
     Role::query()->create([
         'workspace_id' => $workspaceA->id,
         'name' => 'Manager',
+        'slug' => 'manager',
         'description' => 'Workspace A role',
         'is_system' => false,
     ]);
@@ -56,6 +57,7 @@ it('scopes role queries to the current workspace automatically', function () {
     Role::query()->withoutGlobalScope(WorkspaceTenantScope::class)->create([
         'workspace_id' => $workspaceB->id,
         'name' => 'Developer',
+        'slug' => 'developer',
         'description' => 'Workspace B role',
         'is_system' => false,
     ]);
@@ -68,6 +70,46 @@ it('scopes role queries to the current workspace automatically', function () {
     $roles = Role::query()->pluck('name')->all();
 
     expect($roles)->toBe(['Manager']);
+});
+
+it('scopes workspace member queries to the current workspace automatically', function () {
+    $user = User::query()->create([
+        'name' => 'Ali Omar',
+        'email' => 'ali@example.com',
+        'password' => Hash::make('password123'),
+        'email_verified_at' => now(),
+    ]);
+
+    $workspaceA = Workspace::query()->create([
+        'name' => 'Workspace A',
+        'created_by_user_id' => $user->id,
+    ]);
+
+    $workspaceB = Workspace::query()->create([
+        'name' => 'Workspace B',
+        'created_by_user_id' => $user->id,
+    ]);
+
+    Workspace_Members::query()->create([
+        'workspace_id' => $workspaceA->id,
+        'user_id' => $user->id,
+        'role_id' => null,
+    ]);
+
+    Workspace_Members::query()->create([
+        'workspace_id' => $workspaceB->id,
+        'user_id' => $user->id,
+        'role_id' => null,
+    ]);
+
+    $request = Request::create('/api/workspaces/members', 'GET');
+    $request->headers->set(WorkspaceContextService::HEADER_NAME, (string) $workspaceA->id);
+
+    app(WorkspaceContextService::class)->resolveFromRequest($request, $user);
+
+    $members = Workspace_Members::query()->pluck('workspace_id')->all();
+
+    expect($members)->toBe([$workspaceA->id]);
 });
 
 it('fails closed when querying a scoped model without workspace context', function () {
@@ -86,6 +128,7 @@ it('fails closed when querying a scoped model without workspace context', functi
     Role::query()->withoutGlobalScope(WorkspaceTenantScope::class)->create([
         'workspace_id' => $workspace->id,
         'name' => 'Manager',
+        'slug' => 'manager',
         'description' => 'Scoped role',
         'is_system' => false,
     ]);
@@ -97,6 +140,35 @@ it('fails closed when querying a scoped model without workspace context', functi
     } catch (WorkspaceContextException $exception) {
         expect($exception->errorCode)->toBe('WORKSPACE_CONTEXT_REQUIRED')
             ->and($exception->getMessage())->toBe('Workspace context is required to access Role.');
+    }
+});
+
+it('fails closed when querying scoped workspace members without workspace context', function () {
+    $user = User::query()->create([
+        'name' => 'Ali Omar',
+        'email' => 'ali@example.com',
+        'password' => Hash::make('password123'),
+        'email_verified_at' => now(),
+    ]);
+
+    $workspace = Workspace::query()->create([
+        'name' => 'Workspace A',
+        'created_by_user_id' => $user->id,
+    ]);
+
+    Workspace_Members::query()->create([
+        'workspace_id' => $workspace->id,
+        'user_id' => $user->id,
+        'role_id' => null,
+    ]);
+
+    try {
+        Workspace_Members::query()->get();
+
+        $this->fail('Expected workspace context exception was not thrown.');
+    } catch (WorkspaceContextException $exception) {
+        expect($exception->errorCode)->toBe('WORKSPACE_CONTEXT_REQUIRED')
+            ->and($exception->getMessage())->toBe('Workspace context is required to access Workspace_Members.');
     }
 });
 
@@ -126,6 +198,7 @@ it('auto-fills workspace_id from the active workspace context when creating role
 
     $role = Role::query()->create([
         'name' => 'Manager',
+        'slug' => 'manager',
         'description' => 'Workspace scoped role',
         'is_system' => false,
     ]);
@@ -172,6 +245,7 @@ it('rejects creating a role with a mismatched workspace_id', function () {
         Role::query()->create([
             'workspace_id' => $workspaceB->id,
             'name' => 'Manager',
+            'slug' => 'manager',
             'description' => 'Wrong workspace role',
             'is_system' => false,
         ]);
@@ -216,6 +290,7 @@ it('allows explicit bypass of the workspace scope for internal queries', functio
     Role::query()->withoutGlobalScope(WorkspaceTenantScope::class)->create([
         'workspace_id' => $workspace->id,
         'name' => 'Internal Role',
+        'slug' => 'internal-role',
         'description' => 'Used by system code',
         'is_system' => false,
     ]);

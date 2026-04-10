@@ -46,3 +46,13 @@ use this:
 in route api.php
 check if the user have permission to remove the user
 route::delete(middleware:canDo("member.remove"))
+
+
+-- Today:
+-- Test Change Member Role
+
+If full CRUD is required, you still need:
+create role
+update role
+delete role
+assign role permissions

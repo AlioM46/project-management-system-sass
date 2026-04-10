@@ -129,7 +129,7 @@ class InviteWorkspaceMember
 
             // the provided role is valid and belongs to the active workspace,
             // but Owner should never be assigned through an invitation.
-            if ($role->name === 'Owner') {
+            if ($role->isOwnerRole()) {
                 throw WorkspaceContextException::ownerRoleCannotBeAssigned($workspace->id);
             }
 

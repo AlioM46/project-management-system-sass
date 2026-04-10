@@ -13,6 +13,7 @@ class WorkspaceMembersService
     public function isMemberOfWorkspace(Workspace $workspace, int $userId): bool
     {
         return Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('user_id', $userId)
             ->exists();
@@ -21,6 +22,7 @@ class WorkspaceMembersService
     public function isUserEmailMemberOfWorkspace(Workspace $workspace, string $email): bool
     {
         return Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->whereHas('user', function ($query) use ($email) {
                 $query->where('email', $email);
@@ -31,6 +33,7 @@ class WorkspaceMembersService
     public function countOtherMembers(Workspace $workspace, int $currentMembershipId): int
     {
         return Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('id', '!=', $currentMembershipId)
             ->whereHas('user')
@@ -59,7 +62,7 @@ class WorkspaceMembersService
 
     public function assignOwnerToMembership(Workspace $workspace, Workspace_Members $selectedMembership): void
     {
-        $ownerRoleId = $this->roleIdByName($workspace, 'Owner');
+        $ownerRoleId = $this->roleIdBySlug($workspace, Role::OWNER_SLUG);
 
         if ($ownerRoleId === null) {
             throw WorkspaceContextException::workspaceRoleNotFound('Owner', $workspace->id);
@@ -77,6 +80,21 @@ class WorkspaceMembersService
     public function removeMembership(Workspace_Members $membership): void
     {
         $membership->delete();
+    }
+
+    public function resolveWorkspaceMember(Workspace $workspace, int $memberId): Workspace_Members
+    {
+        $membership = Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
+            ->where('workspace_id', $workspace->id)
+            ->whereKey($memberId)
+            ->first();
+
+        if ($membership === null) {
+            throw WorkspaceContextException::invalidWorkspaceMember($memberId, $workspace->id);
+        }
+
+        return $membership;
     }
 
     /**
@@ -106,6 +124,7 @@ class WorkspaceMembersService
 
     private function explicitSuccessorCandidatesQuery(Workspace $workspace, int $currentMembershipId) {
         return Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('id', '!=', $currentMembershipId)
             ->whereHas('user');
@@ -117,7 +136,7 @@ class WorkspaceMembersService
      */
     private function resolveAutomaticSuccessor(Workspace $workspace, int $currentMembershipId): Workspace_Members
     {
-        $adminRoleId = $this->roleIdByName($workspace, 'Admin');
+        $adminRoleId = $this->roleIdBySlug($workspace, Role::ADMIN_SLUG);
 
         if ($adminRoleId !== null) {
             $adminMembership = $this->successorCandidatesQuery($workspace, $currentMembershipId)
@@ -147,6 +166,7 @@ class WorkspaceMembersService
     private function successorCandidatesQuery(Workspace $workspace, int $currentMembershipId)
     {
         return Workspace_Members::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('id', '!=', $currentMembershipId)
             ->whereHas('user')
@@ -180,6 +200,15 @@ class WorkspaceMembersService
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
             ->where('name', $roleName)
+            ->value('id');
+    }
+
+    public function roleIdBySlug(Workspace $workspace, string $roleSlug): ?int
+    {
+        return Role::query()
+            ->withoutGlobalScope(WorkspaceTenantScope::class)
+            ->where('workspace_id', $workspace->id)
+            ->where('slug', $roleSlug)
             ->value('id');
     }
 }
