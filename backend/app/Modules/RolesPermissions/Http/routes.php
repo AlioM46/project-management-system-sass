@@ -34,6 +34,9 @@ Route::prefix('roles-permissions')->middleware('auth:api')->group(function () {
             ->whereNumber('roleId')
             ->middleware('hasPermission:role.delete');
 
+
+            // https://chatgpt.com/c/69d92a4c-0118-8325-bbda-98acb49122d5
+            // Continue Tomorrow form here
         Route::put('/roles/{roleId}/permissions', [RolesPermissionsController::class, 'updateRolePermissions'])
             ->whereNumber('roleId')
             ->middleware('hasPermission:role.assign');
