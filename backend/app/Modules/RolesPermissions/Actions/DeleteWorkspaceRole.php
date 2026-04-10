@@ -15,6 +15,7 @@ class DeleteWorkspaceRole
     {
         $workspace = $this->workspaceRoleManagementService->currentWorkspace();
         $role = $this->workspaceRoleManagementService->resolveWorkspaceRole($workspace, $roleId);
+        
         $roleSnapshot = [
             'id' => $role->id,
             'name' => $role->name,

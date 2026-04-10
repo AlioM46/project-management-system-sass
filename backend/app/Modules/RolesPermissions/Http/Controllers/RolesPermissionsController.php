@@ -30,10 +30,9 @@ class RolesPermissionsController extends Controller
      */
     public function permissions(ListPermissions $action): JsonResponse
     {
-        return $this->respondWithCollection(
+        return ApiResponse::success(
             message: 'Permissions retrieved successfully.',
-            key: 'permissions',
-            items: $action->execute()
+            data: ['permissions' => $action->execute()]
         );
     }
 
@@ -42,47 +41,42 @@ class RolesPermissionsController extends Controller
      */
     public function roles(ListWorkspaceRoles $action): JsonResponse
     {
-        return $this->respondWithCollection(
+        return ApiResponse::success(
             message: 'Roles retrieved successfully.',
-            key: 'roles',
-            items: $action->execute()
+            data: ['roles' => $action->execute()]
         );
     }
 
     public function createRole(CreateWorkspaceRoleRequest $request, CreateWorkspaceRole $action): JsonResponse
     {
-        return $this->respondWithItem(
+        return ApiResponse::success(
             message: 'Workspace role created successfully.',
-            key: 'role',
-            item: $action->execute($request->validated())['role'],
+            data: ['role' => $action->execute($request->validated())['role']],
             status: 201
         );
     }
 
     public function showRole(int $roleId, ShowWorkspaceRole $action): JsonResponse
     {
-        return $this->respondWithItem(
+        return ApiResponse::success(
             message: 'Role retrieved successfully.',
-            key: 'role',
-            item: $action->execute($roleId)['role']
+            data: ['role' => $action->execute($roleId)['role']]
         );
     }
 
     public function updateRole(int $roleId, UpdateWorkspaceRoleRequest $request, UpdateWorkspaceRole $action): JsonResponse
     {
-        return $this->respondWithItem(
+        return ApiResponse::success(
             message: 'Workspace role updated successfully.',
-            key: 'role',
-            item: $action->execute($roleId, $request->validated())['role']
+            data: ['role' => $action->execute($roleId, $request->validated())['role']]
         );
     }
 
     public function deleteRole(int $roleId, DeleteWorkspaceRole $action): JsonResponse
     {
-        return $this->respondWithItem(
+        return ApiResponse::success(
             message: 'Workspace role deleted successfully.',
-            key: 'role',
-            item: $action->execute($roleId)['role']
+            data: ['role' => $action->execute($roleId)['role']]
         );
     }
 
@@ -91,10 +85,9 @@ class RolesPermissionsController extends Controller
         UpdateWorkspaceRolePermissionsRequest $request,
         UpdateWorkspaceRolePermissions $action
     ): JsonResponse {
-        return $this->respondWithItem(
+        return ApiResponse::success(
             message: 'Role permissions updated successfully.',
-            key: 'role',
-            item: $action->execute($roleId, $request->validated(), $request->user())['role']
+            data: ['role' => $action->execute($roleId, $request->validated(), $request->user())['role']]
         );
     }
 
@@ -103,37 +96,9 @@ class RolesPermissionsController extends Controller
      */
     public function syncDefaults(SyncWorkspaceDefaults $action): JsonResponse
     {
-        return $this->respondWithCollection(
+        return ApiResponse::success(
             message: 'Workspace default roles synchronized successfully.',
-            key: 'roles',
-            items: $action->execute()
-        );
-    }
-
-    /**
-     * Shared success response builder.
-     *
-     * Result example:
-     * {
-     *   "success": true,
-     *   "message": "Roles retrieved successfully.",
-     *   "data": { "roles": [...] }
-     * }
-     */
-    private function respondWithCollection(string $message, string $key, mixed $items): JsonResponse
-    {
-        return ApiResponse::success(
-            message: $message,
-            data: [$key => $items]
-        );
-    }
-
-    private function respondWithItem(string $message, string $key, mixed $item, int $status = 200): JsonResponse
-    {
-        return ApiResponse::success(
-            message: $message,
-            data: [$key => $item],
-            status: $status
+            data: ['roles' => $action->execute()]
         );
     }
 }

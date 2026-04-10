@@ -102,8 +102,26 @@ class WorkspaceRoleManagementService
         if ($memberCount > 0) {
             throw RolesPermissionsException::roleStillAssigned($role->id, $role->workspace_id, $memberCount);
         }
+        // 🔥 What detach() does
+        // $role->permissions()->detach();
 
+        // 👉 Deletes rows from the pivot table:
+
+        // DELETE FROM role_permission
+        // WHERE role_id = ?
+
+            //         roles:
+            //   id: 1 (Admin)
+
+            // permissions:
+            //   id: 10 (edit)
+            //   id: 11 (delete)
+
+            // role_permission:
+            //   (1,10) -> deleted
+            //   (1,11) -> deleted
         $role->permissions()->detach();
+
         $role->delete();
     }
 
