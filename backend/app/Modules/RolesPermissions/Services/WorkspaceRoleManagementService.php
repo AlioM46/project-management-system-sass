@@ -138,11 +138,18 @@ class WorkspaceRoleManagementService
 
         $permissions = Permission::query()
             ->whereIn('key', $normalizedKeys)
-            ->orderBy('key')
+            ->orderBy('key')   
             ->get()
-            ->keyBy('key');
+            ->keyBy('key');                                                                                                                                                                                                                                                                                                                                                                                        
 
-        $invalidKeys = array_values(array_diff($normalizedKeys, $permissions->keys()->all()));
+
+            // array_diff() compares the values of two arrays 
+            // and returns an array containing the values from the first array
+            // that are not present in the second array. 
+            // In this case, it is used to find any permission keys that were provided in $normalizedKeys 
+            // but do not exist in the $permissions collection retrieved from the database.
+        // -- To check if provided permissions are exist in the system or not
+            $invalidKeys = array_values(array_diff($normalizedKeys, $permissions->keys()->all()));
 
         if ($invalidKeys !== []) {
             throw RolesPermissionsException::invalidPermissionKeys($invalidKeys);
@@ -170,7 +177,7 @@ class WorkspaceRoleManagementService
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id);
     }
-
+  
     private function guardRoleIdentityAllowed(string $name, string $slug): void
     {
         if ($this->permissionCatalogService->isReservedRoleName($name)) {
