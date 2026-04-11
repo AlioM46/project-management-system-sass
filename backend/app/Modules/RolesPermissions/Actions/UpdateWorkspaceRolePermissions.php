@@ -18,11 +18,7 @@ class UpdateWorkspaceRolePermissions
         $role = $this->workspaceRoleManagementService->resolveWorkspaceRole($workspace, $roleId);
 
         return [
-            'role' => $this->workspaceRoleManagementService->replacePermissions(
-                $role,
-                $data['permissions'],
-                $actor
-            ),
+            'role' => $this->workspaceRoleManagementService->replacePermissions($role, $data['permissions'], $actor),
         ];
     }
 }
