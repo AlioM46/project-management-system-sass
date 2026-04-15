@@ -174,7 +174,7 @@ class TaskService
             $task->delete();
 
             $this->taskHistoryService->record(
-                $task,
+                $task, 
                 'task_deleted',
                 ['deleted_at' => null],
                 ['deleted_at' => optional($task->deleted_at)->toISOString()],

@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-class TasksController extends Controller
+class   TasksController extends Controller
 {
     public function create(CreateTaskRequest $request, CreateTask $action): JsonResponse
     {
