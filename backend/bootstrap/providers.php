@@ -5,5 +5,6 @@ return [
     App\Modules\Auth\AuthServiceProvider::class,
     App\Modules\Projects\ProjectsServiceProvider::class,
     App\Modules\RolesPermissions\RolesPermissionsServiceProvider::class,
+    App\Modules\Tasks\TasksServiceProvider::class,
     App\Modules\Workspace\WorkspaceServiceProvider::class,
 ];
