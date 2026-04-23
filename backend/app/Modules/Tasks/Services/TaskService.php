@@ -13,6 +13,7 @@ use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use App\Modules\Tasks\Enums\TaskStatus;
 
 class TaskService
 {
@@ -49,7 +50,7 @@ class TaskService
                     'project_id' => $project->id,
                     'title' => $title,
                     'description' => $description,
-                    'status' => Task::STATUS_TODO,
+                    'status' => TaskStatus::TODO->value,
                     'created_by_user_id' => $actor->id,
                 ]);
 
@@ -61,7 +62,7 @@ class TaskService
                     'project_id' => $project->id,
                     'title' => $title,
                     'description' => $description,
-                    'status' => Task::STATUS_TODO,
+                    'status' => TaskStatus::TODO->value,
                 ],
                 $actor
             );
@@ -136,6 +137,14 @@ class TaskService
         }
 
         if (array_key_exists('status', $data)) {
+
+                HandleTaskStatusChangeWorkflow(
+                    $task, 
+                    TaskStatus::from($task->status),
+                TaskStatus::from((string) $data['status']),
+                    $actor
+                );
+
             $status = (string) $data['status'];
 
             if ($status !== $task->status) {
@@ -286,5 +295,78 @@ class TaskService
             'creator',
             'assignees' => fn($query) => $query->orderBy('name'),
         ];
-    }
+
+        }
+
+
+        // public function restoreTask
+
+public function handleStatusChangeWorkflow(
+    Task $task,
+    TaskStatus $oldStatus,
+    TaskStatus $newStatus,
+    User $actor
+): void {
+
+if ($oldStatus === $newStatus) {
+    return;
 }
+if ($task->trashed()) {
+    throw TasksException::taskDeletedImmutable($task->id, $task->workspace_id);
+}
+
+    $allowedTransitions = [
+        TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
+        TaskStatus::IN_PROGRESS->value => [
+            TaskStatus::TODO->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::DONE->value,
+            TaskStatus::CANCELLED->value
+        ],
+        TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
+        TaskStatus::DONE->value => [
+            TaskStatus::IN_PROGRESS->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::CANCELLED->value
+        ],
+        TaskStatus::CANCELLED->value => [
+            TaskStatus::IN_PROGRESS->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::DONE->value
+        ],
+    ];
+
+    $from = $oldStatus->value;
+    $to = $newStatus->value;
+
+    // Validate transition
+    if (!isset($allowedTransitions[$from]) || !in_array($to, $allowedTransitions[$from], true)) {
+        throw TasksException::invalidStatusTransition($from, $to);
+    }
+
+    // Apply changes
+    $task->status = $to;
+
+    if ($newStatus === TaskStatus::DONE) {
+        $task->completed_at = now();
+    }
+
+    $task->save();
+
+    // Record history
+    $this->taskHistoryService->record(
+        $task,
+        'task_status_changed',
+        ['status' => $from],
+        [
+            'status' => $to,
+            'completed_at' => $task->completed_at?->toISOString()
+        ],
+        $actor
+    );
+}
+
+    }
+
+
+
