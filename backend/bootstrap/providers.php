@@ -7,4 +7,5 @@ return [
     App\Modules\RolesPermissions\RolesPermissionsServiceProvider::class,
     App\Modules\Tasks\TasksServiceProvider::class,
     App\Modules\Workspace\WorkspaceServiceProvider::class,
+    App\Modules\Comments\CommentsServiceProvider::class,
 ];
