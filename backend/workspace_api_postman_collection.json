@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Project Management System API",
-    "description": "Full Postman collection for all registered application API routes under /api, regenerated from the backend route list and aligned with the existing Auth, Workspace, Roles & Permissions, and Projects JSON files. Includes a few useful query-based request variants for projects.",
+    "description": "Full Postman collection for all registered application API routes under /api, aligned with the current backend including Auth, Workspace, Roles & Permissions, Projects, and Tasks.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -102,6 +102,30 @@
     {
       "key": "project_description",
       "value": "Tasks related to the new website launch"
+    },
+    {
+      "key": "task_id",
+      "value": "0"
+    },
+    {
+      "key": "task_title",
+      "value": "Design task board"
+    },
+    {
+      "key": "task_description",
+      "value": "Build the initial Kanban board screens and API integration."
+    },
+    {
+      "key": "task_status",
+      "value": "in_progress"
+    },
+    {
+      "key": "assignee_user_id",
+      "value": "0"
+    },
+    {
+      "key": "second_assignee_user_id",
+      "value": "0"
     },
     {
       "key": "verification_user_id",
@@ -213,9 +237,7 @@
                       "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
                       "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
                       "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
-                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') {",
-                      "  pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());",
-                      "}"
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
                     ]
                   }
                 }
@@ -269,9 +291,7 @@
                       "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
                       "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
                       "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
-                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') {",
-                      "  pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());",
-                      "}"
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
                     ]
                   }
                 }
@@ -311,9 +331,7 @@
                       "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
                       "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
                       "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
-                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') {",
-                      "  pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());",
-                      "}"
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
                     ]
                   }
                 }
@@ -1692,6 +1710,555 @@
                       "const project = data && data.project ? data.project : null;",
                       "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
                       "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Tasks",
+          "item": [
+            {
+              "name": "List Tasks",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Project",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?project_id={{project_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "project_id",
+                      "value": "{{project_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?status={{task_status}}&sort_by=updated_at&sort_dir=desc",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "{{task_status}}"
+                    },
+                    {
+                      "key": "sort_by",
+                      "value": "updated_at"
+                    },
+                    {
+                      "key": "sort_dir",
+                      "value": "desc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Assignee",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?assignee_id={{assignee_user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "assignee_id",
+                      "value": "{{assignee_user_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Task",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"project_id\": {{project_id}},\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"assignee_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Task",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Task",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Task (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Task",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assignees",
+          "item": [
+            {
+              "name": "List Assignees",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Add Assignees",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Replace Assignees",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Remove Assignees",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
                     ]
                   }
                 }
