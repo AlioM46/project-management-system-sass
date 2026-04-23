@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Modules\Tasks;
+namespace App\Modules\Comments;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
-class TasksServiceProvider extends ServiceProvider
+class CommentsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
