@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('tasks', function (Blueprint $table) {
@@ -21,6 +20,7 @@ return new class extends Migration
             $table->string('status', 20)->default('todo');
             $table->foreignId('created_by_user_id')
                 ->constrained('users');
+
             $table->timestamps();
             $table->softDeletes();
 

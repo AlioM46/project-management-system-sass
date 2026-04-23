@@ -10,10 +10,14 @@ use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceContextService;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use App\Modules\Tasks\Enums\TaskStatus;
+use App\Modules\RolesPermissions\Model\Role;
+use InvalidArgumentException;
+use Nette\ArgumentOutOfRangeException;
 
 class TaskService
 {
@@ -112,6 +116,7 @@ class TaskService
     public function updateTask(Task $task, array $data, User $actor): Task
     {
         $this->guardTaskActive($task);
+        $this->authorizeTaskUpdate($task, $actor);
 
         $oldValue = [];
         $newValue = [];
@@ -138,12 +143,12 @@ class TaskService
 
         if (array_key_exists('status', $data)) {
 
-                HandleTaskStatusChangeWorkflow(
-                    $task, 
-                    TaskStatus::from($task->status),
+            $this->handleStatusChangeWorkflow(
+                $task,
+                TaskStatus::from($task->status),
                 TaskStatus::from((string) $data['status']),
-                    $actor
-                );
+                $actor
+            );
 
             $status = (string) $data['status'];
 
@@ -183,7 +188,7 @@ class TaskService
             $task->delete();
 
             $this->taskHistoryService->record(
-                $task, 
+                $task,
                 'task_deleted',
                 ['deleted_at' => null],
                 ['deleted_at' => optional($task->deleted_at)->toISOString()],
@@ -290,83 +295,112 @@ class TaskService
 
     private function taskRelations(): array
     {
+
+
         return [
             'project',
             'creator',
             'assignees' => fn($query) => $query->orderBy('name'),
         ];
+    }
 
+
+
+
+
+
+
+    // public function restoreTask
+
+
+
+    public function handleStatusChangeWorkflow(
+        Task $task,
+        TaskStatus $oldStatus,
+        TaskStatus $newStatus,
+        User $actor
+    ): void {
+
+        if ($oldStatus === $newStatus) {
+            return;
+        }
+        if ($task->trashed()) {
+            throw TasksException::taskDeletedImmutable($task->id, $task->workspace_id);
         }
 
+        $allowedTransitions = [
+            TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
+            TaskStatus::IN_PROGRESS->value => [
+                TaskStatus::TODO->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::DONE->value,
+                TaskStatus::CANCELLED->value
+            ],
+            TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
+            TaskStatus::DONE->value => [
+                TaskStatus::IN_PROGRESS->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::CANCELLED->value
+            ],
+            TaskStatus::CANCELLED->value => [
+                TaskStatus::IN_PROGRESS->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::DONE->value
+            ],
+        ];
 
-        // public function restoreTask
+        $from = $oldStatus->value;
+        $to = $newStatus->value;
 
-public function handleStatusChangeWorkflow(
-    Task $task,
-    TaskStatus $oldStatus,
-    TaskStatus $newStatus,
-    User $actor
-): void {
+        // Validate transition
+        if (!isset($allowedTransitions[$from]) || !in_array($to, $allowedTransitions[$from], true)) {
+            throw TasksException::invalidStatusTransition($from, $to);
+        }
 
-if ($oldStatus === $newStatus) {
-    return;
-}
-if ($task->trashed()) {
-    throw TasksException::taskDeletedImmutable($task->id, $task->workspace_id);
-}
+        // Apply changes
+        $task->status = $to;
 
-    $allowedTransitions = [
-        TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
-        TaskStatus::IN_PROGRESS->value => [
-            TaskStatus::TODO->value,
-            TaskStatus::BLOCKED->value,
-            TaskStatus::DONE->value,
-            TaskStatus::CANCELLED->value
-        ],
-        TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
-        TaskStatus::DONE->value => [
-            TaskStatus::IN_PROGRESS->value,
-            TaskStatus::BLOCKED->value,
-            TaskStatus::CANCELLED->value
-        ],
-        TaskStatus::CANCELLED->value => [
-            TaskStatus::IN_PROGRESS->value,
-            TaskStatus::BLOCKED->value,
-            TaskStatus::DONE->value
-        ],
-    ];
+        if ($newStatus === TaskStatus::DONE) {
+            $task->completed_at = now();
+        } else {
+            $task->completed_at = null;
+        }
 
-    $from = $oldStatus->value;
-    $to = $newStatus->value;
+        $task->save();
 
-    // Validate transition
-    if (!isset($allowedTransitions[$from]) || !in_array($to, $allowedTransitions[$from], true)) {
-        throw TasksException::invalidStatusTransition($from, $to);
+        // Record history
+        $this->taskHistoryService->record(
+            $task,
+            'task_status_changed',
+            ['status' => $from],
+            [
+                'status' => $to,
+                'completed_at' => $task->completed_at
+            ],
+            $actor
+        );
     }
 
-    // Apply changes
-    $task->status = $to;
+    private function authorizeTaskUpdate(Task $task, User $actor): void
+    {
+        // Owner or Admin can update any task
+        $membership = $this->workspaceContextService->currentMembership();
 
-    if ($newStatus === TaskStatus::DONE) {
-        $task->completed_at = now();
+        if ($membership && $membership->role && in_array($membership->role->slug, [Role::OWNER_SLUG, Role::ADMIN_SLUG], true)) {
+            return;
+        }
+
+        // Creator can update their own task
+        if ($task->created_by_user_id === $actor->id) {
+            return;
+        }
+
+        // Assigned users can update the task
+        $assigneeIds = $task->assignees()->pluck('users.id')->toArray();
+        if (in_array($actor->id, $assigneeIds, true)) {
+            return;
+        }
+
+        throw TasksException::unauthorizedToUpdateTask($task->id, $actor->id);
     }
-
-    $task->save();
-
-    // Record history
-    $this->taskHistoryService->record(
-        $task,
-        'task_status_changed',
-        ['status' => $from],
-        [
-            'status' => $to,
-            'completed_at' => $task->completed_at?->toISOString()
-        ],
-        $actor
-    );
 }
-
-    }
-
-
-

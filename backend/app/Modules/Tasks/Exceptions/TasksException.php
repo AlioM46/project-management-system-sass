@@ -70,6 +70,19 @@ class TasksException extends BusinessException
         );
     }
 
+    public static function unauthorizedToUpdateTask(int $taskId, int $userId): self
+    {
+        return new self(
+            message: 'You are not authorized to update this task.',
+            errorCode: 'TASK_UNAUTHORIZED',
+            status: 403,
+            meta: [
+                'task_id' => $taskId,
+                'user_id' => $userId,
+            ]
+        );
+    }
+
     public static function userNotInWorkspace(int $userId, int $workspaceId): self
     {
         return new self(
