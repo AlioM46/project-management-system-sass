@@ -4,20 +4,17 @@ namespace App\Modules\Tasks\Services;
 
 use App\Models\User;
 use App\Modules\Projects\Model\Project;
+use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Tasks\Enums\TaskStatus;
 use App\Modules\Tasks\Exceptions\TasksException;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceContextService;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use App\Modules\Tasks\Enums\TaskStatus;
-use App\Modules\RolesPermissions\Model\Role;
-use InvalidArgumentException;
-use Nette\ArgumentOutOfRangeException;
 
 class TaskService
 {
@@ -25,8 +22,7 @@ class TaskService
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly TaskAssignmentService $taskAssignmentService,
         private readonly TaskHistoryService $taskHistoryService
-    ) {
-    }
+    ) {}
 
     public function currentWorkspace(): Workspace
     {
@@ -89,15 +85,15 @@ class TaskService
         $query = $this->taskQueryForWorkspace($workspace)
             ->with($this->taskRelations());
 
-        if (!empty($filters['project_id'])) {
+        if (! empty($filters['project_id'])) {
             $query->where('project_id', (int) $filters['project_id']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', (string) $filters['status']);
         }
 
-        if (!empty($filters['assignee_id'])) {
+        if (! empty($filters['assignee_id'])) {
             $query->whereHas('assignments', function (Builder $builder) use ($filters): void {
                 $builder->where('user_id', (int) $filters['assignee_id']);
             });
@@ -296,23 +292,14 @@ class TaskService
     private function taskRelations(): array
     {
 
-
         return [
             'project',
             'creator',
-            'assignees' => fn($query) => $query->orderBy('name'),
+            'assignees' => fn ($query) => $query->orderBy('name'),
         ];
     }
 
-
-
-
-
-
-
     // public function restoreTask
-
-
 
     public function handleStatusChangeWorkflow(
         Task $task,
@@ -334,18 +321,18 @@ class TaskService
                 TaskStatus::TODO->value,
                 TaskStatus::BLOCKED->value,
                 TaskStatus::DONE->value,
-                TaskStatus::CANCELLED->value
+                TaskStatus::CANCELLED->value,
             ],
             TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
             TaskStatus::DONE->value => [
                 TaskStatus::IN_PROGRESS->value,
                 TaskStatus::BLOCKED->value,
-                TaskStatus::CANCELLED->value
+                TaskStatus::CANCELLED->value,
             ],
             TaskStatus::CANCELLED->value => [
                 TaskStatus::IN_PROGRESS->value,
                 TaskStatus::BLOCKED->value,
-                TaskStatus::DONE->value
+                TaskStatus::DONE->value,
             ],
         ];
 
@@ -353,7 +340,7 @@ class TaskService
         $to = $newStatus->value;
 
         // Validate transition
-        if (!isset($allowedTransitions[$from]) || !in_array($to, $allowedTransitions[$from], true)) {
+        if (! isset($allowedTransitions[$from]) || ! in_array($to, $allowedTransitions[$from], true)) {
             throw TasksException::invalidStatusTransition($from, $to);
         }
 
@@ -375,7 +362,7 @@ class TaskService
             ['status' => $from],
             [
                 'status' => $to,
-                'completed_at' => $task->completed_at
+                'completed_at' => $task->completed_at,
             ],
             $actor
         );

@@ -109,8 +109,8 @@ class WorkspaceMembersService
     ): Workspace_Members {
         // the query function, could be more simplified, but for DRY concept, I will use it.
         // you just need to lookup for :
-            // member is valid , the successor is not the current membership, and the successor has a user (is not an orphaned membership)
-            // others like (order, nulls, etc) are not relevant in explicit selection, but we keep them for consistency with the automatic selection logic)
+        // member is valid , the successor is not the current membership, and the successor has a user (is not an orphaned membership)
+        // others like (order, nulls, etc) are not relevant in explicit selection, but we keep them for consistency with the automatic selection logic)
         $membership = $this->explicitSuccessorCandidatesQuery($workspace, $currentMembershipId)
             ->whereKey($successorMemberId)
             ->first();
@@ -122,7 +122,8 @@ class WorkspaceMembersService
         return $membership;
     }
 
-    private function explicitSuccessorCandidatesQuery(Workspace $workspace, int $currentMembershipId) {
+    private function explicitSuccessorCandidatesQuery(Workspace $workspace, int $currentMembershipId)
+    {
         return Workspace_Members::query()
             ->withoutGlobalScope(WorkspaceTenantScope::class)
             ->where('workspace_id', $workspace->id)
@@ -177,21 +178,21 @@ class WorkspaceMembersService
             ->orderBy('joined_at')
             ->orderBy('id');
 
-            /* 
-            Equals To:
+        /*
+        Equals To:
 
-            SELECT wm.*, CASE WHEN wm.joined_at IS NULL THEN 1 ELSE 0 END as CASE_RESULT
-            FROM workspace_members AS wm
+        SELECT wm.*, CASE WHEN wm.joined_at IS NULL THEN 1 ELSE 0 END as CASE_RESULT
+        FROM workspace_members AS wm
 
-            WHERE wm.workspace_id = 1
-              AND wm.id <> 104
-              AND EXISTS (
-                  SELECT 1
-                  FROM dbo.users AS u
-                  WHERE u.id = wm.user_id
-              )
-              order by CASE_RESULT, joined_at, user_id
-            */
+        WHERE wm.workspace_id = 1
+          AND wm.id <> 104
+          AND EXISTS (
+              SELECT 1
+              FROM dbo.users AS u
+              WHERE u.id = wm.user_id
+          )
+          order by CASE_RESULT, joined_at, user_id
+        */
     }
 
     public function roleIdByName(Workspace $workspace, string $roleName): ?int

@@ -10,8 +10,7 @@ class CreateTask
 {
     public function __construct(
         private readonly TaskService $taskService
-    ) {
-    }
+    ) {}
 
     public function execute(array $data, User $actor): Task
     {

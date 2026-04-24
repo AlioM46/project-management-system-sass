@@ -15,11 +15,11 @@ class CreateTaskRequest extends FormRequest
     {
         $payload = [];
 
-        if (!$this->has('project_id') && $this->has('projectId')) {
+        if (! $this->has('project_id') && $this->has('projectId')) {
             $payload['project_id'] = $this->input('projectId');
         }
 
-        if (!$this->has('assignee_ids') && $this->has('assigneeIds')) {
+        if (! $this->has('assignee_ids') && $this->has('assigneeIds')) {
             $payload['assignee_ids'] = $this->input('assigneeIds');
         }
 

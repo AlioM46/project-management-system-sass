@@ -40,7 +40,7 @@ class UpdateTaskRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'status' => ['sometimes', 'required', new Enum(TaskStatus::class)], 
-       ];
+            'status' => ['sometimes', 'required', new Enum(TaskStatus::class)],
+        ];
     }
 }

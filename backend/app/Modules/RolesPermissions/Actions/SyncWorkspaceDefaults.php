@@ -16,8 +16,7 @@ class SyncWorkspaceDefaults
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceRoleProvisioningService $workspaceRoleProvisioningService
-    ) {
-    }
+    ) {}
 
     /**
      * Read the current workspace from middleware context, then re-provision roles.

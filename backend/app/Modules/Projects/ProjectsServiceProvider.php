@@ -14,7 +14,7 @@ class ProjectsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
         $this->mapApiRoutes();
     }
 
@@ -22,6 +22,6 @@ class ProjectsServiceProvider extends ServiceProvider
     {
         Route::prefix('api')
             ->middleware('api')
-            ->group(__DIR__ . '/Http/routes.php');
+            ->group(__DIR__.'/Http/routes.php');
     }
 }

@@ -27,11 +27,11 @@ Route::prefix('tasks')
 
         // Route::get("/tasks/user", [TasksController::class, 'indexByUser'])
         //     ->middleware('hasPermission:task.view');
-    
+
         // Route::get("/")
-    
+
         // REACH HERE;;;;
-    
+
         Route::post('/{taskId}/assignees', [TaskAssigneesController::class, 'add'])
             ->whereNumber('taskId')
             ->middleware('hasPermission:task.assign');

@@ -14,8 +14,8 @@ class LoginUser
     {
         $user = User::query()->where('email', $data['email'])->first();
 
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw new InvalidCredentialsException();
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
+            throw new InvalidCredentialsException;
         }
 
         return DB::transaction(function () use ($user) {

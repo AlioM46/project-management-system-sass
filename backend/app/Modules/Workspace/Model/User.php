@@ -11,7 +11,7 @@
 // use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 // use Illuminate\Database\Eloquent\Relations\HasMany;
 // use Illuminate\Notifications\Notifiable;
-// use Illuminate\Support\Facades\Hash; 
+// use Illuminate\Support\Facades\Hash;
 // use Tymon\JWTAuth\Contracts\JWTSubject;
 
 // class User extends Authenticatable implements JWTSubject
@@ -42,7 +42,6 @@
 //         'last_login_at' => 'datetime',
 //         'deleted_at' => 'datetime',
 //     ];
-
 
 //     /*
 //     ⚙️ Why it works

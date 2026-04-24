@@ -24,8 +24,9 @@ class PasswordResetController extends Controller
     {
         $action->execute($request->validated());
 
-        return ApiResponse::success("Password reset successful. You can now log in with your new password.");
+        return ApiResponse::success('Password reset successful. You can now log in with your new password.');
     }
+
     public function SendPasswordResetLink(Request $request, SendPasswordResetLinkAction $action)
     {
         $request->validate([

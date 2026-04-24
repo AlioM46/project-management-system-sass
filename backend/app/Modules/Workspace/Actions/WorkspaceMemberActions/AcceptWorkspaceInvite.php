@@ -4,8 +4,8 @@ namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
 use App\Models\User;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
-use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceInvitationService;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +14,7 @@ class AcceptWorkspaceInvite
 {
     public function __construct(
         private readonly WorkspaceInvitationService $workspaceInvitationService
-    ) {
-    }
+    ) {}
 
     public function execute(User $user, array $data): array
     {
@@ -46,7 +45,7 @@ class AcceptWorkspaceInvite
                 throw WorkspaceContextException::invitationExpired($invitation->id, $invitation->workspace_id);
             }
 
-            if (!$this->workspaceInvitationService->tokenMatches($invitation, $plainToken)) {
+            if (! $this->workspaceInvitationService->tokenMatches($invitation, $plainToken)) {
                 throw WorkspaceContextException::invalidInvitationToken();
             }
 
@@ -60,15 +59,15 @@ class AcceptWorkspaceInvite
             $member = Workspace_Members::query()
                 ->withoutGlobalScope(WorkspaceTenantScope::class)
                 ->firstOrCreate(
-                [
-                    'workspace_id' => $invitation->workspace_id,
-                    'user_id' => $user->id,
-                ],
-                [
-                    'role_id' => $invitation->role_id,
-                    'joined_at' => now(),
-                ]
-            );
+                    [
+                        'workspace_id' => $invitation->workspace_id,
+                        'user_id' => $user->id,
+                    ],
+                    [
+                        'role_id' => $invitation->role_id,
+                        'joined_at' => now(),
+                    ]
+                );
 
             $invitation->status = 'accepted';
             $invitation->accepted_by_user_id = $user->id;

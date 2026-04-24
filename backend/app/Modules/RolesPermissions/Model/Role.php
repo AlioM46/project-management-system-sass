@@ -2,8 +2,9 @@
 
 namespace App\Modules\RolesPermissions\Model;
 
-use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Concerns\BelongsToWorkspace;
+use App\Modules\Workspace\Model\Workspace;
+use App\Modules\Workspace\Model\Workspace_Members;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -24,7 +25,9 @@ class Role extends Model
     use BelongsToWorkspace;
 
     public const OWNER_SLUG = 'owner';
+
     public const ADMIN_SLUG = 'admin';
+
     public const MEMBER_SLUG = 'member';
 
     public const RESERVED_SLUGS = [
@@ -43,7 +46,7 @@ class Role extends Model
         'is_system',
         'is_editable',
         'is_deletable',
-        // PermissionsCount or Power of this role 
+        // PermissionsCount or Power of this role
         // to help developer infers which is default role to assign when inviting a member without specifying a role.
     ];
 
@@ -71,21 +74,25 @@ class Role extends Model
 
     public function workspaceMembers(): HasMany
     {
-        return $this->hasMany(\App\Modules\Workspace\Model\Workspace_Members::class, 'role_id');
+        return $this->hasMany(Workspace_Members::class, 'role_id');
     }
 
-    public function WeakestRole() {
+    public function WeakestRole()
+    {
         return $this->query()
-        ->withCount("permissions")
-        ->orderBy('permissions_count', 'asc')
-        ->first();
+            ->withCount('permissions')
+            ->orderBy('permissions_count', 'asc')
+            ->first();
     }
-     public function StrongestRole() {
+
+    public function StrongestRole()
+    {
         return $this->query()
-        ->withCount("permissions")
-        ->orderBy('permissions_count', 'desc')
-        ->first();
+            ->withCount('permissions')
+            ->orderBy('permissions_count', 'desc')
+            ->first();
     }
+
     /**
      * Permission models attached to this role.
      *
@@ -119,6 +126,6 @@ class Role extends Model
 
     public function isProtectedSystemRole(): bool
     {
-        return $this->is_system && (!$this->is_editable || !$this->is_deletable);
+        return $this->is_system && (! $this->is_editable || ! $this->is_deletable);
     }
 }

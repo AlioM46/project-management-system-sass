@@ -22,7 +22,7 @@ function makeLeaveWorkspaceUser(string $email, string $name): User
     ]);
 }
 
-function createLeaveWorkspace( User $user, string $name = 'Leave Workspace Test'): Workspace
+function createLeaveWorkspace(User $user, string $name = 'Leave Workspace Test'): Workspace
 {
     return app(CreateWorkspace::class)->execute(['name' => $name], $user);
 }

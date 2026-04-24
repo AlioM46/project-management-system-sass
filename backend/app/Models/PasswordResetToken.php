@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 
-class PasswordResetToken  extends Model
+class PasswordResetToken extends Model
 {
-
     protected $fillable = [
         'email',
         'token',
@@ -15,11 +13,8 @@ class PasswordResetToken  extends Model
         'used_at',
     ];
 
-
     protected $casts = [
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
     ];
-
-  
-    }
+}

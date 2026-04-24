@@ -11,8 +11,8 @@ class RefreshTokenUser
 {
     public function execute(?string $refreshToken): array
     {
-        if (!$refreshToken) {
-            throw new InvalidRefreshTokenException();
+        if (! $refreshToken) {
+            throw new InvalidRefreshTokenException;
         }
 
         $user = User::query()
@@ -20,8 +20,8 @@ class RefreshTokenUser
             ->where('refresh_token_expiration', '>', now())
             ->first();
 
-        if (!$user) {
-            throw new InvalidRefreshTokenException();
+        if (! $user) {
+            throw new InvalidRefreshTokenException;
         }
 
         return DB::transaction(function () use ($user) {
@@ -37,7 +37,7 @@ class RefreshTokenUser
             $user->refresh();
 
             return [
-               'data' => [
+                'data' => [
                     'user' => $user,
                     'access_token' => $accessToken,
                     'token_type' => 'Bearer',

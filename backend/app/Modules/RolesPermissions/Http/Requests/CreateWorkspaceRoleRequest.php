@@ -5,8 +5,8 @@ namespace App\Modules\RolesPermissions\Http\Requests;
 use App\Modules\RolesPermissions\Services\PermissionCatalogService;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CreateWorkspaceRoleRequest extends FormRequest
 {

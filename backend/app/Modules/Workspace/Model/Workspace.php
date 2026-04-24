@@ -7,9 +7,9 @@ use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Workspace extends Model
 {
@@ -44,7 +44,6 @@ class Workspace extends Model
         return $this->hasMany(Role::class, 'workspace_id');
     }
 
-
     // Scopes and helpers
     public function scopeAccessibleTo(Builder $query, int $userId): Builder
     {
@@ -76,7 +75,7 @@ class Workspace extends Model
             ->orderBy('id', 'asc')
             ->first();
     }
-    
+
     public function containsUser(int $userId): bool
     {
         if ((int) $this->created_by_user_id === $userId) {

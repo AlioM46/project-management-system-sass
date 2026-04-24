@@ -38,7 +38,6 @@ class Comment extends Model
         // return $this->hasMany(Mention::class);
     }
 
-
     public function scopeForTask($query, int $taskId)
     {
         return $query->where('task_id', $taskId);
@@ -48,6 +47,7 @@ class Comment extends Model
     {
         return $query->orderByDesc('created_at');
     }
+
     public function scopeOldestFirst($query)
     {
         return $query->orderBy('created_at');

@@ -26,7 +26,7 @@ class ListTasksRequest extends FormRequest
         ];
 
         foreach ($aliases as $from => $to) {
-            if (!$this->has($to) && $this->has($from)) {
+            if (! $this->has($to) && $this->has($from)) {
                 $payload[$to] = $this->input($from);
             }
         }

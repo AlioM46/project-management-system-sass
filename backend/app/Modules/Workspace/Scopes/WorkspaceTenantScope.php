@@ -42,7 +42,6 @@ class WorkspaceTenantScope implements Scope
             // Check if no workspace context exists
 
             throw WorkspaceContextException::missingScopedModelContext(class_basename($model));
-
             // throw -> stops execution
             // WorkspaceContextException -> your custom exception
             // ::missingScopedModelContext(...) -> static method returning exception

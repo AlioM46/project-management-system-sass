@@ -10,10 +10,10 @@ class ListUserWorkspaces
     public function execute(User $user): array
     {
         return Workspace::query()
-        // accessibleTo is a scope that checks if the user is a member of the workspace 
+        // accessibleTo is a scope that checks if the user is a member of the workspace
         // or the owner
         // SQL Code:
-        
+
         // SELECT * FROM workspaces
         // where workspace_created_by_user_id = $user->id
         // OR
