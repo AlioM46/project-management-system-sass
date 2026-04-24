@@ -8,20 +8,24 @@ use App\Modules\Tasks\Model\Task;
 
 class CreateCommentAction
 {
-    public function __construct(
-        private CommentService $service
-    ) {}
+    public function __construct(private
+        CommentService $service
+        )
+    {
+    }
 
     public function execute(CreateCommentRequest $request)
     {
         // dd($request->all(), $request->file('attachments'));
         $task = Task::findOrFail($request->task_id);
+        $validated = $request->validated();
 
         return $this->service->createWithAttachments(
             $task,
             $request->user(),
-            $request->validated()['content'],
-            $request->validated()['attachments'] ?? []
+            $validated['content'],
+            $validated['attachments'] ?? [],
+            $validated['parent_id'] ?? null
         );
     }
 }

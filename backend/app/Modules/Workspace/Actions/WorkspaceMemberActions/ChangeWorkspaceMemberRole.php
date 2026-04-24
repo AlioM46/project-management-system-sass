@@ -158,16 +158,16 @@ class ChangeWorkspaceMemberRole
 
     private function isCurrentUserOwner(): bool
     {
-        return $this->currentUserId === $this->workspaceOwnerUserId;
+        return $this->workspaceContextService->isOwner();
     }
 
     private function isCurrentUserAdmin(): bool
     {
-        return (int) $this->currentMembership->role_id === $this->adminRoleId;
+        return $this->workspaceContextService->isAdmin();
     }
 
     private function isTargetMembershipAdmin(Workspace_Members $targetMembership): bool
     {
-        return (int) $targetMembership->role_id === $this->adminRoleId;
+        return $targetMembership->isAdmin();
     }
 }

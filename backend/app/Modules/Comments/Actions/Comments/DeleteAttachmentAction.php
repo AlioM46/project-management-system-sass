@@ -20,24 +20,13 @@ class DeleteAttachmentAction
         $comment = $attachment->comment;
 
         // Check if user is admin or owner of the workspace
-        $isAdminOrOwner = $this->isAdminOrOwner();
+        $isAdminOrOwner = $this->workspaceContextService->isOwnerOrAdmin();
 
         // Only author or admin/owner can delete attachment
-        if (! $isAdminOrOwner && $comment->author_id !== $user->id) {
+        if (!$isAdminOrOwner && $comment->author_id !== $user->id) {
             throw new \Exception('Unauthorized');
         }
 
         $this->attachmentService->delete($attachment);
-    }
-
-    private function isAdminOrOwner(): bool
-    {
-        $membership = $this->workspaceContextService->currentMembership();
-
-        if ($membership && $membership->role && in_array($membership->role->slug, [Role::OWNER_SLUG, Role::ADMIN_SLUG], true)) {
-            return true;
-        }
-
-        return false;
     }
 }

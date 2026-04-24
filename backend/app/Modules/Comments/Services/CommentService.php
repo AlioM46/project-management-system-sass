@@ -11,24 +11,39 @@ use Illuminate\Support\Collection;
 
 class CommentService
 {
-    public function __construct(
-        private CommentAttachmentService $attachmentService
-    ) {}
-
-    public function create(Task $task, User $user, string $content): Comment
+    public function __construct(private
+        CommentAttachmentService $attachmentService
+        )
     {
-        return Comment::create([
-            'task_id' => $task->id,
-            'author_id' => $user->id,
-            'content' => $content,
-        ]);
     }
 
-    public function createWithAttachments(Task $task, User $user, string $content, array $attachments = []): Comment
+    public function create(Task $task, User $user, string $content, ?int $parentId = null): Comment
     {
-        $comment = $this->create($task, $user, $content);
+        // If parentId is provided, optionally verify it exists and belongs to the same task
+        if ($parentId) {
+            $parent = Comment::findOrFail($parentId);
+            if ($parent->task_id !== $task->id) {
+                throw new \Exception('Parent comment belongs to a different task');
+            }
+        }
 
-        if (! empty($attachments)) {
+        $comment = Comment::create([
+            'task_id' => $task->id,
+            'author_id' => $user->id,
+            'parent_id' => $parentId,
+            'content' => $content,
+        ]);
+
+        // [NOTIFICATION PLACEHOLDER] - Notify parent author or task participants
+
+        return $comment;
+    }
+
+    public function createWithAttachments(Task $task, User $user, string $content, array $attachments = [], ?int $parentId = null): Comment
+    {
+        $comment = $this->create($task, $user, $content, $parentId);
+
+        if (!empty($attachments)) {
             $this->attachmentService->upload($comment, $attachments);
         }
 
@@ -38,7 +53,7 @@ class CommentService
     public function delete(Comment $comment, User $actor, bool $isAdminOrOwner = false): void
     {
         // check if admin or owner of the task
-        if (! $isAdminOrOwner && $comment->author_id !== $actor->id) {
+        if (!$isAdminOrOwner && $comment->author_id !== $actor->id) {
             throw new \Exception('Unauthorized');
         }
 
@@ -53,7 +68,7 @@ class CommentService
         $comment = $attachment->comment;
 
         // Author can delete their own attachment, or admin/owner can delete any
-        if (! $isAdminOrOwner && $comment->author_id !== $actor->id) {
+        if (!$isAdminOrOwner && $comment->author_id !== $actor->id) {
             throw new \Exception('Unauthorized');
         }
 
@@ -64,19 +79,21 @@ class CommentService
     {
         return Comment::query()
             ->forTask($taskId)
-            ->with('author')
+            ->whereNull('parent_id')
+            ->with(['author', 'attachments', 'recursiveReplies'])
             ->latestFirst()
             ->get();
     }
 
     public function listByTaskPaginated(int $taskId, array $filters = []): LengthAwarePaginator
     {
-        $page = max(1, (int) ($filters['page'] ?? 1));
-        $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 15)));
+        $page = max(1, (int)($filters['page'] ?? 1));
+        $perPage = max(1, min(100, (int)($filters['per_page'] ?? 15)));
 
         return Comment::query()
             ->forTask($taskId)
-            ->with(['author', 'attachments'])
+            ->whereNull('parent_id')
+            ->with(['author', 'attachments', 'recursiveReplies'])
             ->latestFirst()
             ->paginate($perPage, ['*'], 'page', $page);
     }
@@ -84,19 +101,13 @@ class CommentService
     public function update(Comment $comment, User $user, string $content, array $attachments = [], bool $isAdminOrOwner = false): Comment
     {
         // Only author or admin/owner can update
-        if (! $isAdminOrOwner && $comment->author_id !== $user->id) {
+        if (!$isAdminOrOwner && $comment->author_id !== $user->id) {
             throw new \Exception('Unauthorized');
         }
 
-        // Handle attachment sync/removal if necessary
-        // Note: The previous logic for removing old attachments was based on an empty newAttachmentIds list.
-        // For simplicity and following the "separate as much as you can" rule,
-        // we'll keep the update logic here or move the sync logic to the attachment service.
-
-        // Remove old attachments if any new ones are provided (existing behavior preserved)
-        if (! empty($attachments)) {
-            $this->attachmentService->deleteAll($comment);
-            $this->attachmentService->upload($comment, $attachments);
+        // Handle attachment sync
+        if (isset($attachments)) {
+            $this->attachmentService->sync($comment, $attachments);
         }
 
         $comment->content = $content;

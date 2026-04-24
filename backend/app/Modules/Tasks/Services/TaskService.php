@@ -371,9 +371,7 @@ class TaskService
     private function authorizeTaskUpdate(Task $task, User $actor): void
     {
         // Owner or Admin can update any task
-        $membership = $this->workspaceContextService->currentMembership();
-
-        if ($membership && $membership->role && in_array($membership->role->slug, [Role::OWNER_SLUG, Role::ADMIN_SLUG], true)) {
+        if ($this->workspaceContextService->isOwnerOrAdmin()) {
             return;
         }
 
