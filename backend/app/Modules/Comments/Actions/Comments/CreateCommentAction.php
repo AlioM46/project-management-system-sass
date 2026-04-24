@@ -15,12 +15,14 @@ class CreateCommentAction
 
     public function execute(CreateCommentRequest $request)
     {
+        // dd($request->all(), $request->file('attachments'));
         $task = Task::findOrFail($request->task_id);
 
-        return $this->service->create(
+        return $this->service->createWithAttachments(
             $task,
             $request->user(),
-            $request->validated()['content']
+            $request->validated()['content'],
+            $request->validated()['attachments'] ?? []
         );
     }
 }
