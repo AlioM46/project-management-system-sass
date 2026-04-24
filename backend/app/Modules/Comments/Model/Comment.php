@@ -30,7 +30,7 @@ class Comment extends Model
 
     public function attachments()
     {
-        // return $this->hasMany(CommentAttachment::class);
+        return $this->hasMany(CommentAttachment::class);
     }
 
     public function mentions()
