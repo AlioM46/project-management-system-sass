@@ -15,8 +15,27 @@ class Comment extends Model
     protected $fillable = [
         'task_id',
         'author_id',
+        'parent_id',
         'content',
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(Comment::class, 'parent_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Comment::class, 'parent_id');
+    }
+
+    /**
+     * Recursive relationship for loading all nested replies.
+     */
+    public function recursiveReplies()
+    {
+        return $this->replies()->with(['recursiveReplies', 'author', 'attachments']);
+    }
 
     public function task()
     {
