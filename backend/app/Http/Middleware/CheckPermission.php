@@ -11,14 +11,14 @@ class CheckPermission
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
-  public function handle($request, Closure $next, $permission)
-{
-    if (!$request->user()->hasPermission($permission)) {
-        abort(403,  $permission . ' Unauthorized | You do not have permission to perform this action.');
-    }
+    public function handle($request, Closure $next, $permission)
+    {
+        if (! $request->user()->hasPermission($permission)) {
+            abort(403, $permission.' Unauthorized | You do not have permission to perform this action.');
+        }
 
-    return $next($request);
-}
+        return $next($request);
+    }
 }

@@ -3,13 +3,11 @@
 namespace App\Modules\Workspace\Model\Concerns;
 
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
-use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
+use App\Modules\Workspace\Services\WorkspaceContextService;
 
 trait BelongsToWorkspace
 {
-
-
     /*
     ⚠️ Important
     Scope
@@ -34,18 +32,14 @@ trait BelongsToWorkspace
         // Extra: later when Role::query(), Role::all(), Role::where() etc run, Laravel auto applies this scope
         // Extra: this method addGlobalScope() comes from Eloquent Model class
 
-
         // ***** Boot time only registers behavior
         // It does not do the actual filtering for every query by itself. *****
 
-
-
-        static::addGlobalScope(new WorkspaceTenantScope());
+        static::addGlobalScope(new WorkspaceTenantScope);
         // At boot time, Laravel is basically being told:
         // “for future queries, use this scope”
         // “for future saves, use this saving callback”
         // So boot is like setup time.
-
 
         // static -> Again, it refers to the Model Being Called from
         // Saving -> since static is Model, and Model(Role, Workspace, Users) Inherits Model Class from (Eloquent)

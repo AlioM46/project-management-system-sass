@@ -13,8 +13,7 @@ class ListPermissions
 {
     public function __construct(
         private readonly PermissionCatalogService $permissionCatalogService
-    ) {
-    }
+    ) {}
 
     /**
      * Ensure the catalog exists in the database, then return it sorted by key.

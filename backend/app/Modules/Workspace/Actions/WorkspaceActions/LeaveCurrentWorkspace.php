@@ -13,8 +13,7 @@ class LeaveCurrentWorkspace
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService
-    ) {
-    }
+    ) {}
 
     public function execute(User $user, array $data): array
     {
@@ -30,7 +29,7 @@ class LeaveCurrentWorkspace
         }
 
         return DB::transaction(function () use ($currentWorkspace, $currentMembership, $user, $data) {
-            if (!$currentWorkspace->isManagedBy($user->id)) {
+            if (! $currentWorkspace->isManagedBy($user->id)) {
                 $this->workspaceMembersService->removeMembership($currentMembership);
 
                 return [

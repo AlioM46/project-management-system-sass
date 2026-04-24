@@ -36,13 +36,13 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             ->name('workspaces.current.destroy')
             ->middleware('hasPermission:workspace.delete');
 
-// under Test......
+        // under Test......
         Route::post('/current/leave', [WorkspaceController::class, 'leaveCurrent'])
             ->name('workspaces.current.leave');
 
-            // WorkspaceMemberController routes
+        // WorkspaceMemberController routes
 
-                    Route::get('/members/{member}', [WorkspaceMemberController::class, 'showMember'])
+        Route::get('/members/{member}', [WorkspaceMemberController::class, 'showMember'])
             ->whereNumber('member')
             ->name('workspaces.members.show')
             ->middleware('hasPermission:member.view');

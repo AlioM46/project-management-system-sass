@@ -10,8 +10,7 @@ class DeleteCurrentWorkspace
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService
-    ) {
-    }
+    ) {}
 
     public function execute(User $user): array
     {
@@ -21,7 +20,7 @@ class DeleteCurrentWorkspace
             throw WorkspaceContextException::missingScopedModelContext('Workspace');
         }
 
-        if (!$currentWorkspace->isManagedBy($user->id)) {
+        if (! $currentWorkspace->isManagedBy($user->id)) {
             throw WorkspaceContextException::workspaceNotManagedByUser($user->name, $currentWorkspace->id);
         }
 

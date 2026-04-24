@@ -18,6 +18,7 @@ class TasksException extends BusinessException
             ]
         );
     }
+
     public static function taskNotFound(int $taskId, int $workspaceId): self
     {
         return new self(

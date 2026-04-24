@@ -3,15 +3,14 @@
 namespace App\Modules\Comments\Actions\Comments;
 
 use App\Modules\Comments\Http\Requests\CreateCommentRequest;
-use App\Modules\Tasks\Model\Task;
 use App\Modules\Comments\Services\CommentService;
+use App\Modules\Tasks\Model\Task;
 
 class CreateCommentAction
 {
     public function __construct(
         private CommentService $service
-    ) {
-    }
+    ) {}
 
     public function execute(CreateCommentRequest $request)
     {

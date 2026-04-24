@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('roles')) {
+        if (! Schema::hasTable('roles')) {
             return;
         }
 
@@ -22,7 +22,7 @@ return new class extends Migration
         $this->backfillRoleSlugs();
         $this->backfillRoleMetadataDefaults();
 
-        if (!$this->hasRolesWorkspaceSlugUniqueIndex()) {
+        if (! $this->hasRolesWorkspaceSlugUniqueIndex()) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->unique(['workspace_id', 'slug']);
             });
@@ -33,9 +33,7 @@ return new class extends Migration
      * Keep rollback as a no-op because the added columns are now part of the
      * canonical roles schema and may also exist from the base migration.
      */
-    public function down(): void
-    {
-    }
+    public function down(): void {}
 
     /**
      * Fill slug for legacy rows using a workspace-scoped unique slugified role name.
@@ -56,6 +54,7 @@ return new class extends Migration
 
             if (is_string($row->slug) && $row->slug !== '') {
                 $usedSlugsByWorkspace[$workspaceId][$row->slug] = true;
+
                 continue;
             }
 
@@ -82,43 +81,43 @@ return new class extends Migration
      */
     private function addMissingRoleColumns(): void
     {
-        if (!Schema::hasColumn('roles', 'slug')) {
+        if (! Schema::hasColumn('roles', 'slug')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->string('slug', 150)->nullable()->after('name');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'description')) {
+        if (! Schema::hasColumn('roles', 'description')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->text('description')->nullable()->after('slug');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'is_system')) {
+        if (! Schema::hasColumn('roles', 'is_system')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->boolean('is_system')->default(false)->after('description');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'is_editable')) {
+        if (! Schema::hasColumn('roles', 'is_editable')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->boolean('is_editable')->default(true)->after('is_system');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'is_deletable')) {
+        if (! Schema::hasColumn('roles', 'is_deletable')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->boolean('is_deletable')->default(true)->after('is_editable');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'created_at')) {
+        if (! Schema::hasColumn('roles', 'created_at')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->timestamp('created_at')->nullable()->after('is_deletable');
             });
         }
 
-        if (!Schema::hasColumn('roles', 'updated_at')) {
+        if (! Schema::hasColumn('roles', 'updated_at')) {
             Schema::table('roles', function (Blueprint $table) {
                 $table->timestamp('updated_at')->nullable()->after('created_at');
             });

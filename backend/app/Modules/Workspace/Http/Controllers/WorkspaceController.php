@@ -19,18 +19,15 @@ use Illuminate\Http\Request;
 
 class WorkspaceController extends Controller
 {
+    // WorkspaceController.php handles the workspace itself:
+    // create workspace
+    // list my workspaces
+    // show current workspace
+    // update current workspace
+    // delete current workspace
+    // restore archived workspace
+    // leave current workspace
 
-
-        // WorkspaceController.php handles the workspace itself:
-        // create workspace
-        // list my workspaces
-        // show current workspace
-        // update current workspace
-        // delete current workspace
-        // restore archived workspace
-        // leave current workspace
-
-        
     public function create(CreateWorkspaceRequest $request, CreateWorkspace $action): JsonResponse
     {
         $workspace = $action->execute(

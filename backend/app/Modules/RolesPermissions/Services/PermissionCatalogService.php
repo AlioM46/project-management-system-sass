@@ -169,7 +169,7 @@ class PermissionCatalogService
             }
         }
 
-        usort($definitions, fn(array $left, array $right): int => $left['key'] <=> $right['key']);
+        usort($definitions, fn (array $left, array $right): int => $left['key'] <=> $right['key']);
 
         return $definitions;
     }
@@ -197,8 +197,9 @@ class PermissionCatalogService
         // 2. Admin Permissions: all except workspace.delete
         $adminPermissionKeys = array_values(array_filter(
             $allPermissionKeys,
-            fn(string $key): bool => $key !== 'workspace.delete'
+            fn (string $key): bool => $key !== 'workspace.delete'
         ));
+
         // 3. Member Permissions: defined in MEMBER_PERMISSION_KEYS constant
         return [
             $this->buildRoleDefinition('owner', $allPermissionKeys),
@@ -275,7 +276,7 @@ class PermissionCatalogService
             /* EG:
              * 'workspace.view' => Permission { id: 10, key: 'workspace.view', name: 'View workspace', description: 'Allows the user to view the workspace and its contents.' }
              * 'workspace.view' => Permission { id: 10, key: 'workspace.view', name: 'View workspace', description: 'Allows the user to view the workspace and its contents.' }
-             * 
+             *
              */
         }
 
@@ -288,7 +289,7 @@ class PermissionCatalogService
             return 'Change task status';
         }
 
-        return self::ACTION_LABELS[$action] . ' ' . $this->resourceLabel($resource);
+        return self::ACTION_LABELS[$action].' '.$this->resourceLabel($resource);
     }
 
     private function permissionDescription(string $resource, string $action): string

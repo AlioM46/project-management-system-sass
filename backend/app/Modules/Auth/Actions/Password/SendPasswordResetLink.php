@@ -14,9 +14,9 @@ class SendPasswordResetLink
     public function execute(string $email)
     {
 
-        $user = User::where("email", $email)->first();
-        if (!$user) {
-            throw new InvalidPasswordResetEmail();
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            throw new InvalidPasswordResetEmail;
         }
 
         PasswordResetToken::where('email', $email)->delete();
@@ -28,7 +28,7 @@ class SendPasswordResetLink
             'expires_at' => now()->addMinutes(30),
         ]);
 
-        $resetUrl = url('/reset-password?email=' . urlencode($email) . '&token=' . urlencode($plainToken));
+        $resetUrl = url('/reset-password?email='.urlencode($email).'&token='.urlencode($plainToken));
 
         // TEMP: disabled while testing the local reset page.
         // Revert by uncommenting the line below and removing the temporary controller response.
@@ -37,5 +37,4 @@ class SendPasswordResetLink
         return $resetUrl;
 
     }
-
 }

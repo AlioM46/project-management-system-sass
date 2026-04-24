@@ -3,8 +3,6 @@
 use App\Modules\Comments\Http\Controllers\CommentsController;
 use Illuminate\Support\Facades\Route;
 
-
-
 Route::prefix('comments')
     ->middleware(['auth:api', 'workspace.context'])
     ->group(function () {
@@ -12,16 +10,24 @@ Route::prefix('comments')
         Route::post('/', [CommentsController::class, 'store'])
             ->middleware('hasPermission:comment.create');
 
-        Route::get('/{taskId}', [CommentsController::class, 'index'])
-            ->middleware('hasPermission:comment.view');
+        // List comments for a task with pagination
+        Route::get('/task/{taskId}', [CommentsController::class, 'index'])
+            ->middleware('hasPermission:comment.view')
+            ->name('comments.task');
 
+        // Update comment (author or admin/owner)
+        Route::put('/{commentId}', [CommentsController::class, 'update'])
+            ->whereNumber('commentId')
+            ->middleware('hasPermission:comment.update');
 
-        // update: only author can delete their comment & owners+admins can delete any comment
-        // problem: author may not have comment.delete permission but should be able to delete their own comment
-        // solved by: using policies
+        // Delete comment (author or admin/owner)
         Route::delete('/{commentId}', [CommentsController::class, 'destroy'])
             ->whereNumber('commentId')
             ->middleware('hasPermission:comment.delete');
 
+        // Attachment routes
+        Route::delete('/attachments/{attachmentId}', [CommentsController::class, 'destroyAttachment'])
+            ->whereNumber('attachmentId')
+            ->middleware('hasPermission:comment.delete');
 
     });

@@ -8,14 +8,13 @@ class DeleteWorkspaceRole
 {
     public function __construct(
         private readonly WorkspaceRoleManagementService $workspaceRoleManagementService
-    ) {
-    }
+    ) {}
 
     public function execute(int $roleId): array
     {
         $workspace = $this->workspaceRoleManagementService->currentWorkspace();
         $role = $this->workspaceRoleManagementService->resolveWorkspaceRole($workspace, $roleId);
-        
+
         $roleSnapshot = [
             'id' => $role->id,
             'name' => $role->name,
