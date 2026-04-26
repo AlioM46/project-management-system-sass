@@ -17,6 +17,7 @@ uses(RefreshDatabase::class);
 it('scopes role queries to the current workspace automatically', function () {
     $makeUser = fn (string $name, string $email) => User::query()->create([
         'name' => $name,
+        'username' => strtolower(str_replace(' ', '', $name)),
         'email' => $email,
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -75,6 +76,7 @@ it('scopes role queries to the current workspace automatically', function () {
 it('scopes workspace member queries to the current workspace automatically', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -115,6 +117,7 @@ it('scopes workspace member queries to the current workspace automatically', fun
 it('fails closed when querying a scoped model without workspace context', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -146,6 +149,7 @@ it('fails closed when querying a scoped model without workspace context', functi
 it('fails closed when querying scoped workspace members without workspace context', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -175,6 +179,7 @@ it('fails closed when querying scoped workspace members without workspace contex
 it('auto-fills workspace_id from the active workspace context when creating roles', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -209,6 +214,7 @@ it('auto-fills workspace_id from the active workspace context when creating role
 it('rejects creating a role with a mismatched workspace_id', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
@@ -277,6 +283,7 @@ it('allows unscoped permission queries because permissions are global', function
 it('allows explicit bypass of the workspace scope for internal queries', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),

@@ -1,5 +1,3 @@
-<!-- 
- 
 <?php
 
 use App\Models\User;
@@ -16,6 +14,7 @@ it('sends a custom verification mail after registration', function () {
 
     $response = $this->postJson('/api/auth/register', [
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => 'password123',
     ]);
@@ -40,6 +39,7 @@ it('resends a custom verification mail to an authenticated unverified user', fun
 
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => 'password123',
         'email_verified_at' => null,
@@ -61,6 +61,7 @@ it('resends a custom verification mail to an authenticated unverified user', fun
 it('verifies an email address through the manual signed link', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => 'password123',
         'email_verified_at' => null,
@@ -83,6 +84,7 @@ it('verifies an email address through the manual signed link', function () {
 it('rejects a tampered manual verification signature', function () {
     $user = User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => 'ali@example.com',
         'password' => 'password123',
         'email_verified_at' => null,
@@ -103,5 +105,3 @@ it('rejects a tampered manual verification signature', function () {
 
     expect($user->fresh()->email_verified_at)->toBeNull();
 });
-
--->
