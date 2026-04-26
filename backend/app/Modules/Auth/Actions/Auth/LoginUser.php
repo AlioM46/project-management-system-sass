@@ -12,7 +12,8 @@ class LoginUser
 {
     public function execute(array $data)
     {
-        $user = User::query()->where('email', $data['email'])->first();
+        $loginField = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $user = User::query()->where($loginField, $data['login'])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             throw new InvalidCredentialsException;
