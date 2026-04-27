@@ -14,9 +14,13 @@ class WorkspaceContextService
     public const HEADER_NAME = 'X-Workspace-Id';
 
     private ?int $workspaceId = null;
+
     private ?int $memberId = null;
+
     private ?int $roleId = null;
+
     private ?Workspace $workspace = null;
+
     private ?Workspace_Members $membership = null;
 
     public function resolveFromRequest(Request $request, User $user): void
@@ -27,14 +31,14 @@ class WorkspaceContextService
             throw WorkspaceContextException::missingHeader(self::HEADER_NAME);
         }
 
-        if (!ctype_digit((string) $header)) {
+        if (! ctype_digit((string) $header)) {
             throw WorkspaceContextException::invalidHeader(self::HEADER_NAME);
         }
 
         $workspaceId = (int) $header;
         $workspace = Workspace::query()->find($workspaceId);
 
-        if (!$workspace) {
+        if (! $workspace) {
             throw WorkspaceContextException::workspaceNotFound($workspaceId);
         }
 
@@ -44,7 +48,7 @@ class WorkspaceContextService
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$membership) {
+        if (! $membership) {
             throw WorkspaceContextException::notAMember($workspace->id);
         }
 
@@ -54,30 +58,37 @@ class WorkspaceContextService
         $this->workspace = $workspace;
         $this->membership = $membership;
     }
+
     public function currentWorkspaceId(): ?int
     {
         return $this->workspaceId;
     }
+
     public function currentMemberId(): ?int
     {
         return $this->memberId;
     }
+
     public function currentRoleId(): ?int
     {
         return $this->roleId;
     }
+
     public function currentWorkspace(): ?Workspace
     {
         return $this->workspace;
     }
+
     public function currentMembership(): ?Workspace_Members
     {
         return $this->membership;
     }
+
     public function hasContext(): bool
     {
         return $this->workspaceId !== null;
     }
+
     public function context(): array
     {
         return [

@@ -17,4 +17,4 @@ abstract class BusinessException extends Exception
     ) {
         parent::__construct($message, $code, $previous);
     }
-};
+}

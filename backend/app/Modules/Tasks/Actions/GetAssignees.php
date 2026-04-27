@@ -11,8 +11,7 @@ class GetAssignees
     public function __construct(
         private readonly TaskService $taskService,
         private readonly TaskAssignmentService $taskAssignmentService
-    ) {
-    }
+    ) {}
 
     public function execute(int $taskId): Collection
     {

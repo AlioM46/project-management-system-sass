@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('status', 20)->default('todo');
             $table->foreignId('created_by_user_id')
                 ->constrained('users');
+
             $table->timestamps();
             $table->softDeletes();
 

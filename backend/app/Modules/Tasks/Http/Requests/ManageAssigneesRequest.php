@@ -13,7 +13,7 @@ class ManageAssigneesRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if (!$this->has('user_ids') && $this->has('userIds')) {
+        if (! $this->has('user_ids') && $this->has('userIds')) {
             $this->merge([
                 'user_ids' => $this->input('userIds'),
             ]);

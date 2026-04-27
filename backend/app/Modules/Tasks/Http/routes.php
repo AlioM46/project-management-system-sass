@@ -25,9 +25,12 @@ Route::prefix('tasks')
             ->whereNumber('taskId')
             ->middleware('hasPermission:task.delete');
 
+        // Route::get("/tasks/user", [TasksController::class, 'indexByUser'])
+        //     ->middleware('hasPermission:task.view');
 
+        // Route::get("/")
 
-            // REACH HERE;;;;
+        // REACH HERE;;;;
 
         Route::post('/{taskId}/assignees', [TaskAssigneesController::class, 'add'])
             ->whereNumber('taskId')

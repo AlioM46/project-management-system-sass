@@ -9,8 +9,7 @@ class GetTask
 {
     public function __construct(
         private readonly TaskService $taskService
-    ) {
-    }
+    ) {}
 
     public function execute(int $taskId): Task
     {

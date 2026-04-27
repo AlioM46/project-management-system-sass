@@ -8,8 +8,7 @@ class UpdateWorkspaceRole
 {
     public function __construct(
         private readonly WorkspaceRoleManagementService $workspaceRoleManagementService
-    ) {
-    }
+    ) {}
 
     public function execute(int $roleId, array $data): array
     {

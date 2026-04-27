@@ -4,6 +4,8 @@ namespace App\Modules\Tasks\Services;
 
 use App\Models\User;
 use App\Modules\Projects\Model\Project;
+use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Tasks\Enums\TaskStatus;
 use App\Modules\Tasks\Exceptions\TasksException;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
@@ -20,8 +22,7 @@ class TaskService
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly TaskAssignmentService $taskAssignmentService,
         private readonly TaskHistoryService $taskHistoryService
-    ) {
-    }
+    ) {}
 
     public function currentWorkspace(): Workspace
     {
@@ -49,7 +50,7 @@ class TaskService
                     'project_id' => $project->id,
                     'title' => $title,
                     'description' => $description,
-                    'status' => Task::STATUS_TODO,
+                    'status' => TaskStatus::TODO->value,
                     'created_by_user_id' => $actor->id,
                 ]);
 
@@ -61,7 +62,7 @@ class TaskService
                     'project_id' => $project->id,
                     'title' => $title,
                     'description' => $description,
-                    'status' => Task::STATUS_TODO,
+                    'status' => TaskStatus::TODO->value,
                 ],
                 $actor
             );
@@ -84,15 +85,15 @@ class TaskService
         $query = $this->taskQueryForWorkspace($workspace)
             ->with($this->taskRelations());
 
-        if (!empty($filters['project_id'])) {
+        if (! empty($filters['project_id'])) {
             $query->where('project_id', (int) $filters['project_id']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', (string) $filters['status']);
         }
 
-        if (!empty($filters['assignee_id'])) {
+        if (! empty($filters['assignee_id'])) {
             $query->whereHas('assignments', function (Builder $builder) use ($filters): void {
                 $builder->where('user_id', (int) $filters['assignee_id']);
             });
@@ -111,6 +112,7 @@ class TaskService
     public function updateTask(Task $task, array $data, User $actor): Task
     {
         $this->guardTaskActive($task);
+        $this->authorizeTaskUpdate($task, $actor);
 
         $oldValue = [];
         $newValue = [];
@@ -136,6 +138,14 @@ class TaskService
         }
 
         if (array_key_exists('status', $data)) {
+
+            $this->handleStatusChangeWorkflow(
+                $task,
+                TaskStatus::from($task->status),
+                TaskStatus::from((string) $data['status']),
+                $actor
+            );
+
             $status = (string) $data['status'];
 
             if ($status !== $task->status) {
@@ -174,7 +184,7 @@ class TaskService
             $task->delete();
 
             $this->taskHistoryService->record(
-                $task, 
+                $task,
                 'task_deleted',
                 ['deleted_at' => null],
                 ['deleted_at' => optional($task->deleted_at)->toISOString()],
@@ -281,10 +291,103 @@ class TaskService
 
     private function taskRelations(): array
     {
+
         return [
             'project',
             'creator',
-            'assignees' => fn($query) => $query->orderBy('name'),
+            'assignees' => fn ($query) => $query->orderBy('name'),
         ];
+    }
+
+    // public function restoreTask
+
+    public function handleStatusChangeWorkflow(
+        Task $task,
+        TaskStatus $oldStatus,
+        TaskStatus $newStatus,
+        User $actor
+    ): void {
+
+        if ($oldStatus === $newStatus) {
+            return;
+        }
+        if ($task->trashed()) {
+            throw TasksException::taskDeletedImmutable($task->id, $task->workspace_id);
+        }
+
+        $allowedTransitions = [
+            TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
+            TaskStatus::IN_PROGRESS->value => [
+                TaskStatus::TODO->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::DONE->value,
+                TaskStatus::CANCELLED->value,
+            ],
+            TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
+            TaskStatus::DONE->value => [
+                TaskStatus::IN_PROGRESS->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::CANCELLED->value,
+            ],
+            TaskStatus::CANCELLED->value => [
+                TaskStatus::IN_PROGRESS->value,
+                TaskStatus::BLOCKED->value,
+                TaskStatus::DONE->value,
+            ],
+        ];
+
+        $from = $oldStatus->value;
+        $to = $newStatus->value;
+
+        // Validate transition
+        if (! isset($allowedTransitions[$from]) || ! in_array($to, $allowedTransitions[$from], true)) {
+            throw TasksException::invalidStatusTransition($from, $to);
+        }
+
+        // Apply changes
+        $task->status = $to;
+
+        if ($newStatus === TaskStatus::DONE) {
+            $task->completed_at = now();
+        } else {
+            $task->completed_at = null;
+        }
+
+        $task->save();
+
+        // Record history
+        $this->taskHistoryService->record(
+            $task,
+            'task_status_changed',
+            ['status' => $from],
+            [
+                'status' => $to,
+                'completed_at' => $task->completed_at,
+            ],
+            $actor
+        );
+    }
+
+    private function authorizeTaskUpdate(Task $task, User $actor): void
+    {
+        // Owner or Admin can update any task
+        $membership = $this->workspaceContextService->currentMembership();
+
+        if ($membership && $membership->role && in_array($membership->role->slug, [Role::OWNER_SLUG, Role::ADMIN_SLUG], true)) {
+            return;
+        }
+
+        // Creator can update their own task
+        if ($task->created_by_user_id === $actor->id) {
+            return;
+        }
+
+        // Assigned users can update the task
+        $assigneeIds = $task->assignees()->pluck('users.id')->toArray();
+        if (in_array($actor->id, $assigneeIds, true)) {
+            return;
+        }
+
+        throw TasksException::unauthorizedToUpdateTask($task->id, $actor->id);
     }
 }

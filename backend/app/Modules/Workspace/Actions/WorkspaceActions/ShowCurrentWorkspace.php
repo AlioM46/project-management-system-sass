@@ -9,8 +9,7 @@ class ShowCurrentWorkspace
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService
-    ) {
-    }
+    ) {}
 
     public function execute(): array
     {

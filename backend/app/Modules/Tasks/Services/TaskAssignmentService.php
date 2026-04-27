@@ -16,8 +16,7 @@ class TaskAssignmentService
 {
     public function __construct(
         private readonly TaskHistoryService $taskHistoryService
-    ) {
-    }
+    ) {}
 
     public function addAssignees(Task $task, array $userIds, User $actor): Task
     {
@@ -36,7 +35,7 @@ class TaskAssignmentService
             $existingIds = $task->assignments()
                 ->whereIn('user_id', $normalizedUserIds)
                 ->pluck('user_id')
-                ->map(fn($id): int => (int) $id)
+                ->map(fn ($id): int => (int) $id)
                 ->all();
 
             $userIdsToAdd = array_values(array_diff($normalizedUserIds, $existingIds));
@@ -85,7 +84,7 @@ class TaskAssignmentService
             $userIdsToRemove = $task->assignments()
                 ->whereIn('user_id', $normalizedUserIds)
                 ->pluck('user_id')
-                ->map(fn($id): int => (int) $id)
+                ->map(fn ($id): int => (int) $id)
                 ->all();
 
             if ($userIdsToRemove !== []) {
@@ -120,7 +119,7 @@ class TaskAssignmentService
         return DB::transaction(function () use ($task, $normalizedUserIds, $actor): Task {
             $existingIds = $task->assignments()
                 ->pluck('user_id')
-                ->map(fn($id): int => (int) $id)
+                ->map(fn ($id): int => (int) $id)
                 ->all();
 
             $userIdsToAdd = array_values(array_diff($normalizedUserIds, $existingIds));
@@ -202,7 +201,7 @@ class TaskAssignmentService
             ->where('workspace_id', $workspace->id)
             ->whereIn('user_id', $userIds)
             ->pluck('user_id')
-            ->map(fn($id): int => (int) $id)
+            ->map(fn ($id): int => (int) $id)
             ->all();
 
         if (in_array((int) $workspace->created_by_user_id, $userIds, true)) {
@@ -220,8 +219,8 @@ class TaskAssignmentService
     private function normalizeUserIds(array $userIds): array
     {
         return array_values(array_unique(array_map(
-            fn($userId): int => (int) $userId,
-            array_filter($userIds, fn($userId): bool => $userId !== null && $userId !== '')
+            fn ($userId): int => (int) $userId,
+            array_filter($userIds, fn ($userId): bool => $userId !== null && $userId !== '')
         )));
     }
 
@@ -230,7 +229,7 @@ class TaskAssignmentService
         return $task->load([
             'project',
             'creator',
-            'assignees' => fn($query) => $query->orderBy('name'),
+            'assignees' => fn ($query) => $query->orderBy('name'),
         ]);
     }
 }

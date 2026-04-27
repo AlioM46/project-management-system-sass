@@ -16,16 +16,16 @@ class ChangePassword
         $currentPassword = $data['current_password'];
         $newPassword = $data['new_password'];
 
-        if (!$user) {
-            throw new AuthenticationException();
+        if (! $user) {
+            throw new AuthenticationException;
         }
 
-        if (!Hash::check($currentPassword, $user->password)) {
-            throw new InvalidCurrentPasswordException();
+        if (! Hash::check($currentPassword, $user->password)) {
+            throw new InvalidCurrentPasswordException;
         }
 
         if (Hash::check($newPassword, $user->password)) {
-            throw new PasswordReuseException();
+            throw new PasswordReuseException;
         }
 
         $user->password = $newPassword;

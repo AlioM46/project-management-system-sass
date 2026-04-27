@@ -22,16 +22,15 @@ class WorkspaceMemberController extends Controller
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService
-    ) {
-    }
+    ) {}
 
-/* 
-    WorkspaceMemberController.php handles membership inside the active workspace:
-        list members
-        invite member
-        update member
-        remove member
-        */
+    /*
+        WorkspaceMemberController.php handles membership inside the active workspace:
+            list members
+            invite member
+            update member
+            remove member
+            */
     public function members(ListWorkspaceMembers $action): JsonResponse
     {
         return ApiResponse::success(

@@ -3,6 +3,7 @@
 namespace App\Modules\Workspace\Mail;
 
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Carbon;
 
 class WorkspaceInviteMail extends Mailable
 {
@@ -12,10 +13,9 @@ class WorkspaceInviteMail extends Mailable
         public string $inviteeEmail,
         public string $inviterName,
         public string $acceptUrl,
-        public \Illuminate\Support\Carbon $expiresAt,
+        public Carbon $expiresAt,
         public ?string $message = null
-    ) {
-    }
+    ) {}
 
     public function build(): self
     {

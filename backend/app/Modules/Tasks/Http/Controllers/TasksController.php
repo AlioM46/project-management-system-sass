@@ -12,11 +12,11 @@ use App\Modules\Tasks\Http\Requests\CreateTaskRequest;
 use App\Modules\Tasks\Http\Requests\ListTasksRequest;
 use App\Modules\Tasks\Http\Requests\UpdateTaskRequest;
 use App\Shared\Http\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class   TasksController extends Controller
+class TasksController extends Controller
 {
     public function create(CreateTaskRequest $request, CreateTask $action): JsonResponse
     {

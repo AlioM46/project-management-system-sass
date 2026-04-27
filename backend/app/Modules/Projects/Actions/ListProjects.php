@@ -9,8 +9,7 @@ class ListProjects
 {
     public function __construct(
         private readonly ProjectService $projectService
-    ) {
-    }
+    ) {}
 
     public function execute(array $filters = []): Collection
     {

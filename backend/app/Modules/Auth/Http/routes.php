@@ -12,7 +12,7 @@ Route::prefix('auth')->group(function () {
     Route::get('/email/verify/{id}/{hash}', [EmailVerficationController::class, 'verify'])
         ->middleware('throttle:6,1');
 
-    Route::prefix("password")->group(function () {
+    Route::prefix('password')->group(function () {
         Route::post('/send-reset-link', [PasswordResetController::class, 'SendPasswordResetLink'])
             ->middleware('throttle:6,1')
             ->name('password.password-reset-link');
@@ -29,8 +29,7 @@ Route::prefix('auth')->group(function () {
             ->middleware('throttle:6,1')
             ->name('verification.send');
 
-
-        Route::prefix("password")->group(function () {
+        Route::prefix('password')->group(function () {
             Route::post('/change-password', [PasswordResetController::class, 'ChangePassword'])
                 ->name('password.change');
         });

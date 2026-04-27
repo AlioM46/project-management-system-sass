@@ -6,6 +6,19 @@ use App\Shared\Exceptions\BusinessException;
 
 class TasksException extends BusinessException
 {
+    public static function invalidStatusTransition(string $fromStatus, string $toStatus): self
+    {
+        return new self(
+            message: "Cannot transition task from status '{$fromStatus}' to '{$toStatus}'.",
+            errorCode: 'TASK_INVALID_STATUS_TRANSITION',
+            status: 422,
+            meta: [
+                'from_status' => $fromStatus,
+                'to_status' => $toStatus,
+            ]
+        );
+    }
+
     public static function taskNotFound(int $taskId, int $workspaceId): self
     {
         return new self(
@@ -54,6 +67,19 @@ class TasksException extends BusinessException
             meta: [
                 'task_id' => $taskId,
                 'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
+    public static function unauthorizedToUpdateTask(int $taskId, int $userId): self
+    {
+        return new self(
+            message: 'You are not authorized to update this task.',
+            errorCode: 'TASK_UNAUTHORIZED',
+            status: 403,
+            meta: [
+                'task_id' => $taskId,
+                'user_id' => $userId,
             ]
         );
     }

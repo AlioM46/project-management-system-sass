@@ -12,8 +12,7 @@ class CreateWorkspace
 {
     public function __construct(
         private readonly WorkspaceRoleProvisioningService $workspaceRoleProvisioningService
-    ) {
-    }
+    ) {}
 
     /**
      * Create a workspace and its initial access-control setup.
