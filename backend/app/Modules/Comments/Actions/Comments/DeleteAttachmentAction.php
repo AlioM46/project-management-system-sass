@@ -4,7 +4,6 @@ namespace App\Modules\Comments\Actions\Comments;
 
 use App\Modules\Comments\Model\CommentAttachment;
 use App\Modules\Comments\Services\CommentAttachmentService;
-use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 
 class DeleteAttachmentAction
