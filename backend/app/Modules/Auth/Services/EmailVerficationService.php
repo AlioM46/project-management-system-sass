@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Mail;
 
 class EmailVerficationService
 {
-
-
     public function send(User $user): array
     {
         if ($this->isVerified($user)) {
@@ -68,15 +66,14 @@ class EmailVerficationService
     {
         // if no expiresAt Passed, or it was null, set it to now + expirationMinutes
         $expiresAt ??= now()->addMinutes($this->expirationMinutes());
-        
+
         $expires = $expiresAt->timestamp;
-        
+
         $hash = sha1($user->email);
-        
+
         $path = $this->verificationPath($user->getKey(), $hash);
-        
+
         $signature = $this->makeSignature($path, $expires);
-        
 
         return rtrim((string) config('app.url'), '/').$path.'?'.http_build_query([
             'expires' => $expires,

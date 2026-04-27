@@ -20,8 +20,8 @@ class LogoutUser
         }
 
         if ($token) {
-            JWTAuth::setToken($token)->invalidate(true); // Works if Blacklist_enabled = true in jwt.php config 
-            
+            JWTAuth::setToken($token)->invalidate(true); // Works if Blacklist_enabled = true in jwt.php config
+
         }
     }
 }

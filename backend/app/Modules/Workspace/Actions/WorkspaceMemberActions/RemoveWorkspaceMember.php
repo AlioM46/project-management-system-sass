@@ -2,28 +2,31 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
+use App\Modules\RolesPermissions\Model\Role;
+use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
-use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 
 class RemoveWorkspaceMember
 {
     private Workspace $workspace;
+
     private Workspace_Members $currentMembership;
 
     private int $ownerRoleId;
+
     private int $adminRoleId;
 
     private int $workspaceOwnerId;
+
     private int $currentUserId;
 
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService
-    ) {
-    }
+    ) {}
 
     /**
      * Execute member removal with proper authorization and validation.
@@ -81,9 +84,9 @@ class RemoveWorkspaceMember
 
         $this->workspaceOwnerId = (int) $workspace->created_by_user_id;
         $this->currentUserId = (int) $currentMembership->user_id;
-        
-        $this->ownerRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, \App\Modules\RolesPermissions\Model\Role::OWNER_SLUG) ?? 0);
-        $this->adminRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, \App\Modules\RolesPermissions\Model\Role::ADMIN_SLUG) ?? 0);
+
+        $this->ownerRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, Role::OWNER_SLUG) ?? 0);
+        $this->adminRoleId = (int) ($this->workspaceMembersService->roleIdBySlug($workspace, Role::ADMIN_SLUG) ?? 0);
     }
 
     /**
@@ -123,7 +126,7 @@ class RemoveWorkspaceMember
             return; // Owner can remove anyone
         }
 
-        if (!$this->canCurrentUserRemoveMember($member)) {
+        if (! $this->canCurrentUserRemoveMember($member)) {
             throw WorkspaceContextException::insufficientPermissionToRemove($this->workspace->id);
         }
     }
@@ -184,7 +187,7 @@ class RemoveWorkspaceMember
     private function canCurrentUserRemoveMember(Workspace_Members $member): bool
     {
         // Only admins can remove members (besides the owner who is already checked)
-        if (!$this->isCurrentUserAdmin()) {
+        if (! $this->isCurrentUserAdmin()) {
             return false;
         }
 

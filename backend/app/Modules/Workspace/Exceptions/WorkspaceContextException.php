@@ -15,6 +15,7 @@ class WorkspaceContextException extends BusinessException
             meta: ['header' => $headerName]
         );
     }
+
     public static function workspaceNotManagedByUser(string $username, int $workspaceId): self
     {
         return new self(
@@ -26,7 +27,6 @@ class WorkspaceContextException extends BusinessException
 
     }
 
-    
     public static function invalidHeader(string $headerName): self
     {
         return new self(

@@ -12,14 +12,13 @@ class WorkspaceContextMiddleware
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             throw new AuthenticationException('Unauthenticated.');
         }
 

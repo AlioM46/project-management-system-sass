@@ -2,9 +2,9 @@
 
 namespace App\Modules\Tasks\Http\Requests;
 
-use App\Modules\Tasks\Model\Task;
+use App\Modules\Tasks\Enums\TaskStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateTaskRequest extends FormRequest
 {
@@ -26,6 +26,10 @@ class UpdateTaskRequest extends FormRequest
             $payload['description'] = $description === '' ? null : $description;
         }
 
+        if ($this->has('status') && is_string($this->input('status'))) {
+            $payload['status'] = strtoupper(trim($this->input('status')));
+        }
+
         if ($payload !== []) {
             $this->merge($payload);
         }
@@ -36,7 +40,7 @@ class UpdateTaskRequest extends FormRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'status' => ['sometimes', 'required', Rule::in(Task::STATUSES)],
+            'status' => ['sometimes', 'required', new Enum(TaskStatus::class)],
         ];
     }
 }

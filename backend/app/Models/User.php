@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Modules\Workspace\Model\Workspace;
-use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Model\Workspace_Members;
+use App\Modules\Workspace\Model\WorkspaceInvitation;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceContextService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Hash; 
+use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
@@ -21,13 +21,13 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'status',
+        'name', 'username', 'email', 'password', 'status',
         'last_login_at', 'last_login_ip',
         'refresh_token', 'refresh_token_expiration',
     ];
 
     protected $hidden = [
-        'password', 'deleted_at', 
+        'password', 'deleted_at',
         'refresh_token', 'refresh_token_expiration',
     ];
 
@@ -40,7 +40,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function setPasswordAttribute($value): void
     {
-        if (!empty($value)) {
+        if (! empty($value)) {
             $this->attributes['password'] = password_get_info($value)['algo'] !== null
                 ? $value
                 : Hash::make($value);
@@ -58,6 +58,7 @@ class User extends Authenticatable implements JWTSubject
             'user' => [
                 'id' => $this->id,
                 'name' => $this->name,
+                'username' => $this->username,
                 'email' => $this->email,
                 'status' => $this->status,
             ],
@@ -103,7 +104,7 @@ class User extends Authenticatable implements JWTSubject
             $workspace = $workspaceContext->currentWorkspace();
 
             // If still null, cannot check
-            if (!$workspace) {
+            if (! $workspace) {
                 return false;
             }
         }
@@ -118,13 +119,14 @@ class User extends Authenticatable implements JWTSubject
             ->where('workspace_id', $workspace->id)
             ->first();
 
-        if (!$membership || !$membership->role) {
+        if (! $membership || ! $membership->role) {
             return false;
         }
 
-      $isExist =    $membership->role->permissions()
+        $isExist = $membership->role->permissions()
             ->where('key', $permissionName)
             ->exists();
+
         // Check role permissions
         return $isExist;
     }

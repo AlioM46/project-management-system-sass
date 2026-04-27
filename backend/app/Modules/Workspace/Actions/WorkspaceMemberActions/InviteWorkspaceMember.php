@@ -2,12 +2,12 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
-use App\Modules\Workspace\Mail\WorkspaceInviteMail;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
+use App\Modules\Workspace\Mail\WorkspaceInviteMail;
 use App\Modules\Workspace\Model\Workspace;
-use App\Modules\Workspace\Services\WorkspaceInvitationService;
 use App\Modules\Workspace\Services\WorkspaceContextService;
+use App\Modules\Workspace\Services\WorkspaceInvitationService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -18,8 +18,7 @@ class InviteWorkspaceMember
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService,
         private readonly WorkspaceInvitationService $workspaceInvitationService
-    ) {
-    }
+    ) {}
 
     public function execute(array $data): array
     {

@@ -10,8 +10,7 @@ class CreateProject
 {
     public function __construct(
         private readonly ProjectService $projectService
-    ) {
-    }
+    ) {}
 
     public function execute(array $data, User $actor): Project
     {

@@ -1,1104 +1,2272 @@
-﻿{
-    "info":  {
-                 "name":  "Project Management System API",
-                 "description":  "Combined Postman collection for Auth, RolesPermissions, Workspace, and Projects API routes.",
-                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-             },
-    "auth":  {
-                 "type":  "bearer",
-                 "bearer":  [
-                                {
-                                    "key":  "token",
-                                    "value":  "{{jwt_token}}",
-                                    "type":  "string"
-                                }
-                            ]
-             },
-    "variable":  [
-                     {
-                         "key":  "base_url",
-                         "value":  "http://localhost:8000/api"
-                     },
-                     {
-                         "key":  "jwt_token",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "workspace_id",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "member_id",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "workspace_restore_id",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "role_id",
-                         "value":  ""
-                     },
-                     {
-                         "key":  "project_id",
-                         "value":  ""
-                     }
-                 ],
-    "item":  [
-                 {
-                     "name":  "Root",
-                     "item":  [
-                                  {
-                                      "name":  "API Root",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "header":  [
-
-                                                                 ],
-                                                      "url":  {
-                                                                  "raw":  "{{base_url}}/",
-                                                                  "host":  [
-                                                                               "{{base_url}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               ""
-                                                                           ]
-                                                              }
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Auth",
-                     "item":  [
-                                  {
-                                      "name":  "User",
-                                      "item":  [
-                                                   {
-                                                       "name":  "Register",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Test User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/register",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "register"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Login",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/login",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "login"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Me",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/me",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "me"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Logout",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/logout",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "logout"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  },
-                                  {
-                                      "name":  "Password",
-                                      "item":  [
-                                                   {
-                                                       "name":  "Send Reset Link",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"email\": \"user@example.com\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/password/send-reset-link",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "password",
-                                                                                                "send-reset-link"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Reset Password",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"email\": \"user@example.com\",\n  \"token\": \"reset-token\",\n  \"password\": \"new-password123\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/password/reset-password",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "password",
-                                                                                                "reset-password"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Change Password",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/password/change-password",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "password",
-                                                                                                "change-password"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  },
-                                  {
-                                      "name":  "Email",
-                                      "item":  [
-                                                   {
-                                                       "name":  "Verify Email",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/email/verify/:id/:hash",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "email",
-                                                                                                "verify",
-                                                                                                ":id",
-                                                                                                ":hash"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Send Email Verification",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/auth/email/send-verification",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "auth",
-                                                                                                "email",
-                                                                                                "send-verification"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Roles \u0026 Permissions",
-                     "item":  [
-                                  {
-                                      "name":  "Permissions",
-                                      "item":  [
-                                                   {
-                                                       "name":  "List Permissions",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/permissions",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "permissions"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  },
-                                  {
-                                      "name":  "Roles",
-                                      "item":  [
-                                                   {
-                                                       "name":  "List Roles",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Create Role",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Project Lead\",\n  \"slug\": \"project-lead\",\n  \"description\": \"Custom role for project leadership.\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Show Role",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles/{{role_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles",
-                                                                                                "{{role_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Update Role",
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Project Manager\",\n  \"slug\": \"project-manager\",\n  \"description\": \"Updated custom role description.\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles/{{role_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles",
-                                                                                                "{{role_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Delete Role",
-                                                       "request":  {
-                                                                       "method":  "DELETE",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles/{{role_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles",
-                                                                                                "{{role_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Update Role Permissions",
-                                                       "request":  {
-                                                                       "method":  "PUT",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"permissions\": [\n    \"project.view\",\n    \"project.create\",\n    \"task.view\"\n  ]\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/roles/{{role_id}}/permissions",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "roles",
-                                                                                                "{{role_id}}",
-                                                                                                "permissions"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Sync Role Defaults",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/roles-permissions/defaults/sync",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "roles-permissions",
-                                                                                                "defaults",
-                                                                                                "sync"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Workspace",
-                     "item":  [
-                                  {
-                                      "name":  "Workspace",
-                                      "item":  [
-                                                   {
-                                                       "name":  "List Workspaces",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Create Workspace",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"My Workspace\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Restore Workspace",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/{{workspace_restore_id}}/restore",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "{{workspace_restore_id}}",
-                                                                                                "restore"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Accept Workspace Invite",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"token\": \"invitation_token_here\",\n  \"workspace_id\": \"{{workspace_id}}\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/members/accept-invite",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "members",
-                                                                                                "accept-invite"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  },
-                                  {
-                                      "name":  "Current Workspace",
-                                      "item":  [
-                                                   {
-                                                       "name":  "Show Current Workspace",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/current",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "current"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Update Current Workspace",
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Updated Workspace Name\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/current",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "current"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Delete Current Workspace",
-                                                       "request":  {
-                                                                       "method":  "DELETE",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/current",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "current"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Leave Current Workspace",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/current/leave",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "current",
-                                                                                                "leave"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  },
-                                  {
-                                      "name":  "Workspace Members",
-                                      "item":  [
-                                                   {
-                                                       "name":  "List Workspace Members",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/members",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "members"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Send Workspace Invite",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"email\": \"newmember@example.com\",\n  \"role_id\": 2,\n  \"message\": \"Welcome to our workspace!\"\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/members/send-invite",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "members",
-                                                                                                "send-invite"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Change Member Role",
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"role_id\": 3\n}"
-                                                                                },
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/members/{{member_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "members",
-                                                                                                "{{member_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Remove Workspace Member",
-                                                       "request":  {
-                                                                       "method":  "DELETE",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/workspaces/members/{{member_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "workspaces",
-                                                                                                "members",
-                                                                                                "{{member_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Workspace Context Test",
-                     "item":  [
-                                  {
-                                      "name":  "Workspace Context",
-                                      "request":  {
-                                                      "method":  "GET",
-                                                      "header":  [
-                                                                     {
-                                                                         "key":  "X-Workspace-Id",
-                                                                         "value":  "{{workspace_id}}"
-                                                                     }
-                                                                 ],
-                                                      "url":  {
-                                                                  "raw":  "{{base_url}}/_test/workspace-context",
-                                                                  "host":  [
-                                                                               "{{base_url}}"
-                                                                           ],
-                                                                  "path":  [
-                                                                               "_test",
-                                                                               "workspace-context"
-                                                                           ]
-                                                              }
-                                                  }
-                                  }
-                              ]
-                 },
-                 {
-                     "name":  "Projects",
-                     "item":  [
-                                  {
-                                      "name":  "Projects",
-                                      "item":  [
-                                                   {
-                                                       "name":  "List Projects",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "List Projects (Include Deleted)",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects?include_deleted=true",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects"
-                                                                                            ],
-                                                                                   "query":  [
-                                                                                                 {
-                                                                                                     "key":  "include_deleted",
-                                                                                                     "value":  "true"
-                                                                                                 }
-                                                                                             ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Search Projects",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects?search=website",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects"
-                                                                                            ],
-                                                                                   "query":  [
-                                                                                                 {
-                                                                                                     "key":  "search",
-                                                                                                     "value":  "website"
-                                                                                                 }
-                                                                                             ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Create Project",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects"
-                                                                                            ]
-                                                                               },
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Marketing Website\",\n  \"description\": \"Tasks related to the new website launch\"\n}"
-                                                                                }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Show Project",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects/{{project_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects",
-                                                                                                "{{project_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Show Project (Include Deleted)",
-                                                       "request":  {
-                                                                       "method":  "GET",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects/{{project_id}}?include_deleted=true",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects",
-                                                                                                "{{project_id}}"
-                                                                                            ],
-                                                                                   "query":  [
-                                                                                                 {
-                                                                                                     "key":  "include_deleted",
-                                                                                                     "value":  "true"
-                                                                                                 }
-                                                                                             ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Update Project",
-                                                       "request":  {
-                                                                       "method":  "PATCH",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      },
-                                                                                      {
-                                                                                          "key":  "Content-Type",
-                                                                                          "value":  "application/json"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects/{{project_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects",
-                                                                                                "{{project_id}}"
-                                                                                            ]
-                                                                               },
-                                                                       "body":  {
-                                                                                    "mode":  "raw",
-                                                                                    "raw":  "{\n  \"name\": \"Website Relaunch\",\n  \"description\": \"Updated scope and delivery plan\"\n}"
-                                                                                }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Delete Project",
-                                                       "request":  {
-                                                                       "method":  "DELETE",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects/{{project_id}}",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects",
-                                                                                                "{{project_id}}"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   },
-                                                   {
-                                                       "name":  "Restore Project",
-                                                       "request":  {
-                                                                       "method":  "POST",
-                                                                       "header":  [
-                                                                                      {
-                                                                                          "key":  "X-Workspace-Id",
-                                                                                          "value":  "{{workspace_id}}"
-                                                                                      }
-                                                                                  ],
-                                                                       "url":  {
-                                                                                   "raw":  "{{base_url}}/projects/{{project_id}}/restore",
-                                                                                   "host":  [
-                                                                                                "{{base_url}}"
-                                                                                            ],
-                                                                                   "path":  [
-                                                                                                "projects",
-                                                                                                "{{project_id}}",
-                                                                                                "restore"
-                                                                                            ]
-                                                                               }
-                                                                   }
-                                                   }
-                                               ]
-                                  }
-                              ]
-                 }
-             ]
+{
+  "info": {
+    "name": "Project Management System API",
+    "description": "Full Postman collection for all registered application API routes under /api, aligned with the current backend including Auth, Workspace, Roles & Permissions, Projects, and Tasks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "user_name",
+      "value": "Test User"
+    },
+    {
+      "key": "user_email",
+      "value": "user@example.com"
+    },
+    {
+      "key": "user_password",
+      "value": "password123"
+    },
+    {
+      "key": "new_password",
+      "value": "new-password123"
+    },
+    {
+      "key": "password_reset_email",
+      "value": "user@example.com"
+    },
+    {
+      "key": "password_reset_plain_token",
+      "value": ""
+    },
+    {
+      "key": "password_reset_url",
+      "value": ""
+    },
+    {
+      "key": "workspace_id",
+      "value": "0"
+    },
+    {
+      "key": "workspace_name",
+      "value": "Delivery Workspace"
+    },
+    {
+      "key": "workspace_restore_id",
+      "value": "0"
+    },
+    {
+      "key": "member_id",
+      "value": "0"
+    },
+    {
+      "key": "successor_member_id",
+      "value": "0"
+    },
+    {
+      "key": "role_id",
+      "value": "0"
+    },
+    {
+      "key": "invite_role_id",
+      "value": "null"
+    },
+    {
+      "key": "role_name",
+      "value": "Project Lead"
+    },
+    {
+      "key": "role_slug",
+      "value": "project-lead"
+    },
+    {
+      "key": "role_description",
+      "value": "Custom role for project leadership."
+    },
+    {
+      "key": "project_id",
+      "value": "0"
+    },
+    {
+      "key": "project_name",
+      "value": "Marketing Website"
+    },
+    {
+      "key": "project_description",
+      "value": "Tasks related to the new website launch"
+    },
+    {
+      "key": "task_id",
+      "value": "0"
+    },
+    {
+      "key": "task_title",
+      "value": "Design task board"
+    },
+    {
+      "key": "task_description",
+      "value": "Build the initial Kanban board screens and API integration."
+    },
+    {
+      "key": "task_status",
+      "value": "in_progress"
+    },
+    {
+      "key": "assignee_user_id",
+      "value": "0"
+    },
+    {
+      "key": "second_assignee_user_id",
+      "value": "0"
+    },
+    {
+      "key": "verification_user_id",
+      "value": "0"
+    },
+    {
+      "key": "verification_hash",
+      "value": ""
+    },
+    {
+      "key": "verification_expires",
+      "value": ""
+    },
+    {
+      "key": "verification_signature",
+      "value": ""
+    },
+    {
+      "key": "invitation_id",
+      "value": "0"
+    },
+    {
+      "key": "invitation_token",
+      "value": ""
+    },
+    {
+      "key": "invitee_email",
+      "value": "invitee@example.com"
+    },
+    {
+      "key": "invite_message",
+      "value": "Join the workspace so we can collaborate."
+    }
+  ],
+  "item": [
+    {
+      "name": "Root",
+      "item": [
+        {
+          "name": "API Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": []
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "User",
+          "item": [
+            {
+              "name": "Register",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{user_name}}\",\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
+                      "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
+                      "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
+                      "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
+                      "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Refresh Token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/refresh-token",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh-token"
+                  ]
+                },
+                "description": "Uses the refresh_token cookie issued by register, login, or refresh-token. Postman should resend it from the cookie jar automatically.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (data && data.access_token) pm.collectionVariables.set('access_token', data.access_token);",
+                      "if (data && data.user && data.user.email) pm.collectionVariables.set('user_email', data.user.email);",
+                      "if (data && data.user && data.user.id) pm.collectionVariables.set('verification_user_id', String(data.user.id));",
+                      "if (data && data.user && data.user.email && typeof CryptoJS !== 'undefined') pm.collectionVariables.set('verification_hash', CryptoJS.SHA1(data.user.email).toString());"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Me",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "me"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/logout",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set('access_token', '');"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Password",
+          "item": [
+            {
+              "name": "Send Reset Link",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/send-reset-link",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "send-reset-link"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{user_email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Current backend behavior returns reset_link_sent for local testing. This request stores the parsed email and plain token into collection variables.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const resetUrl = data && data.reset_link_sent ? data.reset_link_sent : '';",
+                      "if (resetUrl) pm.collectionVariables.set('password_reset_url', resetUrl);",
+                      "const queryString = resetUrl.includes(\"?\") ? resetUrl.split(\"?\")[1] : \"\";",
+                      "const params = {};",
+                      "queryString.split(\"&\").filter(Boolean).forEach((pair) => {",
+                      "  const parts = pair.split(\"=\");",
+                      "  const key = decodeURIComponent(parts[0] || \"\");",
+                      "  const value = decodeURIComponent(parts.slice(1).join(\"=\") || \"\");",
+                      "  if (key) params[key] = value;",
+                      "});",
+                      "if (params.email) pm.collectionVariables.set('password_reset_email', params.email);",
+                      "if (params.token) pm.collectionVariables.set('password_reset_plain_token', params.token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Reset Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/reset-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "reset-password"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{password_reset_email}}\",\n  \"plain_token\": \"{{password_reset_plain_token}}\",\n  \"password\": \"{{new_password}}\",\n  \"password_confirmation\": \"{{new_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const newPassword = pm.collectionVariables.get('new_password');",
+                      "if (newPassword) pm.collectionVariables.set('user_password', newPassword);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Change Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/auth/password/change-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "change-password"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"current_password\": \"{{user_password}}\",\n  \"new_password\": \"{{new_password}}\",\n  \"new_password_confirmation\": \"{{new_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const newPassword = pm.collectionVariables.get('new_password');",
+                      "if (newPassword) pm.collectionVariables.set('user_password', newPassword);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Email",
+          "item": [
+            {
+              "name": "Send Email Verification",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/send-verification",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "send-verification"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Verify Email",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/auth/email/verify/{{verification_user_id}}/{{verification_hash}}?expires={{verification_expires}}&signature={{verification_signature}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "verify",
+                    "{{verification_user_id}}",
+                    "{{verification_hash}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "expires",
+                      "value": "{{verification_expires}}"
+                    },
+                    {
+                      "key": "signature",
+                      "value": "{{verification_signature}}"
+                    }
+                  ]
+                },
+                "description": "Use the exact signed verification link from the email, or copy its id, hash, expires, and signature values into the collection variables before sending.",
+                "auth": {
+                  "type": "noauth"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workspace",
+      "item": [
+        {
+          "name": "Workspace",
+          "item": [
+            {
+              "name": "List User Workspaces",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/workspaces",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Workspace",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{workspace_name}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const workspace = data && data.workspace ? data.workspace : null;",
+                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_id', String(workspace.id));",
+                      "if (workspace && workspace.name) pm.collectionVariables.set('workspace_name', workspace.name);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Restore Workspace",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/{{workspace_restore_id}}/restore",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "{{workspace_restore_id}}",
+                    "restore"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const workspace = data && data.workspace ? data.workspace : null;",
+                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_id', String(workspace.id));",
+                      "if (workspace && workspace.name) pm.collectionVariables.set('workspace_name', workspace.name);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Current Workspace",
+          "item": [
+            {
+              "name": "Show Current Workspace",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const workspace = data && data.workspace ? data.workspace : null;",
+                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_id', String(workspace.id));",
+                      "if (workspace && workspace.name) pm.collectionVariables.set('workspace_name', workspace.name);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Current Workspace",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{workspace_name}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const workspace = data && data.workspace ? data.workspace : null;",
+                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_id', String(workspace.id));",
+                      "if (workspace && workspace.name) pm.collectionVariables.set('workspace_name', workspace.name);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Current Workspace",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const workspace = data && data.workspace ? data.workspace : null;",
+                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_restore_id', String(workspace.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Leave Current Workspace",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/current/leave",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "current",
+                    "leave"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Workspace Members",
+          "item": [
+            {
+              "name": "Show Workspace Member",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Workspace Members",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Send Workspace Invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/send-invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "send-invite"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{invitee_email}}\",\n  \"role_id\": {{invite_role_id}},\n  \"message\": \"{{invite_message}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const invitation = data && data.invitation ? data.invitation : null;",
+                      "if (invitation && invitation.id !== undefined && invitation.id !== null) pm.collectionVariables.set('invitation_id', String(invitation.id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Accept Workspace Invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/accept-invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "accept-invite"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invitation_id\": {{invitation_id}},\n  \"token\": \"{{invitation_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Use invitation_id from the invite response and invitation_token from the emailed accept URL."
+              }
+            },
+            {
+              "name": "Change Member Role",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role_id\": {{role_id}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Remove Workspace Member",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/{{member_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "{{member_id}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Debug",
+          "item": [
+            {
+              "name": "Workspace Context",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/_test/workspace-context",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "_test",
+                    "workspace-context"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "item": [
+        {
+          "name": "Permissions",
+          "item": [
+            {
+              "name": "List Permissions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "permissions"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Roles",
+          "item": [
+            {
+              "name": "List Roles",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Role",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{role_name}}\",\n  \"slug\": \"{{role_slug}}\",\n  \"description\": \"{{role_description}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const role = data && data.role ? data.role : null;",
+                      "if (role && role.id !== undefined && role.id !== null) pm.collectionVariables.set('role_id', String(role.id));",
+                      "if (role && role.name) pm.collectionVariables.set('role_name', role.name);",
+                      "if (role && role.slug) pm.collectionVariables.set('role_slug', role.slug);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Role",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Role",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Project Manager\",\n  \"slug\": \"project-manager\",\n  \"description\": \"Updated custom role description.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const role = data && data.role ? data.role : null;",
+                      "if (role && role.id !== undefined && role.id !== null) pm.collectionVariables.set('role_id', String(role.id));",
+                      "if (role && role.name) pm.collectionVariables.set('role_name', role.name);",
+                      "if (role && role.slug) pm.collectionVariables.set('role_slug', role.slug);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Role",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Role Permissions",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/roles/{{role_id}}/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "roles",
+                    "{{role_id}}",
+                    "permissions"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"permissions\": [\n    \"project.view\",\n    \"project.create\",\n    \"task.view\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sync Role Defaults",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles-permissions/defaults/sync",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles-permissions",
+                    "defaults",
+                    "sync"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Projects",
+          "item": [
+            {
+              "name": "List Projects",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Projects (Include Deleted)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects?include_deleted=true",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_deleted",
+                      "value": "true"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Search Projects",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects?search=website",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "website"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Project",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const project = data && data.project ? data.project : null;",
+                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
+                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Project",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects/{{project_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{project_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Show Project (Include Deleted)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects/{{project_id}}?include_deleted=true",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{project_id}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_deleted",
+                      "value": "true"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Project",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects/{{project_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{project_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Website Relaunch\",\n  \"description\": \"Updated scope and delivery plan\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const project = data && data.project ? data.project : null;",
+                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
+                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Project",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects/{{project_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{project_id}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Restore Project",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/projects/{{project_id}}/restore",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "projects",
+                    "{{project_id}}",
+                    "restore"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const project = data && data.project ? data.project : null;",
+                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
+                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Tasks",
+          "item": [
+            {
+              "name": "List Tasks",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Project",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?project_id={{project_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "project_id",
+                      "value": "{{project_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?status={{task_status}}&sort_by=updated_at&sort_dir=desc",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "{{task_status}}"
+                    },
+                    {
+                      "key": "sort_by",
+                      "value": "updated_at"
+                    },
+                    {
+                      "key": "sort_dir",
+                      "value": "desc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List Tasks By Assignee",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks?assignee_id={{assignee_user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ],
+                  "query": [
+                    {
+                      "key": "assignee_id",
+                      "value": "{{assignee_user_id}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Task",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"project_id\": {{project_id}},\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"assignee_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Show Task",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Task",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Task (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Task",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assignees",
+          "item": [
+            {
+              "name": "List Assignees",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Add Assignees",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Replace Assignees",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Remove Assignees",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "tasks",
+                    "{{task_id}}",
+                    "assignees"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"user_ids\": [{{second_assignee_user_id}}]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "const task = data && data.task ? data.task : null;",
+                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
+                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

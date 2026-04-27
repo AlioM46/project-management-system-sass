@@ -9,8 +9,7 @@ class UpdateProject
 {
     public function __construct(
         private readonly ProjectService $projectService
-    ) {
-    }
+    ) {}
 
     public function execute(int $projectId, array $data): Project
     {

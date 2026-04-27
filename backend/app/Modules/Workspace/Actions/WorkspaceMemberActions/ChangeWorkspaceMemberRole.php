@@ -12,19 +12,21 @@ use App\Modules\Workspace\Services\WorkspaceMembersService;
 class ChangeWorkspaceMemberRole
 {
     private Workspace $workspace;
+
     private Workspace_Members $currentMembership;
 
     private int $ownerRoleId;
+
     private int $adminRoleId;
 
     private int $workspaceOwnerUserId;
+
     private int $currentUserId;
 
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService
-    ) {
-    }
+    ) {}
 
     public function execute(int $memberId, array $data): array
     {
@@ -38,7 +40,7 @@ class ChangeWorkspaceMemberRole
         $this->validateTargetIsNotCurrentUser($targetMembership);
 
         // #4: prevent changing the actual workspace owner through this endpoint.
-        // eg: the target user is workspace_created_by_user_id  
+        // eg: the target user is workspace_created_by_user_id
         // or the target role is Owner role.
         $this->validateTargetIsNotWorkspaceOwner($targetMembership);
 
@@ -138,7 +140,7 @@ class ChangeWorkspaceMemberRole
         // 3. cannot assign admin
 
         // if not owner, must be admin to proceed with any role change.
-        if (!$this->isCurrentUserAdmin()) {
+        if (! $this->isCurrentUserAdmin()) {
             throw WorkspaceContextException::insufficientPermissionToChangeRole($this->workspace->id);
         }
 

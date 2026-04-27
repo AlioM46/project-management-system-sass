@@ -19,8 +19,7 @@ class ProjectService
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService
-    ) {
-    }
+    ) {}
 
     public function currentWorkspace(): Workspace
     {
@@ -43,7 +42,7 @@ class ProjectService
             ->orderByDesc('id');
 
         if ($search !== null) {
-            $like = '%' . $search . '%';
+            $like = '%'.$search.'%';
 
             $query->where(function (Builder $builder) use ($like): void {
                 $builder
@@ -195,7 +194,7 @@ class ProjectService
 
     private function guardProjectDeleted(Project $project): void
     {
-        if (!$project->trashed()) {
+        if (! $project->trashed()) {
             throw ProjectsException::projectNotDeleted($project->id, $project->workspace_id);
         }
     }

@@ -9,8 +9,7 @@ class ListTasks
 {
     public function __construct(
         private readonly TaskService $taskService
-    ) {
-    }
+    ) {}
 
     public function execute(array $filters = []): LengthAwarePaginator
     {

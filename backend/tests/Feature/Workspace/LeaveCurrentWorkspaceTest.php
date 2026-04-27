@@ -16,13 +16,14 @@ function makeLeaveWorkspaceUser(string $email, string $name): User
 {
     return User::query()->create([
         'name' => $name,
+        'username' => strtolower(str_replace(' ', '', $name)),
         'email' => $email,
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
     ]);
 }
 
-function createLeaveWorkspace( User $user, string $name = 'Leave Workspace Test'): Workspace
+function createLeaveWorkspace(User $user, string $name = 'Leave Workspace Test'): Workspace
 {
     return app(CreateWorkspace::class)->execute(['name' => $name], $user);
 }

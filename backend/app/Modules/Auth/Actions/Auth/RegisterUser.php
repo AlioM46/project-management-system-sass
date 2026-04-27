@@ -16,6 +16,7 @@ class RegisterUser
         $result = DB::transaction(function () use ($data, &$user) {
             $user = User::create([
                 'name' => $data['name'],
+                'username' => $data['username'],
                 'email' => $data['email'],
                 'password' => $data['password'],
             ]);

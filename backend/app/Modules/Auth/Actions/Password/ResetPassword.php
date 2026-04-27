@@ -14,9 +14,9 @@ class ResetPassword
 {
     public function execute(array $data)
     {
-        $password = $data["password"];
-        $email = strtolower(trim($data["email"]));
-        $hashedToken = hash('sha256', $data["plain_token"]);
+        $password = $data['password'];
+        $email = strtolower(trim($data['email']));
+        $hashedToken = hash('sha256', $data['plain_token']);
 
         $reset = PasswordResetToken::where('email', $email)
             ->where('token', $hashedToken)
@@ -24,25 +24,25 @@ class ResetPassword
             ->latest()
             ->first();
 
-        if (!$reset) {
-            throw new InvalidPasswordResetTokenException();
+        if (! $reset) {
+            throw new InvalidPasswordResetTokenException;
         }
 
         if ($reset->expires_at->isPast()) {
-            throw new InvalidPasswordResetTokenException();
+            throw new InvalidPasswordResetTokenException;
         }
 
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
-            throw new InvalidPasswordResetTokenException();
+        if (! $user) {
+            throw new InvalidPasswordResetTokenException;
         }
 
         if (Hash::check($password, $user->password)) {
-            throw new PasswordReuseException();
+            throw new PasswordReuseException;
         }
 
-        DB::transaction(function () use ($user, $reset, $email, $password) {
+        DB::transaction(function () use ($user, $email, $password) {
             $user->password = Hash::make($password);
             $user->save();
 
