@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
 
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('comments')
+                ->cascadeOnDelete();
             // 🔗 Relations
             $table->foreignId('task_id')
                 ->constrained()
