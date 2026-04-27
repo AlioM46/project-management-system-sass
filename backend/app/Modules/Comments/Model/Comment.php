@@ -3,6 +3,8 @@
 namespace App\Modules\Comments\Model;
 
 use App\Models\User;
+use App\Modules\Comments\Model\Mention;
+use App\Modules\Tasks\Model\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -52,11 +54,6 @@ class Comment extends Model
         return $this->hasMany(CommentAttachment::class);
     }
 
-    public function mentions()
-    {
-        // return $this->hasMany(Mention::class);
-    }
-
     public function scopeForTask($query, int $taskId)
     {
         return $query->where('task_id', $taskId);
@@ -70,5 +67,11 @@ class Comment extends Model
     public function scopeOldestFirst($query)
     {
         return $query->orderBy('created_at');
+    }
+
+    public function mentions()
+    {
+        return $this->hasMany(Mention::class, 'source_id')
+            ->where('source_type', 'comment');
     }
 }
