@@ -6,11 +6,10 @@ use App\Modules\Comments\Http\Requests\CreateCommentRequest;
 use App\Modules\Comments\Services\CommentService;
 use App\Modules\Tasks\Model\Task;
 
+
 class CreateCommentAction
 {
-    public function __construct(private
-        CommentService $service
-        )
+    public function __construct(private CommentService $service)
     {
     }
 
@@ -20,6 +19,9 @@ class CreateCommentAction
         $task = Task::findOrFail($request->task_id);
         $validated = $request->validated();
 
+
+
+
         return $this->service->createWithAttachments(
             $task,
             $request->user(),
@@ -27,5 +29,6 @@ class CreateCommentAction
             $validated['attachments'] ?? [],
             $validated['parent_id'] ?? null
         );
+
     }
 }
