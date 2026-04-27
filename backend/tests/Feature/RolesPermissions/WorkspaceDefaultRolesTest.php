@@ -17,6 +17,7 @@ function makeRolesPermissionsUser(string $email): User
 {
     return User::query()->create([
         'name' => 'Ali Omar',
+        'username' => 'aliomar',
         'email' => $email,
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),

@@ -21,7 +21,7 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'status',
+        'name', 'username', 'email', 'password', 'status',
         'last_login_at', 'last_login_ip',
         'refresh_token', 'refresh_token_expiration',
     ];
@@ -58,6 +58,7 @@ class User extends Authenticatable implements JWTSubject
             'user' => [
                 'id' => $this->id,
                 'name' => $this->name,
+                'username' => $this->username,
                 'email' => $this->email,
                 'status' => $this->status,
             ],

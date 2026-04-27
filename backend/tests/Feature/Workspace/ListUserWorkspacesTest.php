@@ -12,6 +12,7 @@ uses(RefreshDatabase::class);
 it('lists the user workspaces with a simple summary payload', function () {
     $makeUser = fn (string $name, string $email) => User::query()->create([
         'name' => $name,
+        'username' => strtolower(str_replace(' ', '', $name)),
         'email' => $email,
         'password' => Hash::make('password123'),
         'email_verified_at' => now(),
