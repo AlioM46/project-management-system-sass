@@ -153,6 +153,13 @@ return new class extends Migration
      */
     private function hasRolesWorkspaceSlugUniqueIndex(): bool
     {
+        $databaseConnection = DB::connection();
+        $databaseDriver = $databaseConnection->getDriverName();
+
+        if ($databaseDriver === 'sqlite') {
+            return DB::select("SELECT name FROM sqlite_master WHERE type='index' AND name='roles_workspace_id_slug_unique'") !== [];
+        }
+
         $databaseName = DB::getDatabaseName();
 
         return DB::table('information_schema.statistics')
