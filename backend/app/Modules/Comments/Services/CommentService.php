@@ -8,13 +8,16 @@ use App\Modules\Comments\Model\CommentAttachment;
 use App\Modules\Tasks\Model\Task;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use App\Modules\Comments\Services\MentionService;
+use App\Modules\Workspace\Services\WorkspaceContextService;
 
 class CommentService
 {
-    public function __construct(private
-        CommentAttachmentService $attachmentService
-        )
-    {
+    public function __construct(
+        private CommentAttachmentService $attachmentService,
+        private MentionService $mentionService,
+        private WorkspaceContextService $workspaceContext
+    ) {
     }
 
     public function create(Task $task, User $user, string $content, ?int $parentId = null): Comment
@@ -43,6 +46,25 @@ class CommentService
     {
         $comment = $this->create($task, $user, $content, $parentId);
 
+
+                $usernames = $this->mentionService
+            ->extractUsernames($content);
+
+            $workspaceId = $this->workspaceContext->currentWorkspaceId();
+
+        $users = $this->mentionService
+            ->resolveUsers($usernames, $workspaceId);
+
+
+        $this->mentionService->store(
+            users: $users,
+            sourceType: 'comment',
+            sourceId: $comment->id,
+            workspaceId: $workspaceId,
+            mentionedBy: $user->id
+        );
+
+
         if (!empty($attachments)) {
             $this->attachmentService->upload($comment, $attachments);
         }
@@ -61,6 +83,7 @@ class CommentService
         $this->attachmentService->deleteAll($comment);
 
         $comment->delete();
+        $this->mentionService->deleteBySource('comment', $comment->id);
     }
 
     public function deleteAttachment(CommentAttachment $attachment, User $actor, bool $isAdminOrOwner = false): void
@@ -106,13 +129,22 @@ class CommentService
         }
 
         // Handle attachment sync
-        if (isset($attachments)) {
+        if (!empty($attachments)) {
             $this->attachmentService->sync($comment, $attachments);
         }
 
+
+        $workspaceId = $this->workspaceContext->currentWorkspaceId();
         $comment->content = $content;
         $comment->save();
 
+        $this->mentionService->syncForSource(
+            content: $content,
+            sourceType: 'comment',
+            sourceId: $comment->id,
+            workspaceId: $workspaceId,
+            mentionedBy: $user->id
+        );
         return $comment->fresh(['author', 'attachments']);
     }
 }
