@@ -3,6 +3,7 @@
 namespace App\Modules\Workspace\Model;
 
 use App\Models\User;
+use App\Modules\Notifications\Model\Notification;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +45,10 @@ class Workspace extends Model
         return $this->hasMany(Role::class, 'workspace_id');
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
     // Scopes and helpers
     public function scopeAccessibleTo(Builder $query, int $userId): Builder
     {
