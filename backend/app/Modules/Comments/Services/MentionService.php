@@ -101,6 +101,8 @@ public function syncForSource(
             'updated_at' => now(),
         ])->toArray();
 
+        
+
         ModelMention::insertOrIgnore($rows);
     }
 }
