@@ -2,6 +2,7 @@
 
 use App\Modules\Auth\AuthServiceProvider;
 use App\Modules\Comments\CommentsServiceProvider;
+use App\Modules\Notifications\NotificationsServiceProvider;
 use App\Modules\Projects\ProjectsServiceProvider;
 use App\Modules\RolesPermissions\RolesPermissionsServiceProvider;
 use App\Modules\Tasks\TasksServiceProvider;
@@ -16,4 +17,5 @@ return [
     TasksServiceProvider::class,
     WorkspaceServiceProvider::class,
     CommentsServiceProvider::class,
+    NotificationsServiceProvider::class,
 ];
