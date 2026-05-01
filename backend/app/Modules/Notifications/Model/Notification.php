@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Modules\Notifications\Model;
 
 use App\Models\User;
@@ -24,9 +25,9 @@ class Notification extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function Workspace()
     {
         return $this->belongsTo(Workspace::class);
     }
-
 }

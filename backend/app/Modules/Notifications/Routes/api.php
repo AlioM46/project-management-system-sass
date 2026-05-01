@@ -1,9 +1,9 @@
 <?php
 
-use App\Modules\Notifications\Http\Controllers\NotificationController;
+use App\Modules\Notifications\Http\Controllers\NotificationsController;
 
 Route::middleware(['auth:api', 'workspace.context'])->group(function () {
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('/notifications/read', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications', [NotificationsController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationsController::class, 'markAsRead']);
+    Route::post('/notifications/read', [NotificationsController::class, 'markAllAsRead']);
 });

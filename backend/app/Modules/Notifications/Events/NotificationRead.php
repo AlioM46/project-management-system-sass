@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldRescue;
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationCreated implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldRescue
+class NotificationRead implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldRescue
 {
     use SerializesModels;
 
@@ -28,7 +28,7 @@ class NotificationCreated implements ShouldBroadcast, ShouldDispatchAfterCommit,
 
     public function broadcastAs(): string
     {
-        return 'notification.created';
+        return 'notification.read';
     }
 
     public function broadcastWith(): array
