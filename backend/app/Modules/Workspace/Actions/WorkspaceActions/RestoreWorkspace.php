@@ -3,11 +3,19 @@
 namespace App\Modules\Workspace\Actions\WorkspaceActions;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
+use Illuminate\Support\Facades\DB;
 
 class RestoreWorkspace
 {
+    public function __construct(
+        private readonly AuditLogger $auditLogger
+    ) {}
+
     public function execute(int $workspaceId, User $user): array
     {
         // find(id): by default, it does not return deleted_at != null records,
@@ -26,7 +34,21 @@ class RestoreWorkspace
             throw WorkspaceContextException::workspaceNotArchived($workspace->id);
         }
 
-        $workspace->restore();
+        $deletedAt = $workspace->deleted_at?->toISOString();
+
+        DB::transaction(function () use ($workspace, $user, $deletedAt): void {
+            $workspace->restore();
+
+            $this->auditLogger->record(
+                workspace: $workspace,
+                action: AuditAction::WorkspaceRestored,
+                targetType: AuditTargetType::Workspace,
+                targetId: $workspace->id,
+                actor: $user,
+                oldValues: ['deleted_at' => $deletedAt],
+                newValues: ['deleted_at' => null]
+            );
+        });
 
         $workspace = $workspace->fresh();
         $workspace->load([

@@ -2,12 +2,16 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
+use Illuminate\Support\Facades\DB;
 
 class RemoveWorkspaceMember
 {
@@ -25,7 +29,8 @@ class RemoveWorkspaceMember
 
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
-        private readonly WorkspaceMembersService $workspaceMembersService
+        private readonly WorkspaceMembersService $workspaceMembersService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     /**
@@ -45,7 +50,22 @@ class RemoveWorkspaceMember
         $this->validateMemberNotOwner($member);
         $this->validateRemovalPermission($member);
 
-        $this->workspaceMembersService->removeMembership($member);
+        DB::transaction(function () use ($member): void {
+            $this->workspaceMembersService->removeMembership($member);
+
+            $this->auditLogger->record(
+                workspace: $this->workspace,
+                action: AuditAction::MemberRemoved,
+                targetType: AuditTargetType::WorkspaceMember,
+                targetId: $member->id,
+                actor: $this->currentMembership->user,
+                oldValues: [
+                    'user_id' => $member->user_id,
+                    'role_id' => $member->role_id,
+                    'joined_at' => $member->joined_at?->toISOString(),
+                ]
+            );
+        });
 
         return ['member' => $this->formatRemovedMemberData($member)];
     }

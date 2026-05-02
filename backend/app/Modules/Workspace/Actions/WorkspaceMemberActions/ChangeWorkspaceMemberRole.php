@@ -2,12 +2,16 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
+use Illuminate\Support\Facades\DB;
 
 class ChangeWorkspaceMemberRole
 {
@@ -25,7 +29,8 @@ class ChangeWorkspaceMemberRole
 
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
-        private readonly WorkspaceMembersService $workspaceMembersService
+        private readonly WorkspaceMembersService $workspaceMembersService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function execute(int $memberId, array $data): array
@@ -54,10 +59,23 @@ class ChangeWorkspaceMemberRole
         $this->validateRoleChangePermission($targetMembership, $newRole);
 
         // #8: save only when the role actually changes.
-        if ((int) $targetMembership->role_id !== (int) $newRole->id) {
-            $targetMembership->role()->associate($newRole);
-            // $targetMembership->role_id = $newRole->id;
-            $targetMembership->save();
+        $oldRoleId = (int) $targetMembership->role_id;
+
+        if ($oldRoleId !== (int) $newRole->id) {
+            DB::transaction(function () use ($targetMembership, $newRole, $oldRoleId): void {
+                $targetMembership->role()->associate($newRole);
+                $targetMembership->save();
+
+                $this->auditLogger->record(
+                    workspace: $this->workspace,
+                    action: AuditAction::MemberRoleChanged,
+                    targetType: AuditTargetType::WorkspaceMember,
+                    targetId: $targetMembership->id,
+                    actor: $this->currentMembership->user,
+                    oldValues: ['role_id' => $oldRoleId],
+                    newValues: ['role_id' => $newRole->id]
+                );
+            });
         }
 
         // #9: return the updated membership with user + role relations.
