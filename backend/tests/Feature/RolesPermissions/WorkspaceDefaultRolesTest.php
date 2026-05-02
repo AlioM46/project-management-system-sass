@@ -68,6 +68,7 @@ function expectedGranularPermissionKeys(): array
         'project.archive',
         'project.create',
         'project.delete',
+        'project.restore',
         'project.update',
         'project.view',
         'report.create',
