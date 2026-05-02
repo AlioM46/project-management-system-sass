@@ -38,6 +38,7 @@ class Task extends Model
         'title',
         'description',
         'status',
+        'completed_at',
         'created_by_user_id',
     ];
 
@@ -45,6 +46,7 @@ class Task extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function workspace(): BelongsTo
@@ -80,7 +82,8 @@ class Task extends Model
             ->orderByDesc('id');
     }
 
-    public function comments(): HasMany {
+    public function comments(): HasMany
+    {
         return $this->hasMany(Comment::class, 'task_id');
     }
 }
