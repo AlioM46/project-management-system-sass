@@ -19,7 +19,8 @@ class AuditLogService
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly AuditLogger $auditLogger
-    ) {}
+    ) {
+    }
 
     public function currentWorkspace(): Workspace
     {
@@ -57,7 +58,7 @@ class AuditLogService
             ]
         );
 
-        $filename = 'audit-logs-workspace-'.$workspace->id.'-'.now()->format('Ymd-His').'.csv';
+        $filename = 'audit-logs-workspace-' . $workspace->id . '-' . now()->format('Ymd-His') . '.csv';
 
         return response()->streamDownload(function () use ($logs): void {
             $handle = fopen('php://output', 'w');
@@ -66,7 +67,7 @@ class AuditLogService
                 'id',
                 'workspace_id',
                 'actor_user_id',
-                'action',
+                'event_type',
                 'target_type',
                 'target_id',
                 'old_values',
@@ -82,7 +83,7 @@ class AuditLogService
                     $log->id,
                     $log->workspace_id,
                     $log->actor_user_id,
-                    $log->action,
+                    $log->event_type,
                     $log->target_type,
                     $log->target_id,
                     json_encode($log->old_values),
@@ -108,8 +109,8 @@ class AuditLogService
             ->orderByDesc('occurred_at')
             ->orderByDesc('id');
 
-        if (! empty($filters['action'])) {
-            $query->where('action', (string) $filters['action']);
+        if (! empty($filters['event_type'])) {
+            $query->where('event_type', (string) $filters['event_type']);
         }
 
         if (! empty($filters['target_type'])) {
@@ -139,7 +140,7 @@ class AuditLogService
     {
         return array_filter(
             $filters,
-            fn (mixed $value): bool => $value !== null && $value !== ''
+            fn(mixed $value): bool => $value !== null && $value !== ''
         );
     }
 }

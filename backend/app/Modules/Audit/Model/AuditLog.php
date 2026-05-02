@@ -7,6 +7,7 @@ use App\Modules\Workspace\Model\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AuditLog extends Model
 {
@@ -17,7 +18,7 @@ class AuditLog extends Model
     protected $fillable = [
         'workspace_id',
         'actor_user_id',
-        'action',
+        'event_type',
         'target_type',
         'target_id',
         'old_values',
@@ -45,8 +46,24 @@ class AuditLog extends Model
         return $this->belongsTo(User::class, 'actor_user_id');
     }
 
+    public function target(): MorphTo
+    {
+        return $this->morphTo(__FUNCTION__, 'target_type', 'target_id');
+    }
+
     public function scopeForWorkspace(Builder $query, int $workspaceId): Builder
     {
         return $query->where('workspace_id', $workspaceId);
+    }
+
+    public function scopeOccurredBetween(Builder $query, ?string $from, ?string $to): Builder
+    {
+        return $query
+            ->when($from !== null, function (Builder $query) use ($from) {
+                $query->where('occurred_at', '>=', $from);
+            })
+            ->when($to !== null, function (Builder $query) use ($to) {
+                $query->where('occurred_at', '<=', $to);
+            });
     }
 }

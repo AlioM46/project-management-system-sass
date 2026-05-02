@@ -63,7 +63,7 @@ it('records a project creation audit log only after a successful create request'
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::ProjectCreated->value)
+        ->where('event_type', AuditAction::ProjectCreated->value)
         ->where('target_type', AuditTargetType::Project->value)
         ->where('target_id', $projectId)
         ->exists())->toBeTrue();
@@ -103,12 +103,12 @@ it('lists audit logs only for the active workspace and supports filters', functi
 
     $response = $this->withToken(auditToken($user))
         ->withHeader('X-Workspace-Id', (string) $workspaceA->id)
-        ->getJson('/api/audit-logs?action=project_created&target_type=project&per_page=1');
+        ->getJson('/api/audit-logs?event_type=project_created&target_type=project&per_page=1');
 
     $response->assertOk()
         ->assertJsonPath('data.count', 1)
         ->assertJsonPath('data.audit_logs.0.workspace_id', $workspaceA->id)
-        ->assertJsonPath('data.audit_logs.0.action', AuditAction::ProjectCreated->value)
+        ->assertJsonPath('data.audit_logs.0.event_type', AuditAction::ProjectCreated->value)
         ->assertJsonPath('data.audit_logs.0.target_id', 101)
         ->assertJsonPath('meta.pagination.total', 1);
 });
@@ -147,12 +147,12 @@ it('records task lifecycle audit events through the task api', function () {
 
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
-        ->where('action', AuditAction::TaskCreated->value)
+        ->where('event_type', AuditAction::TaskCreated->value)
         ->where('target_id', $taskId)
         ->exists())->toBeTrue()
         ->and(AuditLog::query()
             ->where('workspace_id', $workspace->id)
-            ->where('action', AuditAction::TaskStatusChanged->value)
+            ->where('event_type', AuditAction::TaskStatusChanged->value)
             ->where('target_id', $taskId)
             ->exists())->toBeTrue();
 });
@@ -180,7 +180,7 @@ it('exports filtered audit logs to csv and records the export event', function (
 
     $response = $this->withToken(auditToken($user))
         ->withHeader('X-Workspace-Id', (string) $workspace->id)
-        ->get('/api/audit-logs/export?action=project_created');
+        ->get('/api/audit-logs/export?event_type=project_created');
 
     $response->assertOk()
         ->assertHeader('content-type', 'text/csv; charset=UTF-8');
@@ -192,10 +192,10 @@ it('exports filtered audit logs to csv and records the export event', function (
     $exportLog = AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::AuditExported->value)
+        ->where('event_type', AuditAction::AuditExported->value)
         ->first();
 
     expect($exportLog)->not->toBeNull()
         ->and($exportLog->metadata['exported_row_count'])->toBe(1)
-        ->and($exportLog->metadata['filters']['action'])->toBe(AuditAction::ProjectCreated->value);
+        ->and($exportLog->metadata['filters']['event_type'])->toBe(AuditAction::ProjectCreated->value);
 });
