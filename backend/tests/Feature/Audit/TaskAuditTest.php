@@ -47,7 +47,7 @@ it('records task status change audit log through the API', function () {
 
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
-        ->where('action', AuditAction::TaskStatusChanged->value)
+        ->where('event_type', AuditAction::TaskStatusChanged->value)
         ->where('target_id', $taskId)
         ->exists())->toBeTrue();
 });
