@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Audit\AuditServiceProvider;
 use App\Modules\Auth\AuthServiceProvider;
 use App\Modules\Comments\CommentsServiceProvider;
 use App\Modules\Notifications\NotificationsServiceProvider;
@@ -12,6 +13,7 @@ use App\Providers\AppServiceProvider;
 return [
     AppServiceProvider::class,
     AuthServiceProvider::class,
+    AuditServiceProvider::class,
     ProjectsServiceProvider::class,
     RolesPermissionsServiceProvider::class,
     TasksServiceProvider::class,
