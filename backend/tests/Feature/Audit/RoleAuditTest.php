@@ -42,7 +42,7 @@ it('records role created audit log through the API', function () {
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::RoleCreated->value)
+        ->where('event_type', AuditAction::RoleCreated->value)
         ->where('target_id', $roleId)
         ->exists())->toBeTrue();
 });

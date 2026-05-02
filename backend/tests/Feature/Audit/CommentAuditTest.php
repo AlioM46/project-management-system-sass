@@ -57,7 +57,7 @@ it('records comment created audit log through the API', function () {
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::CommentCreated->value)
+        ->where('event_type', AuditAction::CommentCreated->value)
         ->where('target_id', $commentId)
         ->exists())->toBeTrue();
 });

@@ -30,7 +30,7 @@ it('records workspace created audit log', function () {
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::WorkspaceCreated->value)
+        ->where('event_type', AuditAction::WorkspaceCreated->value)
         ->where('target_type', AuditTargetType::Workspace->value)
         ->where('target_id', $workspace->id)
         ->exists())->toBeTrue();
@@ -49,7 +49,7 @@ it('records workspace archived audit log through the API', function () {
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::WorkspaceDeleted->value)
+        ->where('event_type', AuditAction::WorkspaceDeleted->value)
         ->exists())->toBeTrue();
 });
 

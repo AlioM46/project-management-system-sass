@@ -39,7 +39,7 @@ it('records project created audit log through the API', function () {
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('action', AuditAction::ProjectCreated->value)
+        ->where('event_type', AuditAction::ProjectCreated->value)
         ->where('target_id', $projectId)
         ->exists())->toBeTrue();
 });
