@@ -17,6 +17,8 @@ class ListAuditLogsRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $aliases = [
+            'action' => 'event_type',
+            'eventType' => 'event_type',
             'targetType' => 'target_type',
             'targetId' => 'target_id',
             'actorUserId' => 'actor_user_id',
@@ -26,7 +28,7 @@ class ListAuditLogsRequest extends FormRequest
         $payload = [];
 
         foreach ($aliases as $from => $to) {
-            if (! $this->has($to) && $this->has($from)) {
+            if (!$this->has($to) && $this->has($from)) {
                 $payload[$to] = $this->input($from);
             }
         }
@@ -39,14 +41,14 @@ class ListAuditLogsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['sometimes', Rule::in(AuditAction::values())],
+            'event_type' => ['sometimes', Rule::in(AuditAction::values())],
             'target_type' => ['sometimes', Rule::in(AuditTargetType::values())],
             'target_id' => ['sometimes', 'integer', 'min:1'],
             'actor_user_id' => ['sometimes', 'integer', 'exists:users,id'],
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
             'page' => ['sometimes', 'integer', 'min:1'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:1000'],
         ];
     }
 }
