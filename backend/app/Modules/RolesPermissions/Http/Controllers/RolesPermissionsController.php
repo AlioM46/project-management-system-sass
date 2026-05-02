@@ -51,7 +51,7 @@ class RolesPermissionsController extends Controller
     {
         return ApiResponse::success(
             message: 'Workspace role created successfully.',
-            data: ['role' => $action->execute($request->validated())['role']],
+            data: ['role' => $action->execute($request->validated(), $request->user())['role']],
             status: 201
         );
     }
@@ -68,7 +68,7 @@ class RolesPermissionsController extends Controller
     {
         return ApiResponse::success(
             message: 'Workspace role updated successfully.',
-            data: ['role' => $action->execute($roleId, $request->validated())['role']]
+            data: ['role' => $action->execute($roleId, $request->validated(), $request->user())['role']]
         );
     }
 
@@ -76,7 +76,7 @@ class RolesPermissionsController extends Controller
     {
         return ApiResponse::success(
             message: 'Workspace role deleted successfully.',
-            data: ['role' => $action->execute($roleId)['role']]
+            data: ['role' => $action->execute($roleId, request()->user())['role']]
         );
     }
 
