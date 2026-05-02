@@ -17,8 +17,8 @@ class EmailVerficationController extends Controller
 
         return ApiResponse::success(
             message: $result['sent']
-                ? 'Verification email sent successfully.'
-                : 'Email is already verified.',
+            ? 'Verification email sent successfully.'
+            : 'Email is already verified.',
             data: ['user' => $result['user']],
             status: 200
         );
@@ -30,8 +30,8 @@ class EmailVerficationController extends Controller
 
         return ApiResponse::success(
             message: $result['verified']
-                ? 'Email verified successfully.'
-                : 'Email is already verified.',
+            ? 'Email verified successfully.'
+            : 'Email is already verified.',
             data: ['user' => $result['user']],
             status: 200
         );
