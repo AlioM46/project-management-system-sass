@@ -10,7 +10,8 @@ class ExportAuditLogs
 {
     public function __construct(
         private readonly AuditLogService $auditLogService
-    ) {}
+    ) {
+    }
 
     public function execute(array $filters, User $actor): StreamedResponse
     {

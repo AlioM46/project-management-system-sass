@@ -9,7 +9,8 @@ class ListAuditLogs
 {
     public function __construct(
         private readonly AuditLogService $auditLogService
-    ) {}
+    ) {
+    }
 
     public function execute(array $filters = []): LengthAwarePaginator
     {

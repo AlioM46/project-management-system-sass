@@ -33,8 +33,10 @@ enum AuditAction: string
 
     public static function values(): array
     {
+
+        // return array of all enum values converted to strings
         return array_map(
-            fn (self $action): string => $action->value,
+            fn(self $action): string => $action->value,
             self::cases()
         );
     }

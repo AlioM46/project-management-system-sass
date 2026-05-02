@@ -35,8 +35,50 @@ class AuditLogService
 
     public function listForWorkspace(Workspace $workspace, array $filters = []): LengthAwarePaginator
     {
+
+        /*
+        If the user sends:
+    ?page=3
+    then:
+    $page = 3;
+    If the user sends nothing:
+    /audit-logs
+    then default is:
+    $page = 1;
+    If the user sends bad value:
+    ?page=-5
+    then:
+    max(1, -5)
+    becomes:
+    1
+    So the page can never be less than 1.
+ */
         $page = max(1, (int) ($filters['page'] ?? 1));
-        $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 15)));
+
+        /*
+If the user sends:
+?per_page=50
+then:
+$perPage = 50;
+If the user sends nothing:
+/audit-logs
+then default is:
+$perPage = 30;
+If the user sends bad value:
+?per_page=200
+then:
+min(100, 200)
+becomes:
+100
+If the user sends bad value:
+?per_page=-10
+then:
+max(1, -10)
+becomes:
+1
+So the per_page can never be less than 1 or more than 100.
+ */
+        $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 30)));
 
         return $this->queryForWorkspace($workspace, $filters)
             ->paginate($perPage, ['*'], 'page', $page);
@@ -44,7 +86,23 @@ class AuditLogService
 
     public function exportForWorkspace(Workspace $workspace, array $filters, User $actor): StreamedResponse
     {
-        $logs = $this->queryForWorkspace($workspace, $filters)->get();
+        $logs = $this->queryForWorkspace($workspace, $filters);
+
+
+        $hasPagination = isset($filters['page']) || isset($filters['per_page']);
+
+        if ($hasPagination) {
+            $page = max(1, (int) ($filters['page'] ?? 1));
+            $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 30)));
+
+            $paginator = $logs->paginate($perPage, ['*'], 'page', $page);
+
+            $logs = collect($paginator->items());
+        } else {
+            $logs = $logs->get();
+        }
+
+
 
         $this->auditLogger->record(
             workspace: $workspace,
@@ -109,27 +167,27 @@ class AuditLogService
             ->orderByDesc('occurred_at')
             ->orderByDesc('id');
 
-        if (! empty($filters['event_type'])) {
+        if (!empty($filters['event_type'])) {
             $query->where('event_type', (string) $filters['event_type']);
         }
 
-        if (! empty($filters['target_type'])) {
+        if (!empty($filters['target_type'])) {
             $query->where('target_type', (string) $filters['target_type']);
         }
 
-        if (! empty($filters['target_id'])) {
+        if (!empty($filters['target_id'])) {
             $query->where('target_id', (int) $filters['target_id']);
         }
 
-        if (! empty($filters['actor_user_id'])) {
+        if (!empty($filters['actor_user_id'])) {
             $query->where('actor_user_id', (int) $filters['actor_user_id']);
         }
 
-        if (! empty($filters['from'])) {
+        if (!empty($filters['from'])) {
             $query->where('occurred_at', '>=', $filters['from']);
         }
 
-        if (! empty($filters['to'])) {
+        if (!empty($filters['to'])) {
             $query->where('occurred_at', '<=', $filters['to']);
         }
 
