@@ -36,6 +36,33 @@ class ListAuditLogsRequest extends FormRequest
         if ($payload !== []) {
             $this->merge($payload);
         }
+        /*
+
+
+    $payload = [
+        'event_type' => 'task.deleted',
+        'per_page' => 50,
+    ];
+
+    $this->merge($payload);
+
+    Before: ( The request (it self) information )
+
+    [
+        'eventType' => 'task.deleted',
+        'perPage' => 50,
+    ]
+
+After: ( the request (it self) information )
+
+[
+    'eventType' => 'task.deleted',
+    'perPage' => 50,
+
+    'event_type' => 'task.deleted',
+    'per_page' => 50,
+]
+         */
     }
 
     public function rules(): array
@@ -43,12 +70,12 @@ class ListAuditLogsRequest extends FormRequest
         return [
             'event_type' => ['sometimes', Rule::in(AuditAction::values())],
             'target_type' => ['sometimes', Rule::in(AuditTargetType::values())],
-            'target_id' => ['sometimes', 'integer', 'min:1'],
+            'target_id' => ['sometimes', 'integer', 'min:1', 'required_with:target_type'],
             'actor_user_id' => ['sometimes', 'integer', 'exists:users,id'],
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
             'page' => ['sometimes', 'integer', 'min:1'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:1000'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ];
     }
 }

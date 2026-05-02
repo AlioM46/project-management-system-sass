@@ -33,7 +33,7 @@ class AuditLogger
         return AuditLog::query()->create([
             'workspace_id' => $workspace->id,
             'actor_user_id' => $actor?->id,
-            'action' => $action->value,
+            'event_type' => $action->value,
             'target_type' => $targetType->value,
             'target_id' => $targetId,
             'old_values' => $oldValues,
