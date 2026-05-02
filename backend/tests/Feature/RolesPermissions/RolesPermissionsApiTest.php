@@ -38,7 +38,7 @@ it('returns the granular permission catalog through the public endpoint', functi
     $response->assertOk()
         ->assertJsonPath('data.permissions.0.key', 'audit.export')
         ->assertJsonPath('data.permissions.1.key', 'audit.view')
-        ->assertJsonPath('data.permissions.32.key', 'workspace.view');
+        ->assertJsonPath('data.permissions.33.key', 'workspace.view');
 });
 
 it('returns granular workspace roles for the active workspace', function () {
@@ -60,5 +60,5 @@ it('returns granular workspace roles for the active workspace', function () {
         ->assertJsonPath('data.roles.1.permissions.0.key', 'comment.create')
         ->assertJsonPath('data.roles.2.name', 'Owner')
         ->assertJsonPath('data.roles.2.slug', 'owner')
-        ->assertJsonPath('data.roles.2.permissions.32.key', 'workspace.view');
+        ->assertJsonPath('data.roles.2.permissions.33.key', 'workspace.view');
 });
