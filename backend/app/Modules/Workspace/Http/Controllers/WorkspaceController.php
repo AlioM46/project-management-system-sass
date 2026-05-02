@@ -67,7 +67,7 @@ class WorkspaceController extends Controller
     {
         return ApiResponse::success(
             message: 'Workspace update endpoint scaffolded. Logic not implemented yet.',
-            data: $action->execute($request->validated())
+            data: $action->execute($request->validated(), $request->user())
         );
     }
 
