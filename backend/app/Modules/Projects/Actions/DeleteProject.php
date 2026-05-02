@@ -2,6 +2,7 @@
 
 namespace App\Modules\Projects\Actions;
 
+use App\Models\User;
 use App\Modules\Projects\Services\ProjectService;
 
 class DeleteProject
@@ -10,11 +11,11 @@ class DeleteProject
         private readonly ProjectService $projectService
     ) {}
 
-    public function execute(int $projectId): void
+    public function execute(int $projectId, User $actor): void
     {
         $workspace = $this->projectService->currentWorkspace();
         $project = $this->projectService->resolveProject($workspace, $projectId, true);
 
-        $this->projectService->deleteProject($project);
+        $this->projectService->deleteProject($project, $actor);
     }
 }

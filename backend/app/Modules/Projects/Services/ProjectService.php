@@ -3,6 +3,9 @@
 namespace App\Modules\Projects\Services;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Projects\Exceptions\ProjectsException;
 use App\Modules\Projects\Model\Project;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
@@ -18,7 +21,8 @@ use Illuminate\Support\Facades\DB;
 class ProjectService
 {
     public function __construct(
-        private readonly WorkspaceContextService $workspaceContextService
+        private readonly WorkspaceContextService $workspaceContextService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function currentWorkspace(): Workspace
@@ -97,6 +101,18 @@ class ProjectService
                             'active_name_key' => $activeNameKey,
                         ]);
 
+                    $this->auditLogger->record(
+                        workspace: $workspace,
+                        action: AuditAction::ProjectCreated,
+                        targetType: AuditTargetType::Project,
+                        targetId: $project->id,
+                        actor: $actor,
+                        newValues: [
+                            'name' => $project->name,
+                            'description' => $project->description,
+                        ]
+                    );
+
                     return $project->fresh();
                 });
             },
@@ -105,9 +121,14 @@ class ProjectService
         );
     }
 
-    public function updateProject(Project $project, array $data): Project
+    public function updateProject(Project $project, array $data, User $actor): Project
     {
         $this->guardProjectActive($project);
+
+        $oldValues = [
+            'name' => $project->name,
+            'description' => $project->description,
+        ];
 
         $name = array_key_exists('name', $data)
             ? $this->normalizeName((string) $data['name'])
@@ -122,12 +143,32 @@ class ProjectService
         $this->guardActiveNameUnique($project->workspace_id, $name, $activeNameKey, $project->id);
 
         return $this->executeWithNameConflictHandling(
-            function () use ($project, $name, $description, $activeNameKey): Project {
-                return DB::transaction(function () use ($project, $name, $description, $activeNameKey): Project {
+            function () use ($project, $name, $description, $activeNameKey, $oldValues, $actor): Project {
+                return DB::transaction(function () use ($project, $name, $description, $activeNameKey, $oldValues, $actor): Project {
                     $project->name = $name;
                     $project->description = $description;
                     $project->active_name_key = $activeNameKey;
+
+                    $newValues = [
+                        'name' => $project->name,
+                        'description' => $project->description,
+                    ];
+
+                    if ($oldValues === $newValues) {
+                        return $project->fresh();
+                    }
+
                     $project->save();
+
+                    $this->auditLogger->record(
+                        workspace: $project->workspace,
+                        action: AuditAction::ProjectUpdated,
+                        targetType: AuditTargetType::Project,
+                        targetId: $project->id,
+                        actor: $actor,
+                        oldValues: $oldValues,
+                        newValues: $newValues
+                    );
 
                     return $project->fresh();
                 });
@@ -137,20 +178,30 @@ class ProjectService
         );
     }
 
-    public function deleteProject(Project $project): void
+    public function deleteProject(Project $project, User $actor): void
     {
         if ($project->trashed()) {
             throw ProjectsException::projectAlreadyDeleted($project->id, $project->workspace_id);
         }
 
-        DB::transaction(function () use ($project): void {
+        DB::transaction(function () use ($project, $actor): void {
             $project->active_name_key = null;
             $project->save();
             $project->delete();
+
+            $this->auditLogger->record(
+                workspace: $project->workspace,
+                action: AuditAction::ProjectDeleted,
+                targetType: AuditTargetType::Project,
+                targetId: $project->id,
+                actor: $actor,
+                oldValues: ['deleted_at' => null],
+                newValues: ['deleted_at' => $project->deleted_at?->toISOString()]
+            );
         });
     }
 
-    public function restoreProject(Project $project): Project
+    public function restoreProject(Project $project, User $actor): Project
     {
         $this->guardProjectDeleted($project);
 
@@ -159,10 +210,21 @@ class ProjectService
         $this->guardActiveNameUnique($project->workspace_id, $project->name, $activeNameKey, $project->id);
 
         return $this->executeWithNameConflictHandling(
-            function () use ($project, $activeNameKey): Project {
-                return DB::transaction(function () use ($project, $activeNameKey): Project {
+            function () use ($project, $activeNameKey, $actor): Project {
+                return DB::transaction(function () use ($project, $activeNameKey, $actor): Project {
+                    $deletedAt = $project->deleted_at?->toISOString();
                     $project->active_name_key = $activeNameKey;
                     $project->restore();
+
+                    $this->auditLogger->record(
+                        workspace: $project->workspace,
+                        action: AuditAction::ProjectRestored,
+                        targetType: AuditTargetType::Project,
+                        targetId: $project->id,
+                        actor: $actor,
+                        oldValues: ['deleted_at' => $deletedAt],
+                        newValues: ['deleted_at' => null]
+                    );
 
                     return $project->fresh();
                 });
