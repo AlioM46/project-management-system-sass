@@ -14,12 +14,21 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
+/*
+This file configures how Laravel starts, 
+which route files are loaded, which middleware names exist, 
+which middleware runs for API requests, and how exceptions-
+-become clean JSON API responses.
+*/
+
+
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
+        channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -48,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 );
             }
 
-            if (! ($request->expectsJson() || $request->is('api/*'))) {
+            if (!($request->expectsJson() || $request->is('api/*'))) {
                 return null;
             }
 
@@ -75,7 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($message === '') {
                 $message = $status >= 500 ? 'Server error' : 'Request failed';
-            } elseif ($status >= 500 && ! config('app.debug')) {
+            } elseif ($status >= 500 && !config('app.debug')) {
                 $message = 'Server error';
             }
 
