@@ -28,6 +28,8 @@ Route::prefix('auth')->group(function () {
         Route::post('/email/send-verification', [EmailVerficationController::class, 'send'])
             ->middleware('throttle:6,1')
             ->name('verification.send');
+        Route::post('/email/verification-notification', [EmailVerficationController::class, 'send'])
+            ->middleware('throttle:6,1');
 
         Route::prefix('password')->group(function () {
             Route::post('/change-password', [PasswordResetController::class, 'ChangePassword'])

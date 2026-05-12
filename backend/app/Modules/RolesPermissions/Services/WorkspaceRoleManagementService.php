@@ -3,6 +3,9 @@
 namespace App\Modules\RolesPermissions\Services;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\RolesPermissions\Exceptions\RolesPermissionsException;
 use App\Modules\RolesPermissions\Model\Permission;
 use App\Modules\RolesPermissions\Model\Role;
@@ -12,12 +15,14 @@ use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class WorkspaceRoleManagementService
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
-        private readonly PermissionCatalogService $permissionCatalogService
+        private readonly PermissionCatalogService $permissionCatalogService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function currentWorkspace(): Workspace
@@ -44,31 +49,54 @@ class WorkspaceRoleManagementService
         return $this->loadRoleDetails($role);
     }
 
-    public function createCustomRole(Workspace $workspace, array $data): Role
+    public function createCustomRole(Workspace $workspace, array $data, User $actor): Role
     {
         $name = trim((string) $data['name']);
         $slug = strtolower(trim((string) $data['slug']));
 
         $this->guardRoleIdentityAllowed($name, $slug);
 
-        $role = Role::query()
-            ->withoutGlobalScope(WorkspaceTenantScope::class)
-            ->create([
-                'workspace_id' => $workspace->id,
-                'name' => $name,
-                'slug' => $slug,
-                'description' => isset($data['description']) ? trim((string) $data['description']) : null,
-                'is_system' => false,
-                'is_editable' => true,
-                'is_deletable' => true,
-            ]);
+        $role = DB::transaction(function () use ($workspace, $name, $slug, $data, $actor): Role {
+            $role = Role::query()
+                ->withoutGlobalScope(WorkspaceTenantScope::class)
+                ->create([
+                    'workspace_id' => $workspace->id,
+                    'name' => $name,
+                    'slug' => $slug,
+                    'description' => isset($data['description']) ? trim((string) $data['description']) : null,
+                    'is_system' => false,
+                    'is_editable' => true,
+                    'is_deletable' => true,
+                ]);
+
+            $this->auditLogger->record(
+                workspace: $workspace,
+                action: AuditAction::RoleCreated,
+                targetType: AuditTargetType::Role,
+                targetId: $role->id,
+                actor: $actor,
+                newValues: [
+                    'name' => $role->name,
+                    'slug' => $role->slug,
+                    'description' => $role->description,
+                ]
+            );
+
+            return $role;
+        });
 
         return $this->loadRoleDetails($role);
     }
 
-    public function updateCustomRole(Role $role, array $data): Role
+    public function updateCustomRole(Role $role, array $data, User $actor): Role
     {
         $this->guardRoleEditable($role);
+
+        $oldValues = [
+            'name' => $role->name,
+            'slug' => $role->slug,
+            'description' => $role->description,
+        ];
 
         if (array_key_exists('name', $data)) {
             $name = trim((string) $data['name']);
@@ -87,12 +115,32 @@ class WorkspaceRoleManagementService
             $role->description = $description !== null ? trim((string) $description) : null;
         }
 
-        $role->save();
+        $newValues = [
+            'name' => $role->name,
+            'slug' => $role->slug,
+            'description' => $role->description,
+        ];
+
+        if ($oldValues !== $newValues) {
+            DB::transaction(function () use ($role, $actor, $oldValues, $newValues): void {
+                $role->save();
+
+                $this->auditLogger->record(
+                    workspace: $role->workspace,
+                    action: AuditAction::RoleUpdated,
+                    targetType: AuditTargetType::Role,
+                    targetId: $role->id,
+                    actor: $actor,
+                    oldValues: $oldValues,
+                    newValues: $newValues
+                );
+            });
+        }
 
         return $this->loadRoleDetails($role->fresh());
     }
 
-    public function deleteCustomRole(Role $role): void
+    public function deleteCustomRole(Role $role, User $actor): void
     {
         $this->guardRoleDeletable($role);
 
@@ -119,9 +167,25 @@ class WorkspaceRoleManagementService
         // role_permission:
         //   (1,10) -> deleted
         //   (1,11) -> deleted
-        $role->permissions()->detach();
+        $oldValues = [
+            'name' => $role->name,
+            'slug' => $role->slug,
+            'description' => $role->description,
+        ];
 
-        $role->delete();
+        DB::transaction(function () use ($role, $actor, $oldValues): void {
+            $role->permissions()->detach();
+            $role->delete();
+
+            $this->auditLogger->record(
+                workspace: $role->workspace,
+                action: AuditAction::RoleDeleted,
+                targetType: AuditTargetType::Role,
+                targetId: $role->id,
+                actor: $actor,
+                oldValues: $oldValues
+            );
+        });
     }
 
     public function replacePermissions(Role $role, array $permissionKeys, User $actor): Role
@@ -155,7 +219,33 @@ class WorkspaceRoleManagementService
 
         $this->guardPermissionGrantAllowed($role->workspace, $normalizedKeys, $actor);
 
-        $role->permissions()->sync($this->permissionSyncData($normalizedKeys, $permissions));
+        $oldPermissionKeys = $role->permissions()
+            ->orderBy('key')
+            ->pluck('key')
+            ->all();
+
+        DB::transaction(function () use ($role, $normalizedKeys, $permissions, $actor, $oldPermissionKeys): void {
+            $role->permissions()->sync($this->permissionSyncData($normalizedKeys, $permissions));
+
+            $newPermissionKeys = $role->permissions()
+                ->orderBy('key')
+                ->pluck('key')
+                ->all();
+
+            if ($oldPermissionKeys === $newPermissionKeys) {
+                return;
+            }
+
+            $this->auditLogger->record(
+                workspace: $role->workspace,
+                action: AuditAction::RolePermissionsUpdated,
+                targetType: AuditTargetType::Role,
+                targetId: $role->id,
+                actor: $actor,
+                oldValues: ['permissions' => $oldPermissionKeys],
+                newValues: ['permissions' => $newPermissionKeys]
+            );
+        });
 
         return $this->loadRoleDetails($role->fresh());
     }

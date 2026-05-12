@@ -2,6 +2,7 @@
 
 namespace App\Modules\RolesPermissions\Actions;
 
+use App\Models\User;
 use App\Modules\RolesPermissions\Services\WorkspaceRoleManagementService;
 
 class UpdateWorkspaceRole
@@ -10,13 +11,13 @@ class UpdateWorkspaceRole
         private readonly WorkspaceRoleManagementService $workspaceRoleManagementService
     ) {}
 
-    public function execute(int $roleId, array $data): array
+    public function execute(int $roleId, array $data, User $actor): array
     {
         $workspace = $this->workspaceRoleManagementService->currentWorkspace();
         $role = $this->workspaceRoleManagementService->resolveWorkspaceRole($workspace, $roleId);
 
         return [
-            'role' => $this->workspaceRoleManagementService->updateCustomRole($role, $data),
+            'role' => $this->workspaceRoleManagementService->updateCustomRole($role, $data, $actor),
         ];
     }
 }

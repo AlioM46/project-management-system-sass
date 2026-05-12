@@ -15,6 +15,11 @@ Route::prefix('comments')
             ->middleware('hasPermission:comment.view')
             ->name('comments.task');
 
+        // Get single comment
+        Route::get('/{commentId}', [CommentsController::class, 'show'])
+            ->whereNumber('commentId')
+            ->middleware('hasPermission:comment.view');
+
         // Update comment (author or admin/owner)
         Route::put('/{commentId}', [CommentsController::class, 'update'])
             ->whereNumber('commentId')

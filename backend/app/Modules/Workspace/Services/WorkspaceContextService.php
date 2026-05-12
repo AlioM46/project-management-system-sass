@@ -98,6 +98,32 @@ class WorkspaceContextService
         ];
     }
 
+    public function isOwner(): bool
+    {
+        return $this->membership?->isOwner() ?? false;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->membership?->isAdmin() ?? false;
+    }
+
+    public function isOwnerOrAdmin(): bool
+    {
+        return $this->membership?->isOwnerOrAdmin() ?? false;
+    }
+
+    public function hasRole(string|array $roleSlugs): bool
+    {
+        if (! $this->membership || ! $this->membership->role) {
+            return false;
+        }
+
+        $slugs = (array) $roleSlugs;
+
+        return in_array($this->membership->role->slug, $slugs, true);
+    }
+
     public function clear(): void
     {
         $this->workspaceId = null;

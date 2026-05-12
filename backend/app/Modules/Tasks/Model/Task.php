@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Model;
 
 use App\Models\User;
+use App\Modules\Comments\Model\Comment;
 use App\Modules\Projects\Model\Project;
 use App\Modules\Workspace\Model\Concerns\BelongsToWorkspace;
 use App\Modules\Workspace\Model\Workspace;
@@ -37,6 +38,7 @@ class Task extends Model
         'title',
         'description',
         'status',
+        'completed_at',
         'created_by_user_id',
     ];
 
@@ -44,6 +46,7 @@ class Task extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function workspace(): BelongsTo
@@ -77,5 +80,10 @@ class Task extends Model
         return $this->hasMany(TaskHistory::class, 'task_id')
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'task_id');
     }
 }

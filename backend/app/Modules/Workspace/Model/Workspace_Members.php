@@ -42,4 +42,24 @@ class Workspace_Members extends Model
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
+
+    public function isOwner(): bool
+    {
+        return $this->role && $this->role->isOwnerRole();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role && $this->role->isAdminRole();
+    }
+
+    public function isOwnerOrAdmin(): bool
+    {
+        return $this->isOwner() || $this->isAdmin();
+    }
+
+    public function isMember(): bool
+    {
+        return $this->role && $this->role->isMemberRole();
+    }
 }

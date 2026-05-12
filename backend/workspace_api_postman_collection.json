@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Project Management System API",
-    "description": "Full Postman collection for all registered application API routes under /api, aligned with the current backend including Auth, Workspace, Roles & Permissions, Projects, and Tasks.",
+    "name": "Project Management System API - Complete",
+    "description": "Full Postman collection for all registered application API routes under /api, including Auth, Workspace, Roles & Permissions, Projects, Tasks, Comments, and Notifications modules.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -158,6 +158,26 @@
     {
       "key": "invite_message",
       "value": "Join the workspace so we can collaborate."
+    },
+    {
+      "key": "comment_id",
+      "value": "0"
+    },
+    {
+      "key": "comment_body",
+      "value": "This is a test comment for the task."
+    },
+    {
+      "key": "attachment_id",
+      "value": "0"
+    },
+    {
+      "key": "notification_id",
+      "value": "0"
+    },
+    {
+      "key": "permission_id",
+      "value": ""
     }
   ],
   "item": [
@@ -793,25 +813,7 @@
                     }
                   }
                 }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const workspace = data && data.workspace ? data.workspace : null;",
-                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_id', String(workspace.id));",
-                      "if (workspace && workspace.name) pm.collectionVariables.set('workspace_name', workspace.name);"
-                    ]
-                  }
-                }
-              ]
+              }
             },
             {
               "name": "Delete Current Workspace",
@@ -834,38 +836,16 @@
                     "current"
                   ]
                 }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const workspace = data && data.workspace ? data.workspace : null;",
-                      "if (workspace && workspace.id !== undefined && workspace.id !== null) pm.collectionVariables.set('workspace_restore_id', String(workspace.id));"
-                    ]
-                  }
-                }
-              ]
+              }
             },
             {
-              "name": "Leave Current Workspace",
+              "name": "Leave Workspace",
               "request": {
                 "method": "POST",
                 "header": [
                   {
                     "key": "X-Workspace-Id",
                     "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
                     "type": "text"
                   }
                 ],
@@ -879,10 +859,39 @@
                     "current",
                     "leave"
                   ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Members",
+          "item": [
+            {
+              "name": "Accept Invite",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members/accept-invite",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members",
+                    "accept-invite"
+                  ]
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{}",
+                  "raw": "{\n  \"token\": \"{{invitation_token}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -890,14 +899,48 @@
                   }
                 }
               }
-            }
-          ]
-        },
-        {
-          "name": "Workspace Members",
-          "item": [
+            },
             {
-              "name": "Show Workspace Member",
+              "name": "List Members",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Workspace-Id",
+                    "value": "{{workspace_id}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/workspaces/members",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "workspaces",
+                    "members"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('member_id', String(data[0].id));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get Member",
               "request": {
                 "method": "GET",
                 "header": [
@@ -921,30 +964,7 @@
               }
             },
             {
-              "name": "List Workspace Members",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/workspaces/members",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "workspaces",
-                    "members"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Send Workspace Invite",
+              "name": "Send Invite",
               "request": {
                 "method": "POST",
                 "header": [
@@ -992,48 +1012,15 @@
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
                       "const invitation = data && data.invitation ? data.invitation : null;",
-                      "if (invitation && invitation.id !== undefined && invitation.id !== null) pm.collectionVariables.set('invitation_id', String(invitation.id));"
+                      "if (invitation && invitation.id) pm.collectionVariables.set('invitation_id', String(invitation.id));",
+                      "if (invitation && invitation.token) pm.collectionVariables.set('invitation_token', invitation.token);"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Accept Workspace Invite",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/workspaces/members/accept-invite",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "workspaces",
-                    "members",
-                    "accept-invite"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"invitation_id\": {{invitation_id}},\n  \"token\": \"{{invitation_token}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "description": "Use invitation_id from the invite response and invitation_token from the emailed accept URL."
-              }
-            },
-            {
-              "name": "Change Member Role",
+              "name": "Update Member",
               "request": {
                 "method": "PATCH",
                 "header": [
@@ -1071,7 +1058,7 @@
               }
             },
             {
-              "name": "Remove Workspace Member",
+              "name": "Remove Member",
               "request": {
                 "method": "DELETE",
                 "header": [
@@ -1095,34 +1082,6 @@
               }
             }
           ]
-        },
-        {
-          "name": "Debug",
-          "item": [
-            {
-              "name": "Workspace Context",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/_test/workspace-context",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "_test",
-                    "workspace-context"
-                  ]
-                }
-              }
-            }
-          ]
         }
       ]
     },
@@ -1133,7 +1092,7 @@
           "name": "Permissions",
           "item": [
             {
-              "name": "List Permissions",
+              "name": "List All Permissions",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -1147,7 +1106,23 @@
                     "permissions"
                   ]
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('permission_id', String(data[0].id));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
@@ -1175,7 +1150,23 @@
                     "roles"
                   ]
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('role_id', String(data[0].id));"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Create Role",
@@ -1225,16 +1216,15 @@
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
                       "const role = data && data.role ? data.role : null;",
-                      "if (role && role.id !== undefined && role.id !== null) pm.collectionVariables.set('role_id', String(role.id));",
-                      "if (role && role.name) pm.collectionVariables.set('role_name', role.name);",
-                      "if (role && role.slug) pm.collectionVariables.set('role_slug', role.slug);"
+                      "if (role && role.id) pm.collectionVariables.set('role_id', String(role.id));",
+                      "if (role && role.name) pm.collectionVariables.set('role_name', role.name);"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Show Role",
+              "name": "Get Role",
               "request": {
                 "method": "GET",
                 "header": [
@@ -1286,33 +1276,14 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"name\": \"Project Manager\",\n  \"slug\": \"project-manager\",\n  \"description\": \"Updated custom role description.\"\n}",
+                  "raw": "{\n  \"name\": \"{{role_name}}\",\n  \"description\": \"{{role_description}}\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const role = data && data.role ? data.role : null;",
-                      "if (role && role.id !== undefined && role.id !== null) pm.collectionVariables.set('role_id', String(role.id));",
-                      "if (role && role.name) pm.collectionVariables.set('role_name', role.name);",
-                      "if (role && role.slug) pm.collectionVariables.set('role_slug', role.slug);"
-                    ]
-                  }
-                }
-              ]
+              }
             },
             {
               "name": "Delete Role",
@@ -1339,7 +1310,7 @@
               }
             },
             {
-              "name": "Update Role Permissions",
+              "name": "Assign Permissions to Role",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -1368,7 +1339,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"permissions\": [\n    \"project.view\",\n    \"project.create\",\n    \"task.view\"\n  ]\n}",
+                  "raw": "{\n  \"permissions\": [\"{{permission_id}}\"]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1378,7 +1349,7 @@
               }
             },
             {
-              "name": "Sync Role Defaults",
+              "name": "Sync Default Roles",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1409,313 +1380,203 @@
       "name": "Projects",
       "item": [
         {
-          "name": "Projects",
-          "item": [
-            {
-              "name": "List Projects",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects"
-                  ]
-                }
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
               }
-            },
-            {
-              "name": "List Projects (Include Deleted)",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects?include_deleted=true",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects"
-                  ],
-                  "query": [
-                    {
-                      "key": "include_deleted",
-                      "value": "true"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Search Projects",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects?search=website",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects"
-                  ],
-                  "query": [
-                    {
-                      "key": "search",
-                      "value": "website"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Create Project",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const project = data && data.project ? data.project : null;",
-                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
-                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Show Project",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects/{{project_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects",
-                    "{{project_id}}"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Show Project (Include Deleted)",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects/{{project_id}}?include_deleted=true",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects",
-                    "{{project_id}}"
-                  ],
-                  "query": [
-                    {
-                      "key": "include_deleted",
-                      "value": "true"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Update Project",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects/{{project_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects",
-                    "{{project_id}}"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"Website Relaunch\",\n  \"description\": \"Updated scope and delivery plan\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const project = data && data.project ? data.project : null;",
-                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
-                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Delete Project",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects/{{project_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects",
-                    "{{project_id}}"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Restore Project",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/projects/{{project_id}}/restore",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "projects",
-                    "{{project_id}}",
-                    "restore"
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const project = data && data.project ? data.project : null;",
-                      "if (project && project.id !== undefined && project.id !== null) pm.collectionVariables.set('project_id', String(project.id));",
-                      "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
-                    ]
-                  }
-                }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects"
               ]
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('project_id', String(data[0].id));"
+                ]
+              }
+            }
           ]
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "const project = data && data.project ? data.project : null;",
+                  "if (project && project.id) pm.collectionVariables.set('project_id', String(project.id));",
+                  "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restore Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}",
+                "restore"
+              ]
+            }
+          }
         }
       ]
     },
@@ -1723,357 +1584,185 @@
       "name": "Tasks",
       "item": [
         {
-          "name": "Tasks",
-          "item": [
-            {
-              "name": "List Tasks",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks"
-                  ]
-                }
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
               }
-            },
-            {
-              "name": "List Tasks By Project",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks?project_id={{project_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks"
-                  ],
-                  "query": [
-                    {
-                      "key": "project_id",
-                      "value": "{{project_id}}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "List Tasks By Status",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks?status={{task_status}}&sort_by=updated_at&sort_dir=desc",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks"
-                  ],
-                  "query": [
-                    {
-                      "key": "status",
-                      "value": "{{task_status}}"
-                    },
-                    {
-                      "key": "sort_by",
-                      "value": "updated_at"
-                    },
-                    {
-                      "key": "sort_dir",
-                      "value": "desc"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "List Tasks By Assignee",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks?assignee_id={{assignee_user_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks"
-                  ],
-                  "query": [
-                    {
-                      "key": "assignee_id",
-                      "value": "{{assignee_user_id}}"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Create Task",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"project_id\": {{project_id}},\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"assignee_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
-                    ]
-                  }
-                }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
               ]
-            },
+            }
+          },
+          "event": [
             {
-              "name": "Show Task",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks",
-                    "{{task_id}}"
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Update Task",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks",
-                    "{{task_id}}"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Update Task (PUT)",
-              "request": {
-                "method": "PUT",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks",
-                    "{{task_id}}"
-                  ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"Design task board v2\",\n  \"description\": \"Refine the Kanban experience and empty states.\",\n  \"status\": \"{{task_status}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Delete Task",
-              "request": {
-                "method": "DELETE",
-                "header": [
-                  {
-                    "key": "X-Workspace-Id",
-                    "value": "{{workspace_id}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "tasks",
-                    "{{task_id}}"
-                  ]
-                }
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('task_id', String(data[0].id));"
+                ]
               }
             }
           ]
         },
         {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"project_id\": {{project_id}},\n  \"status\": \"{{task_status}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "const task = data && data.task ? data.task : null;",
+                  "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));",
+                  "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"status\": \"{{task_status}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
           "name": "Assignees",
           "item": [
             {
-              "name": "List Assignees",
+              "name": "Get Assignees",
               "request": {
                 "method": "GET",
                 "header": [
@@ -2094,7 +1783,23 @@
                     "assignees"
                   ]
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "let json = null;",
+                      "try {",
+                      "  json = pm.response.json();",
+                      "} catch (error) {}",
+                      "const data = json && json.data ? json.data : null;",
+                      "if (Array.isArray(data) && data.length > 0 && data[0].user_id) pm.collectionVariables.set('assignee_user_id', String(data[0].user_id));"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Add Assignees",
@@ -2125,7 +1830,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}, {{second_assignee_user_id}}]\n}",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2145,15 +1850,14 @@
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
                       "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                      "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Replace Assignees",
+              "name": "Update Assignees",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -2201,8 +1905,7 @@
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
                       "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                      "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));"
                     ]
                   }
                 }
@@ -2237,34 +1940,311 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"user_ids\": [{{second_assignee_user_id}}]\n}",
+                  "raw": "{\n  \"user_ids\": [{{assignee_user_id}}]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "let json = null;",
-                      "try {",
-                      "  json = pm.response.json();",
-                      "} catch (error) {}",
-                      "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id !== undefined && task.id !== null) pm.collectionVariables.set('task_id', String(task.id));",
-                      "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
-                    ]
-                  }
-                }
-              ]
+              }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Get Comments by Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/task/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments",
+                "task",
+                "{{task_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('comment_id', String(data[0].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"{{comment_body}}\",\n  \"task_id\": {{task_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "const comment = data && data.comment ? data.comment : null;",
+                  "if (comment && comment.id) pm.collectionVariables.set('comment_id', String(comment.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Comment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/{{comment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments",
+                "{{comment_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/{{comment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments",
+                "{{comment_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"{{comment_body}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/{{comment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments",
+                "{{comment_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Attachment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/attachments/{{attachment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments",
+                "attachments",
+                "{{attachment_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (error) {}",
+                  "const data = json && json.data ? json.data : null;",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('notification_id', String(data[0].id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Workspace-Id",
+                "value": "{{workspace_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "read"
+              ]
+            }
+          }
         }
       ]
     }

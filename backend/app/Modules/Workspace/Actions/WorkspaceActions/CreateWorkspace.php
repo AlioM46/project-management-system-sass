@@ -3,6 +3,9 @@
 namespace App\Modules\Workspace\Actions\WorkspaceActions;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\RolesPermissions\Services\WorkspaceRoleProvisioningService;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
@@ -11,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 class CreateWorkspace
 {
     public function __construct(
-        private readonly WorkspaceRoleProvisioningService $workspaceRoleProvisioningService
+        private readonly WorkspaceRoleProvisioningService $workspaceRoleProvisioningService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     /**
@@ -33,6 +37,18 @@ class CreateWorkspace
             $defaultRoles = $this->workspaceRoleProvisioningService->provisionForWorkspace($workspace);
 
             $this->createOwnerMembership($workspace, $user, $defaultRoles['owner']->id);
+
+            $this->auditLogger->record(
+                workspace: $workspace,
+                action: AuditAction::WorkspaceCreated,
+                targetType: AuditTargetType::Workspace,
+                targetId: $workspace->id,
+                actor: $user,
+                newValues: [
+                    'name' => $workspace->name,
+                    'created_by_user_id' => $workspace->created_by_user_id,
+                ]
+            );
 
             return $workspace->load([
                 'owner:id,name,email',

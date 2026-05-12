@@ -10,7 +10,9 @@ class ForceJsonResponse
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->is('api/*') && ! $request->expectsJson()) {
+        // logger('2. ForceJsonResponse reached');
+
+        if ($request->is('api/*') && !$request->expectsJson()) {
             $request->headers->set('Accept', 'application/json');
         }
 
