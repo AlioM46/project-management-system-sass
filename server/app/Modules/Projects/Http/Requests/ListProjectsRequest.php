@@ -24,6 +24,7 @@ class ListProjectsRequest extends FormRequest
 
     public function rules(): array
     {
+        // 👉 sometimes = “optional, but if present → must be valid”
         return [
             'include_deleted' => ['sometimes', 'boolean'],
             'search' => ['sometimes', 'nullable', 'string', 'max:255'],

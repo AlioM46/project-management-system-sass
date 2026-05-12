@@ -37,11 +37,11 @@ class EmailVerficationService
     {
         $user = User::query()->find($id);
 
-        if (! $user || ! hash_equals(sha1($user->email), $hash)) {
+        if (!$user || !hash_equals(sha1($user->email), $hash)) {
             throw new InvalidEmailVerificationLinkException;
         }
 
-        if (! $this->hasValidSignature($request, $id, $hash)) {
+        if (!$this->hasValidSignature($request, $id, $hash)) {
             throw new InvalidEmailVerificationLinkException;
         }
 
@@ -75,7 +75,7 @@ class EmailVerficationService
 
         $signature = $this->makeSignature($path, $expires);
 
-        return rtrim((string) config('app.url'), '/').$path.'?'.http_build_query([
+        return rtrim((string) env('FRONT_END_URL'), '/') . $path . '?' . http_build_query([
             'expires' => $expires,
             'signature' => $signature,
         ], '', '&', PHP_QUERY_RFC3986);
@@ -100,12 +100,12 @@ class EmailVerficationService
 
     private function verificationPath(int|string $id, string $hash): string
     {
-        return '/api/auth/email/verify/'.$id.'/'.$hash;
+        return '/api/auth/email/verify/' . $id . '/' . $hash;
     }
 
     private function makeSignature(string $path, int $expires): string
     {
-        return hash_hmac('sha256', $path.'|'.$expires, $this->signingKey());
+        return hash_hmac('sha256', $path . '|' . $expires, $this->signingKey());
     }
 
     private function signingKey(): string
