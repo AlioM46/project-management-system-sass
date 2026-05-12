@@ -9,7 +9,8 @@ class VerifyEmail
 {
     public function __construct(
         private readonly EmailVerficationService $service
-    ) {}
+    ) {
+    }
 
     public function execute(Request $request, int|string $id, string $hash): array
     {
