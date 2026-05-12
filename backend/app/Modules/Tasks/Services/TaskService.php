@@ -3,8 +3,11 @@
 namespace App\Modules\Tasks\Services;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditMetadataKey;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Projects\Model\Project;
-use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Tasks\Enums\TaskStatus;
 use App\Modules\Tasks\Exceptions\TasksException;
 use App\Modules\Tasks\Model\Task;
@@ -21,7 +24,7 @@ class TaskService
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly TaskAssignmentService $taskAssignmentService,
-        private readonly TaskHistoryService $taskHistoryService
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function currentWorkspace(): Workspace
@@ -54,17 +57,18 @@ class TaskService
                     'created_by_user_id' => $actor->id,
                 ]);
 
-            $this->taskHistoryService->record(
-                $task,
-                'task_created',
-                null,
-                [
+            $this->auditLogger->record(
+                workspace: $workspace,
+                action: AuditAction::TaskCreated,
+                targetType: AuditTargetType::Task,
+                targetId: $task->id,
+                actor: $actor,
+                newValues: [
                     'project_id' => $project->id,
                     'title' => $title,
                     'description' => $description,
                     'status' => TaskStatus::TODO->value,
                 ],
-                $actor
             );
 
             if (is_array($assigneeIds) && $assigneeIds !== []) {
@@ -116,6 +120,9 @@ class TaskService
 
         $oldValue = [];
         $newValue = [];
+        $oldStatusValue = null;
+        $newStatusValue = null;
+        $oldCompletedAt = $task->completed_at ?? null;
 
         if (array_key_exists('title', $data)) {
             $title = $this->normalizeTitle((string) $data['title']);
@@ -139,36 +146,57 @@ class TaskService
 
         if (array_key_exists('status', $data)) {
 
+            $oldStatusValue = $task->status;
+            $newStatusValue = (string) $data['status'];
+
             $this->handleStatusChangeWorkflow(
                 $task,
                 TaskStatus::from($task->status),
-                TaskStatus::from((string) $data['status']),
-                $actor
+                TaskStatus::from($newStatusValue)
             );
 
-            $status = (string) $data['status'];
-
-            if ($status !== $task->status) {
-                $oldValue['status'] = $task->status;
-                $newValue['status'] = $status;
-                $task->status = $status;
+            if ($newStatusValue === $oldStatusValue) {
+                $oldStatusValue = null;
+                $newStatusValue = null;
             }
         }
 
-        if ($oldValue === []) {
+        if ($oldValue === [] && $newStatusValue === null) {
             return $this->loadTaskRelations($task->fresh());
         }
 
-        return DB::transaction(function () use ($task, $oldValue, $newValue, $actor): Task {
+        return DB::transaction(function () use ($task, $oldValue, $newValue, $oldStatusValue, $newStatusValue, $oldCompletedAt, $actor): Task {
             $task->save();
 
-            $this->taskHistoryService->record(
-                $task,
-                'task_updated',
-                $oldValue,
-                $newValue,
-                $actor
-            );
+            if ($oldValue !== []) {
+                $this->auditLogger->record(
+                    workspace: $task->workspace,
+                    action: AuditAction::TaskUpdated,
+                    targetType: AuditTargetType::Task,
+                    targetId: $task->id,
+                    actor: $actor,
+                    oldValues: $oldValue,
+                    newValues: $newValue
+                );
+            }
+
+            if ($newStatusValue !== null) {
+                $this->auditLogger->record(
+                    workspace: $task->workspace,
+                    action: AuditAction::TaskStatusChanged,
+                    targetType: AuditTargetType::Task,
+                    targetId: $task->id,
+                    actor: $actor,
+                    oldValues: [
+                        'status' => $oldStatusValue,
+                        'completed_at' => $oldCompletedAt?->toISOString(),
+                    ],
+                    newValues: [
+                        'status' => $newStatusValue,
+                        'completed_at' => $task->completed_at?->toISOString(),
+                    ]
+                );
+            }
 
             return $this->loadTaskRelations($task->fresh());
         });
@@ -183,12 +211,17 @@ class TaskService
         DB::transaction(function () use ($task, $actor): void {
             $task->delete();
 
-            $this->taskHistoryService->record(
-                $task,
-                'task_deleted',
-                ['deleted_at' => null],
-                ['deleted_at' => optional($task->deleted_at)->toISOString()],
-                $actor
+            $this->auditLogger->record(
+                workspace: $task->workspace,
+                action: AuditAction::TaskDeleted,
+                targetType: AuditTargetType::Task,
+                targetId: $task->id,
+                actor: $actor,
+                oldValues: ['deleted_at' => null],
+                newValues: ['deleted_at' => optional($task->deleted_at)->toISOString()],
+                metadata: [
+                    AuditMetadataKey::ProjectId->value => $task->project_id,
+                ]
             );
         });
     }
@@ -304,8 +337,7 @@ class TaskService
     public function handleStatusChangeWorkflow(
         Task $task,
         TaskStatus $oldStatus,
-        TaskStatus $newStatus,
-        User $actor
+        TaskStatus $newStatus
     ): void {
 
         if ($oldStatus === $newStatus) {
@@ -344,7 +376,6 @@ class TaskService
             throw TasksException::invalidStatusTransition($from, $to);
         }
 
-        // Apply changes
         $task->status = $to;
 
         if ($newStatus === TaskStatus::DONE) {
@@ -352,28 +383,12 @@ class TaskService
         } else {
             $task->completed_at = null;
         }
-
-        $task->save();
-
-        // Record history
-        $this->taskHistoryService->record(
-            $task,
-            'task_status_changed',
-            ['status' => $from],
-            [
-                'status' => $to,
-                'completed_at' => $task->completed_at,
-            ],
-            $actor
-        );
     }
 
     private function authorizeTaskUpdate(Task $task, User $actor): void
     {
         // Owner or Admin can update any task
-        $membership = $this->workspaceContextService->currentMembership();
-
-        if ($membership && $membership->role && in_array($membership->role->slug, [Role::OWNER_SLUG, Role::ADMIN_SLUG], true)) {
+        if ($this->workspaceContextService->isOwnerOrAdmin()) {
             return;
         }
 

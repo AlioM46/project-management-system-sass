@@ -2,6 +2,7 @@
 
 namespace App\Modules\RolesPermissions\Actions;
 
+use App\Models\User;
 use App\Modules\RolesPermissions\Services\WorkspaceRoleManagementService;
 
 class DeleteWorkspaceRole
@@ -10,7 +11,7 @@ class DeleteWorkspaceRole
         private readonly WorkspaceRoleManagementService $workspaceRoleManagementService
     ) {}
 
-    public function execute(int $roleId): array
+    public function execute(int $roleId, User $actor): array
     {
         $workspace = $this->workspaceRoleManagementService->currentWorkspace();
         $role = $this->workspaceRoleManagementService->resolveWorkspaceRole($workspace, $roleId);
@@ -22,7 +23,7 @@ class DeleteWorkspaceRole
             'workspace_id' => $role->workspace_id,
         ];
 
-        $this->workspaceRoleManagementService->deleteCustomRole($role);
+        $this->workspaceRoleManagementService->deleteCustomRole($role, $actor);
 
         return ['role' => $roleSnapshot];
     }

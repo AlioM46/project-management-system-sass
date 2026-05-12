@@ -3,6 +3,10 @@
 namespace App\Modules\Tasks\Services;
 
 use App\Models\User;
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditMetadataKey;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Tasks\Exceptions\TasksException;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Tasks\Model\TaskAssignment;
@@ -15,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 class TaskAssignmentService
 {
     public function __construct(
-        private readonly TaskHistoryService $taskHistoryService
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function addAssignees(Task $task, array $userIds, User $actor): Task
@@ -56,12 +60,16 @@ class TaskAssignmentService
                 TaskAssignment::query()->insert($rows);
 
                 foreach ($userIdsToAdd as $userId) {
-                    $this->taskHistoryService->record(
-                        $task,
-                        'assignee_added',
-                        null,
-                        ['user_id' => $userId],
-                        $actor
+                    $this->auditLogger->record(
+                        workspace: $task->workspace,
+                        action: AuditAction::TaskAssigneeAdded,
+                        targetType: AuditTargetType::Task,
+                        targetId: $task->id,
+                        actor: $actor,
+                        newValues: ['user_id' => $userId],
+                        metadata: [
+                            AuditMetadataKey::AssigneeUserId->value => $userId,
+                        ]
                     );
                 }
             }
@@ -93,12 +101,16 @@ class TaskAssignmentService
                     ->delete();
 
                 foreach ($userIdsToRemove as $userId) {
-                    $this->taskHistoryService->record(
-                        $task,
-                        'assignee_removed',
-                        ['user_id' => $userId],
-                        null,
-                        $actor
+                    $this->auditLogger->record(
+                        workspace: $task->workspace,
+                        action: AuditAction::TaskAssigneeRemoved,
+                        targetType: AuditTargetType::Task,
+                        targetId: $task->id,
+                        actor: $actor,
+                        oldValues: ['user_id' => $userId],
+                        metadata: [
+                            AuditMetadataKey::AssigneeUserId->value => $userId,
+                        ]
                     );
                 }
             }
@@ -131,12 +143,16 @@ class TaskAssignmentService
                     ->delete();
 
                 foreach ($userIdsToRemove as $userId) {
-                    $this->taskHistoryService->record(
-                        $task,
-                        'assignee_removed',
-                        ['user_id' => $userId],
-                        null,
-                        $actor
+                    $this->auditLogger->record(
+                        workspace: $task->workspace,
+                        action: AuditAction::TaskAssigneeRemoved,
+                        targetType: AuditTargetType::Task,
+                        targetId: $task->id,
+                        actor: $actor,
+                        oldValues: ['user_id' => $userId],
+                        metadata: [
+                            AuditMetadataKey::AssigneeUserId->value => $userId,
+                        ]
                     );
                 }
             }
@@ -157,12 +173,16 @@ class TaskAssignmentService
                 TaskAssignment::query()->insert($rows);
 
                 foreach ($userIdsToAdd as $userId) {
-                    $this->taskHistoryService->record(
-                        $task,
-                        'assignee_added',
-                        null,
-                        ['user_id' => $userId],
-                        $actor
+                    $this->auditLogger->record(
+                        workspace: $task->workspace,
+                        action: AuditAction::TaskAssigneeAdded,
+                        targetType: AuditTargetType::Task,
+                        targetId: $task->id,
+                        actor: $actor,
+                        newValues: ['user_id' => $userId],
+                        metadata: [
+                            AuditMetadataKey::AssigneeUserId->value => $userId,
+                        ]
                     );
                 }
             }

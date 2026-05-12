@@ -15,6 +15,7 @@ use App\Modules\Projects\Http\Requests\ShowProjectRequest;
 use App\Modules\Projects\Http\Requests\UpdateProjectRequest;
 use App\Shared\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProjectsController extends Controller
@@ -64,24 +65,24 @@ class ProjectsController extends Controller
         return ApiResponse::success(
             message: 'Project updated successfully.',
             data: [
-                'project' => $action->execute($projectId, $request->validated()),
+                'project' => $action->execute($projectId, $request->validated(), $request->user()),
             ]
         );
     }
 
-    public function delete(int $projectId, DeleteProject $action): Response
+    public function delete(int $projectId, Request $request, DeleteProject $action): Response
     {
-        $action->execute($projectId);
+        $action->execute($projectId, $request->user());
 
         return response()->noContent();
     }
 
-    public function restore(int $projectId, RestoreProject $action): JsonResponse
+    public function restore(int $projectId, Request $request, RestoreProject $action): JsonResponse
     {
         return ApiResponse::success(
             message: 'Project restored successfully.',
             data: [
-                'project' => $action->execute($projectId),
+                'project' => $action->execute($projectId, $request->user()),
             ]
         );
     }

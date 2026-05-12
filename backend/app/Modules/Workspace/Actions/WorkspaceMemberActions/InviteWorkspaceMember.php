@@ -2,6 +2,10 @@
 
 namespace App\Modules\Workspace\Actions\WorkspaceMemberActions;
 
+use App\Modules\Audit\Enums\AuditAction;
+use App\Modules\Audit\Enums\AuditMetadataKey;
+use App\Modules\Audit\Enums\AuditTargetType;
+use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Mail\WorkspaceInviteMail;
@@ -17,7 +21,8 @@ class InviteWorkspaceMember
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService,
-        private readonly WorkspaceInvitationService $workspaceInvitationService
+        private readonly WorkspaceInvitationService $workspaceInvitationService,
+        private readonly AuditLogger $auditLogger
     ) {}
 
     public function execute(array $data): array
@@ -87,6 +92,23 @@ class InviteWorkspaceMember
 
             $invitation->sent_at = now();
             $invitation->save();
+
+            $this->auditLogger->record(
+                workspace: $currentWorkspace,
+                action: AuditAction::MemberInvited,
+                targetType: AuditTargetType::WorkspaceInvitation,
+                targetId: $invitation->id,
+                actor: $currentMembership->user,
+                newValues: [
+                    'email' => $invitation->email,
+                    'role_id' => $invitation->role_id,
+                    'status' => $invitation->status,
+                ],
+                metadata: [
+                    AuditMetadataKey::InvitationEmail->value => $invitation->email,
+                    AuditMetadataKey::RoleId->value => $invitation->role_id,
+                ]
+            );
 
             return $invitation;
         });

@@ -15,6 +15,7 @@ class CreateCommentRequest extends FormRequest
     {
         return [
             'task_id' => ['required', 'exists:tasks,id'],
+            'parent_id' => ['sometimes', 'nullable', 'exists:comments,id'],
             'content' => ['required', 'string', 'max:5000'],
             'attachments' => ['sometimes', 'array'],
             'attachments.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,pdf,docx,mp4'], // 10MB, specific file types

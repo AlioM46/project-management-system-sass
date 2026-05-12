@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Notifications\Model\Notification;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Model\Workspace_Members;
 use App\Modules\Workspace\Model\WorkspaceInvitation;
@@ -21,14 +22,22 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'username', 'email', 'password', 'status',
-        'last_login_at', 'last_login_ip',
-        'refresh_token', 'refresh_token_expiration',
+        'name',
+        'username',
+        'email',
+        'password',
+        'status',
+        'last_login_at',
+        'last_login_ip',
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $hidden = [
-        'password', 'deleted_at',
-        'refresh_token', 'refresh_token_expiration',
+        'password',
+        'deleted_at',
+        'refresh_token',
+        'refresh_token_expiration',
     ];
 
     protected $casts = [
@@ -40,7 +49,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function setPasswordAttribute($value): void
     {
-        if (! empty($value)) {
+        if (!empty($value)) {
             $this->attributes['password'] = password_get_info($value)['algo'] !== null
                 ? $value
                 : Hash::make($value);
@@ -83,6 +92,10 @@ class User extends Authenticatable implements JWTSubject
             ->withTimestamps();
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
     public function sentWorkspaceInvitations(): HasMany
     {
         return $this->hasMany(WorkspaceInvitation::class, 'invited_by_user_id');
@@ -104,7 +117,7 @@ class User extends Authenticatable implements JWTSubject
             $workspace = $workspaceContext->currentWorkspace();
 
             // If still null, cannot check
-            if (! $workspace) {
+            if (!$workspace) {
                 return false;
             }
         }
@@ -119,7 +132,7 @@ class User extends Authenticatable implements JWTSubject
             ->where('workspace_id', $workspace->id)
             ->first();
 
-        if (! $membership || ! $membership->role) {
+        if (!$membership || !$membership->role) {
             return false;
         }
 
@@ -130,4 +143,6 @@ class User extends Authenticatable implements JWTSubject
         // Check role permissions
         return $isExist;
     }
+
+
 }

@@ -1,5 +1,10 @@
-- Projects
-## Include Deleted list is not working correctly 
-## Shoudln't project Have status like active, inactive, deleted, finsihed, etc.... (add status column to projects table) and add good status list if needed to add status column?
+Notifications:
+ - Backend Almost (80% - 99%) finished, just have to 
+  - make it multi-tanent safe
+  - implement notification system for all Models that need to implement this e.g. -> Task Assignee, Comment Mention , something else....
+
+ - frontend: it just have to listen to backend chanel, and show upcoming data.
 
 
+
+Chat SYSTEM: 
