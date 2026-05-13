@@ -33,13 +33,8 @@ class PasswordResetController extends Controller
             'email' => ['required', 'string', 'email'],
         ]);
 
-        $result = $action->execute($request->input('email'));
+        $action->execute($request->input('email'));
 
-        // Original response after enabling email delivery again:
-        // return ApiResponse::success('If your email is registered, you will receive a password reset link shortly.');
-        return ApiResponse::success(
-            'Temporary local testing response. Open reset_link_sent in the browser.',
-            ['reset_link_sent' => $result]
-        );
+        return ApiResponse::success('If your email is registered, you will receive a password reset link shortly.');
     }
 }

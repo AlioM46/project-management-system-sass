@@ -34,3 +34,24 @@ export interface RegisterInput {
     email: string;                 // Email
     password: string;              // Password
 }
+export interface LoginInput {
+    login: string;                 // Email or username
+    password: string;              // Password
+}
+
+/**
+ * Data for requesting a password reset link
+ */
+export interface ForgotPasswordInput {
+    email: string;
+}
+
+/**
+ * Data for resetting the password using the link token
+ */
+export interface ResetPasswordInput {
+    email: string;
+    plain_token: string;
+    password: string;
+    password_confirmation: string;
+}
