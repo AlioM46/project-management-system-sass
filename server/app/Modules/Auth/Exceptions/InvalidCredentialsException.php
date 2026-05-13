@@ -6,10 +6,10 @@ use App\Shared\Exceptions\BusinessException;
 
 class InvalidCredentialsException extends BusinessException
 {
-    public function __construct()
+    public function __construct($message = 'Invalid email or password.')
     {
         parent::__construct(
-            message: 'Invalid email or password.',
+            message: $message,
             errorCode: 'IDENTITY_INVALID_CREDENTIALS',
             status: 401
         );
