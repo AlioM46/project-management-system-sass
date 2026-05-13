@@ -6,7 +6,7 @@ use App\Shared\Exceptions\BusinessException;
 
 class InvalidPasswordResetEmail extends BusinessException
 {
-    public function __construct(string $message = 'The password reset email is invalid or has expired.')
+    public function __construct(string $message = 'the email is invalid for reset password')
     {
         parent::__construct(
             message: $message,

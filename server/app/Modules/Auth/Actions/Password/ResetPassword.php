@@ -24,7 +24,7 @@ class ResetPassword
             ->latest()
             ->first();
 
-        if (! $reset) {
+        if (!$reset) {
             throw new InvalidPasswordResetTokenException;
         }
 
@@ -34,7 +34,7 @@ class ResetPassword
 
         $user = User::where('email', $email)->first();
 
-        if (! $user) {
+        if (!$user) {
             throw new InvalidPasswordResetTokenException;
         }
 
