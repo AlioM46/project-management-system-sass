@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { forgotPassword } from "../api/auth.api";
 import { ApiError } from "../../../shared/api/ApiError";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -13,6 +13,7 @@ import { AuthLayout } from "../components/AuthLayout";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export default function ForgotPassword() {
     const router = useRouter();
@@ -125,9 +126,15 @@ export default function ForgotPassword() {
                 <p className="text-sm text-muted-foreground">
                     Remember your password?
                 </p>
-                <Button variant="outline" asChild className="rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all">
-                    <Link href="/login">Back to Login</Link>
-                </Button>
+                <Link 
+                    href="/login" 
+                    className={cn(
+                        buttonVariants({ variant: "outline" }),
+                        "rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all"
+                    )}
+                >
+                    Back to Login
+                </Link>
             </div>
         </AuthLayout>
     );
