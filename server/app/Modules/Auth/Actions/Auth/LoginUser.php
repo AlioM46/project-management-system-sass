@@ -16,7 +16,7 @@ class LoginUser
         $user = User::query()->where($loginField, $data['login'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw new InvalidCredentialsException;
+            throw new InvalidCredentialsException("Invalid " . $loginField . " or password");
         }
 
         return DB::transaction(function () use ($user) {
