@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Workspace\Http\Controllers\DashboardController;
 use App\Modules\Workspace\Http\Controllers\WorkspaceController;
 use App\Modules\Workspace\Http\Controllers\WorkspaceMemberController;
 use App\Modules\Workspace\Services\WorkspaceContextService;
@@ -24,6 +25,10 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
 
     // The workspace-specific endpoints below depend on X-Workspace-Id.
     Route::middleware('workspace.context')->group(function () {
+        Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
+            ->name('workspaces.dashboard.summary')
+            ->middleware('hasPermission:workspace.view');
+
         Route::get('/current', [WorkspaceController::class, 'showCurrent'])
             ->name('workspaces.current.show')
             ->middleware('hasPermission:workspace.view');
