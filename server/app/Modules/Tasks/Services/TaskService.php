@@ -25,7 +25,8 @@ class TaskService
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly TaskAssignmentService $taskAssignmentService,
         private readonly AuditLogger $auditLogger
-    ) {}
+    ) {
+    }
 
     public function currentWorkspace(): Workspace
     {
@@ -89,15 +90,15 @@ class TaskService
         $query = $this->taskQueryForWorkspace($workspace)
             ->with($this->taskRelations());
 
-        if (! empty($filters['project_id'])) {
+        if (!empty($filters['project_id'])) {
             $query->where('project_id', (int) $filters['project_id']);
         }
 
-        if (! empty($filters['status'])) {
+        if (!empty($filters['status'])) {
             $query->where('status', (string) $filters['status']);
         }
 
-        if (! empty($filters['assignee_id'])) {
+        if (!empty($filters['assignee_id'])) {
             $query->whereHas('assignments', function (Builder $builder) use ($filters): void {
                 $builder->where('user_id', (int) $filters['assignee_id']);
             });
@@ -328,11 +329,36 @@ class TaskService
         return [
             'project',
             'creator',
-            'assignees' => fn ($query) => $query->orderBy('name'),
+            'assignees' => fn($query) => $query->orderBy('name'),
         ];
     }
 
     // public function restoreTask
+
+    private $allowedTransitions = [
+        TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
+        TaskStatus::IN_PROGRESS->value => [
+            TaskStatus::TODO->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::DONE->value,
+            TaskStatus::CANCELLED->value,
+        ],
+        TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
+        TaskStatus::DONE->value => [
+            TaskStatus::IN_PROGRESS->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::CANCELLED->value,
+        ],
+        TaskStatus::CANCELLED->value => [
+            TaskStatus::IN_PROGRESS->value,
+            TaskStatus::BLOCKED->value,
+            TaskStatus::DONE->value,
+        ],
+    ];
+    public function allowedTrasitions(string $currentStatus): array
+    {
+        return $this->allowedTransitions[$currentStatus] ?? [];
+    }
 
     public function handleStatusChangeWorkflow(
         Task $task,
@@ -347,32 +373,12 @@ class TaskService
             throw TasksException::taskDeletedImmutable($task->id, $task->workspace_id);
         }
 
-        $allowedTransitions = [
-            TaskStatus::TODO->value => [TaskStatus::IN_PROGRESS->value, TaskStatus::CANCELLED->value],
-            TaskStatus::IN_PROGRESS->value => [
-                TaskStatus::TODO->value,
-                TaskStatus::BLOCKED->value,
-                TaskStatus::DONE->value,
-                TaskStatus::CANCELLED->value,
-            ],
-            TaskStatus::BLOCKED->value => [TaskStatus::IN_PROGRESS->value],
-            TaskStatus::DONE->value => [
-                TaskStatus::IN_PROGRESS->value,
-                TaskStatus::BLOCKED->value,
-                TaskStatus::CANCELLED->value,
-            ],
-            TaskStatus::CANCELLED->value => [
-                TaskStatus::IN_PROGRESS->value,
-                TaskStatus::BLOCKED->value,
-                TaskStatus::DONE->value,
-            ],
-        ];
 
         $from = $oldStatus->value;
         $to = $newStatus->value;
 
         // Validate transition
-        if (! isset($allowedTransitions[$from]) || ! in_array($to, $allowedTransitions[$from], true)) {
+        if (!isset($this->allowedTransitions[$from]) || !in_array($to, $this->allowedTransitions[$from], true)) {
             throw TasksException::invalidStatusTransition($from, $to);
         }
 

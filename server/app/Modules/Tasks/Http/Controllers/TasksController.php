@@ -5,6 +5,7 @@ namespace App\Modules\Tasks\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Tasks\Actions\CreateTask;
 use App\Modules\Tasks\Actions\DeleteTask;
+use App\Modules\Tasks\Actions\GetAllowedStatusTransitionsAction;
 use App\Modules\Tasks\Actions\GetTask;
 use App\Modules\Tasks\Actions\ListTasks;
 use App\Modules\Tasks\Actions\UpdateTask;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TasksController extends Controller
 {
+
+
     public function create(CreateTaskRequest $request, CreateTask $action): JsonResponse
     {
         return ApiResponse::success(
@@ -75,5 +78,15 @@ class TasksController extends Controller
         $action->execute($taskId, $request->user());
 
         return response()->noContent();
+    }
+
+    public function allowedTrasitions(int $taskId, GetAllowedStatusTransitionsAction $action): JsonResponse
+    {
+        $result = $action->execute($taskId);
+
+        return ApiResponse::success(
+            message: 'Allowed transitions retrieved successfully.',
+            data: $result
+        );
     }
 }
