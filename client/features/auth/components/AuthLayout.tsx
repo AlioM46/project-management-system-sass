@@ -2,8 +2,9 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sun, Moon, Star } from "lucide-react";
+import { CheckCircle2, Sun, Moon, Star, Hexagon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 interface AuthLayoutProps {
@@ -18,19 +19,20 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             {/* Left Side: Illustration & Social Proof */}
             <div className="hidden lg:flex flex-col justify-between p-12 bg-muted/40 relative border-r border-border/50">
                 <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-12">
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                            <CheckCircle2 className="text-primary-foreground w-6 h-6" />
+                    <Link href="/" className="flex items-center gap-2 mb-12 hover:opacity-80 transition-opacity w-fit">
+                        <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+                            <Hexagon className="h-6 w-6 absolute" strokeWidth={2.5} />
+                            <div className="h-2.5 w-2.5 bg-white rounded-full absolute" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight">FocusFlow</span>
-                    </div>
+                        <span className="text-2xl font-bold tracking-tight">Nexus</span>
+                    </Link>
 
                     <div className="space-y-6 max-w-lg">
                         <h1 className="text-5xl font-extrabold leading-tight tracking-tight">
                             Manage projects with <span className="text-primary">unmatched speed.</span>
                         </h1>
                         <p className="text-xl text-muted-foreground leading-relaxed">
-                            Join thousands of teams who have transformed their productivity with FocusFlow.
+                            Join thousands of teams who have transformed their productivity with Nexus.
                         </p>
                     </div>
                 </div>
@@ -92,6 +94,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                         <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                         <span className="sr-only">Toggle theme</span>
                     </Button>
+                </div>
+
+                {/* Mobile Home Link (Visible only on small screens or as a persistent back button) */}
+                <div className="absolute top-6 left-6 lg:hidden">
+                    <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                        <div className="relative flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md">
+                            <Hexagon className="h-4 w-4 absolute" strokeWidth={2.5} />
+                            <div className="h-1.5 w-1.5 bg-white rounded-full absolute" />
+                        </div>
+                        <span className="font-bold tracking-tight">Nexus</span>
+                    </Link>
                 </div>
 
                 <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
