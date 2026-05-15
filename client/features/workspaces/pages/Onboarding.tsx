@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkspace, getWorkspaces } from "../api/workspace.api";
 import { ApiError } from "@/shared/api/ApiError";
@@ -25,11 +25,14 @@ export default function Onboarding() {
      * Handles the form submission to create a new workspace.
      */
 
-    useEffect(() => {
+    const hasFetched = useRef(false);
 
+    useEffect(() => {
         const fetchData = async () => {
+            if (hasFetched.current) return;
+            hasFetched.current = true;
             try {
-                await detectWorkspaces();
+                await detectWorkspaces(true);
             } catch (error) {
                 console.error(error);
             }
@@ -39,7 +42,7 @@ export default function Onboarding() {
         fetchData();
     }, [router])
 
-    const detectWorkspaces = async () => {
+    const detectWorkspaces = async (showToast: boolean = true) => {
         setIsRefreshing(true);
         try {
             const data = await getWorkspaces();
@@ -51,11 +54,13 @@ export default function Onboarding() {
                 router.push("/dashboard");
             } else {
                 // Still zero workspaces
-                toast.info("No workspaces found yet. Please create a workspace to continue");
+                if (showToast) {
+                    toast.info("No workspaces found yet. Please create a workspace to continue");
+                }
                 setIsRefreshing(false);
             }
         } catch (err) {
-            toast.error("Failed to check status.");
+            if (showToast) toast.error("Failed to check status.");
             setIsRefreshing(false);
         }
     }
