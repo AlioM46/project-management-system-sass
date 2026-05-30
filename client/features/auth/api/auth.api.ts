@@ -2,7 +2,7 @@
 import { apiClient } from "@/shared/api/apiClient";
 // Import helpers to save or remove "Cookies" (tiny pieces of data saved in the browser)
 import { setCookie } from "@/shared/utils/cookies";
-import { AuthResponse, LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput } from "../types";
+import { AuthResponse, LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, User } from "../types";
 
 /**
  * This function sends the registration data to the backend.
@@ -44,4 +44,8 @@ export async function forgotPassword(data: ForgotPasswordInput): Promise<string>
 export async function resetPassword(data: ResetPasswordInput): Promise<string> {
     const response = await apiClient.post<{ message?: string }>("/auth/password/reset-password", data, { skipRefresh: true });
     return response?.message || "Password reset successfully";
+}
+
+export async function getMe(): Promise<User> {
+    return apiClient.get<User>("/auth/me");
 }
