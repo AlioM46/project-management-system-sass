@@ -6,6 +6,8 @@ class NotificationType
 {
     const MENTIONED = 'mentioned';
 
+    const COMMENT_REPLIED = 'comment_replied';
+
     const TASK_ASSIGNED = 'task_assigned';
 
     const TASK_UPDATED = 'task_updated';

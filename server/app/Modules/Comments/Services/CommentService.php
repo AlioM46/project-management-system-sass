@@ -9,6 +9,8 @@ use App\Modules\Audit\Enums\AuditTargetType;
 use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Comments\Model\Comment;
 use App\Modules\Comments\Model\CommentAttachment;
+use App\Modules\Notifications\Enums\NotificationType;
+use App\Modules\Notifications\Services\NotificationService;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -21,11 +23,14 @@ class CommentService
         private CommentAttachmentService $attachmentService,
         private MentionService $mentionService,
         private WorkspaceContextService $workspaceContext,
-        private AuditLogger $auditLogger
+        private AuditLogger $auditLogger,
+        private NotificationService $notificationService
     ) {}
 
     public function create(Task $task, User $user, string $content, ?int $parentId = null): Comment
     {
+        $parent = null;
+
         // If parentId is provided, optionally verify it exists and belongs to the same task
         if ($parentId) {
             $parent = Comment::findOrFail($parentId);
@@ -61,7 +66,20 @@ class CommentService
             return $comment;
         });
 
-        // [NOTIFICATION PLACEHOLDER] - Notify parent author or task participants
+        if ($parent && (int) $parent->author_id !== (int) $user->id) {
+            $this->notificationService->send(
+                $this->workspaceContext->currentWorkspaceId() ?? (int) $task->workspace_id,
+                (int) $parent->author_id,
+                NotificationType::COMMENT_REPLIED,
+                [
+                    'source_type' => 'comment',
+                    'source_id' => $comment->id,
+                    'parent_comment_id' => $parent->id,
+                    'task_id' => $task->id,
+                    'replied_by_user_id' => $user->id,
+                ]
+            );
+        }
 
         return $comment;
     }
@@ -95,10 +113,9 @@ class CommentService
         });
     }
 
-    public function delete(Comment $comment, User $actor, bool $isAdminOrOwner = false): void
+    public function delete(Comment $comment, User $actor): void
     {
-        // check if admin or owner of the task
-        if (! $isAdminOrOwner && $comment->author_id !== $actor->id) {
+        if ($comment->author_id !== $actor->id) {
             throw new \Exception('Unauthorized');
         }
 
@@ -129,12 +146,11 @@ class CommentService
         });
     }
 
-    public function deleteAttachment(CommentAttachment $attachment, User $actor, bool $isAdminOrOwner = false): void
+    public function deleteAttachment(CommentAttachment $attachment, User $actor): void
     {
         $comment = $attachment->comment;
 
-        // Author can delete their own attachment, or admin/owner can delete any
-        if (! $isAdminOrOwner && $comment->author_id !== $actor->id) {
+        if ($comment->author_id !== $actor->id) {
             throw new \Exception('Unauthorized');
         }
 
@@ -164,15 +180,14 @@ class CommentService
             ->paginate($perPage, ['*'], 'page', $page);
     }
 
-    public function update(Comment $comment, User $user, string $content, array $attachments = [], bool $isAdminOrOwner = false): Comment
+    public function update(Comment $comment, User $user, string $content, ?array $attachments = null): Comment
     {
-        // Only author or admin/owner can update
-        if (! $isAdminOrOwner && $comment->author_id !== $user->id) {
+        if ($comment->author_id !== $user->id) {
             throw new \Exception('Unauthorized');
         }
 
         // Handle attachment sync
-        if (! empty($attachments)) {
+        if ($attachments !== null) {
             $this->attachmentService->sync($comment, $attachments);
         }
 

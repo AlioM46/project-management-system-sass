@@ -15,7 +15,7 @@ class UpdateCommentRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string', 'max:5000'],
-            'attachments' => ['sometimes', 'array'],
+            'attachments' => ['sometimes', 'array', 'max:10'],
             'attachments.*' => ['nullable'], // Validated manually in the service as either ID or File
         ];
     }
