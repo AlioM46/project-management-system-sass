@@ -11,6 +11,10 @@ type ApiOptions = RequestInit & {
     skipRefresh?: boolean;
 };
 
+function isFormDataBody(body: unknown): body is FormData {
+    return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
 async function refreshAccessToken() {
     const response = await fetch(`${API_URL}/auth/refresh-token`, {
         method: "POST",
@@ -52,12 +56,15 @@ async function _request<T>(
 
     const accessToken = getCookie("access_token");
     const workspaceId = getCookie("workspace_id");
+    const hasFormDataBody = isFormDataBody(fetchOptions.body);
 
     const response = await fetch(`${API_URL}${path}`, {
         ...fetchOptions,
         credentials: "include",
         headers: {
-            "Content-Type": "application/json",
+            ...(!hasFormDataBody && {
+                "Content-Type": "application/json",
+            }),
 
             ...(accessToken && {
                 Authorization: `Bearer ${accessToken}`,
@@ -122,7 +129,7 @@ export const apiClient = {
         const response = await _request<T>(path, {
             ...options,
             method: "POST",
-            body: body ? JSON.stringify(body) : undefined,
+            body: body ? (isFormDataBody(body) ? body : JSON.stringify(body)) : undefined,
         });
         return response.data;
     },
@@ -131,7 +138,7 @@ export const apiClient = {
         const response = await _request<T>(path, {
             ...options,
             method: "PUT",
-            body: body ? JSON.stringify(body) : undefined,
+            body: body ? (isFormDataBody(body) ? body : JSON.stringify(body)) : undefined,
         });
         return response.data;
     },
@@ -140,7 +147,7 @@ export const apiClient = {
         const response = await _request<T>(path, {
             ...options,
             method: "PATCH",
-            body: body ? JSON.stringify(body) : undefined,
+            body: body ? (isFormDataBody(body) ? body : JSON.stringify(body)) : undefined,
         });
         return response.data;
     },
