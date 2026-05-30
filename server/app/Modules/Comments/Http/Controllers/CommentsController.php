@@ -61,10 +61,14 @@ class CommentsController extends Controller
     public function update(UpdateCommentRequest $request, int $commentId, UpdateCommentAction $action): JsonResponse
     {
         $content = $request->validated('content');
-        $attachments = array_merge(
-            $request->file('attachments', []),
-            $request->input('attachments', [])
-        );
+        $attachments = null;
+
+        if ($request->hasFile('attachments') || $request->exists('attachments')) {
+            $attachments = array_merge(
+                $request->file('attachments', []),
+                $request->input('attachments', [])
+            );
+        }
 
         $comment = $action->execute($commentId, request()->user(), $content, $attachments);
 

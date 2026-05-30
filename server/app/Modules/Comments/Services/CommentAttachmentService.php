@@ -4,6 +4,7 @@ namespace App\Modules\Comments\Services;
 
 use App\Modules\Comments\Model\Comment;
 use App\Modules\Comments\Model\CommentAttachment;
+use App\Modules\Comments\Support\CommentAttachmentStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,6 +17,8 @@ class CommentAttachmentService
      */
     public function upload(Comment $comment, array $attachments): void
     {
+        $diskName = CommentAttachmentStorage::diskName();
+
         foreach ($attachments as $attachment) {
             if (!$attachment instanceof UploadedFile) {
                 continue;
@@ -23,7 +26,7 @@ class CommentAttachmentService
 
             $fileName = uniqid() . '.' . $attachment->getClientOriginalExtension();
             try {
-                $path = Storage::disk('r2')->putFileAs(
+                $path = Storage::disk($diskName)->putFileAs(
                     'attachments/' . $comment->task_id,
                     $attachment,
                     $fileName
@@ -36,14 +39,16 @@ class CommentAttachmentService
                 CommentAttachment::create([
                     'comment_id' => $comment->id,
                     'object_key' => $path,
+                    'original_name' => $attachment->getClientOriginalName(),
                     'file_type' => $attachment->getMimeType(),
                     'file_size' => $attachment->getSize(),
                 ]);
             }
             catch (\Throwable $e) {
-                logger()->error('R2 upload failed', [
+                logger()->error('Comment attachment upload failed', [
                     'error' => $e->getMessage(),
                     'comment_id' => $comment->id,
+                    'disk' => $diskName,
                 ]);
 
                 throw $e;
@@ -56,7 +61,7 @@ class CommentAttachmentService
      */
     public function delete(CommentAttachment $attachment): void
     {
-        Storage::disk('r2')->delete($attachment->object_key);
+        Storage::disk(CommentAttachmentStorage::diskName())->delete($attachment->object_key);
         $attachment->delete();
     }
 
@@ -76,7 +81,7 @@ class CommentAttachmentService
      * Synchronize attachments for a comment.
      *
      * @param Comment $comment
-     * @param array $attachments Mixed array of IDs (int) and new files (UploadedFile)
+     * @param array $attachments Mixed array of IDs (int|string) and new files (UploadedFile)
      */
     public function sync(Comment $comment, array $attachments): void
     {

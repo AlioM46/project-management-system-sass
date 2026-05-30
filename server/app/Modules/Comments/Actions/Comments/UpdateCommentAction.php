@@ -4,23 +4,18 @@ namespace App\Modules\Comments\Actions\Comments;
 
 use App\Modules\Comments\Model\Comment;
 use App\Modules\Comments\Services\CommentService;
-use App\Modules\Workspace\Services\WorkspaceContextService;
 
 class UpdateCommentAction
 {
     public function __construct(
-        private CommentService $service,
-        private WorkspaceContextService $workspaceContextService
+        private CommentService $service
     ) {
     }
 
-    public function execute(int $commentId, $user, string $content, array $attachments = [])
+    public function execute(int $commentId, $user, string $content, ?array $attachments = null)
     {
         $comment = Comment::with('task')->findOrFail($commentId);
 
-        // Check if user is admin or owner of the workspace
-        $isAdminOrOwner = $this->workspaceContextService->isOwnerOrAdmin();
-
-        return $this->service->update($comment, $user, $content, $attachments, $isAdminOrOwner);
+        return $this->service->update($comment, $user, $content, $attachments);
     }
 }

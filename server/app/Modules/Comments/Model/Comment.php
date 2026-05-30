@@ -21,6 +21,12 @@ class Comment extends Model
         'content',
     ];
 
+    protected $appends = [
+        'formatted_content',
+        'can_update',
+        'can_delete',
+    ];
+
     public function parent()
     {
         return $this->belongsTo(Comment::class, 'parent_id');
@@ -73,5 +79,34 @@ class Comment extends Model
     {
         return $this->hasMany(Mention::class, 'source_id')
             ->where('source_type', 'comment');
+    }
+
+    public function getFormattedContentAttribute(): string
+    {
+        $escaped = e((string) $this->content);
+
+        $formatted = preg_replace(
+            '/(^|\\s)(@([\\w-]+))/u',
+            '$1<span style="display:inline-block;border-radius:0.375rem;background:rgba(59,130,246,0.12);padding:0.125rem 0.375rem;color:#2563eb;font-weight:600;">$2</span>',
+            $escaped
+        );
+
+        return nl2br((string) $formatted);
+    }
+
+    public function getCanUpdateAttribute(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return (int) $this->author_id === (int) $user->id;
+    }
+
+    public function getCanDeleteAttribute(): bool
+    {
+        return $this->getCanUpdateAttribute();
     }
 }

@@ -21,7 +21,7 @@ class ListWorkspaceMembers
 
         $members = $workspace->members()
             ->with([
-                'user:id,name,email',
+                'user:id,name,username,email',
                 'role:id,workspace_id,name,description,is_system',
             ])
             ->orderByDesc('joined_at')

@@ -22,13 +22,11 @@ Route::prefix('comments')
 
         // Update comment (author or admin/owner)
         Route::put('/{commentId}', [CommentsController::class, 'update'])
-            ->whereNumber('commentId')
-            ->middleware('hasPermission:comment.update');
+            ->whereNumber('commentId');
 
         // Delete comment (author or admin/owner)
         Route::delete('/{commentId}', [CommentsController::class, 'destroy'])
-            ->whereNumber('commentId')
-            ->middleware('hasPermission:comment.delete');
+            ->whereNumber('commentId');
 
         // Attachment routes
         Route::delete('/attachments/{attachmentId}', [CommentsController::class, 'destroyAttachment'])
