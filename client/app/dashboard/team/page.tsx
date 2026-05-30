@@ -1,22 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UserPlus, Search, Shield, MoreHorizontal, Mail, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getMembers, sendInvite } from "@/features/team/api/team.api";
 import { Member } from "@/features/team/types";
+import { getMe } from "@/features/auth/api/auth.api";
 import { toast } from "sonner";
+
+function getRoleName(member: Member): string {
+    return member.role?.name || "member";
+}
+
+function getRoleTone(roleName: string): string {
+    const normalizedRole = roleName.toLowerCase();
+
+    if (normalizedRole === "owner") {
+        return "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400";
+    }
+
+    if (normalizedRole === "admin") {
+        return "bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-400";
+    }
+
+    return "bg-zinc-100 text-zinc-800 dark:bg-white/10 dark:text-zinc-400";
+}
 
 export default function TeamPage() {
     const [members, setMembers] = useState<Member[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [inviteEmail, setInviteEmail] = useState("");
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const actionsRef = useRef<HTMLDivElement | null>(null);
 
     // Close dropdown on click outside
     useEffect(() => {
-        const handleClickOutside = () => setOpenDropdownId(null);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (actionsRef.current?.contains(event.target as Node)) {
+                return;
+            }
+
+            setOpenDropdownId(null);
+        };
+
         document.addEventListener("click", handleClickOutside);
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
@@ -24,8 +52,13 @@ export default function TeamPage() {
     useEffect(() => {
         const fetchMembers = async () => {
             try {
-                const response = await getMembers();
+                const [response, currentUser] = await Promise.all([
+                    getMembers(),
+                    getMe(),
+                ]);
+
                 setMembers(response.members || (Array.isArray(response) ? response : []));
+                setCurrentUserId(currentUser.id);
             } catch (error) {
                 console.error("Failed to fetch members:", error);
                 toast.error("Failed to load team members.");
@@ -134,8 +167,13 @@ export default function TeamPage() {
                                                     {member.user?.name?.charAt(0).toUpperCase() || "U"}
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-zinc-900 dark:text-white">
+                                                    <p className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-white">
                                                         {member.user?.name || "Unknown User"}
+                                                        {currentUserId === member.user_id && (
+                                                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
+                                                                You
+                                                            </span>
+                                                        )}
                                                     </p>
                                                     <p className="text-zinc-500 text-xs mt-0.5">
                                                         {member.user?.email || "No email"}
@@ -144,20 +182,16 @@ export default function TeamPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                member.role === 'owner' ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                member.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-400' :
-                                                'bg-zinc-100 text-zinc-800 dark:bg-white/10 dark:text-zinc-400'
-                                            }`}>
-                                                {member.role === 'owner' && <Shield className="h-3 w-3" />}
-                                                {member.role}
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getRoleTone(getRoleName(member))}`}>
+                                                {getRoleName(member).toLowerCase() === "owner" && <Shield className="h-3 w-3" />}
+                                                {getRoleName(member)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-zinc-500">
                                             {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'Unknown'}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="relative inline-block text-left opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div ref={openDropdownId === member.id ? actionsRef : null} className="relative inline-block text-left opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                                                 <Button 
                                                     variant="ghost" 
                                                     size="sm" 
@@ -174,7 +208,11 @@ export default function TeamPage() {
                                                     <div className="absolute top-full right-0 mt-1 w-36 bg-white dark:bg-[#0f0f0f] border border-zinc-200 dark:border-white/10 rounded-xl shadow-lg overflow-hidden z-10 text-left">
                                                         <button 
                                                             className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5"
-                                                            onClick={() => toast.info("Change role feature coming soon!")}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toast.info("Change role feature coming soon!");
+                                                                setOpenDropdownId(null);
+                                                            }}
                                                         >
                                                             Change Role
                                                         </button>
