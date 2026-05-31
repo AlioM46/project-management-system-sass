@@ -47,5 +47,7 @@ export async function resetPassword(data: ResetPasswordInput): Promise<string> {
 }
 
 export async function getMe(): Promise<User> {
-    return apiClient.get<User>("/auth/me");
+    const response = await apiClient.get<User | { user: User }>("/auth/me");
+
+    return "user" in response ? response.user : response;
 }

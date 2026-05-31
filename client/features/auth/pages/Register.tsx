@@ -11,12 +11,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle } from "lucide-react";
 import { AuthLayout } from "../components/AuthLayout";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export default function Register() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function Register() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const next = searchParams.get("next") || "/dashboard";
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -58,7 +60,7 @@ export default function Register() {
                 password: password
             });
 
-            toast.success("Welcome aboard! 🎉");
+            toast.success("Welcome aboard!");
             setShowSuccessDialog(true);
         } catch (err) {
             if (err instanceof ApiError) {
@@ -78,21 +80,21 @@ export default function Register() {
                 open={showSuccessDialog} 
                 onOpenChange={(open) => {
                     if (!open) {
-                        router.push("/dashboard");
+                        router.push(next);
                     }
                 }}
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Welcome aboard! 🎉</DialogTitle>
+                        <DialogTitle className="text-2xl">Welcome aboard!</DialogTitle>
                         <DialogDescription className="text-base pt-2">
-                            We've sent a verification link to your email address. 
+                            We&apos;ve sent a verification link to your email address. 
                             Please check your inbox (and spam folder) to activate your account.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-4">
-                        <Button onClick={() => router.push("/dashboard")} className="w-full sm:w-auto">
-                            Go to Dashboard
+                        <Button onClick={() => router.push(next)} className="w-full sm:w-auto">
+                            {next === "/dashboard" ? "Go to Dashboard" : "Continue"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -191,7 +193,7 @@ export default function Register() {
                     Already have an account?
                 </p>
                 <Link 
-                    href="/login" 
+                    href={next !== "/dashboard" ? `/login?next=${encodeURIComponent(next)}` : "/login"} 
                     className={cn(
                         buttonVariants({ variant: "outline" }),
                         "rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all"
