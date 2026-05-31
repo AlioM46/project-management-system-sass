@@ -19,7 +19,8 @@ class AcceptWorkspaceInvite
     public function __construct(
         private readonly WorkspaceInvitationService $workspaceInvitationService,
         private readonly AuditLogger $auditLogger
-    ) {}
+    ) {
+    }
 
     public function execute(User $user, array $data): array
     {
@@ -36,6 +37,12 @@ class AcceptWorkspaceInvite
                 throw WorkspaceContextException::invalidInvitationToken();
             }
 
+            $invitation = $this->workspaceInvitationService->normalizeInvitationStatus($invitation);
+
+            if ($invitation->status === 'expired') {
+                throw WorkspaceContextException::invitationExpired($invitation->id, $invitation->workspace_id);
+            }
+
             if ($invitation->status !== 'pending') {
                 throw WorkspaceContextException::invitationAlreadyHandled(
                     invitationId: $invitation->id,
@@ -43,14 +50,7 @@ class AcceptWorkspaceInvite
                 );
             }
 
-            if ($this->workspaceInvitationService->isExpired($invitation)) {
-                $invitation->status = 'expired';
-                $invitation->save();
-
-                throw WorkspaceContextException::invitationExpired($invitation->id, $invitation->workspace_id);
-            }
-
-            if (! $this->workspaceInvitationService->tokenMatches($invitation, $plainToken)) {
+            if (!$this->workspaceInvitationService->tokenMatches($invitation, $plainToken)) {
                 throw WorkspaceContextException::invalidInvitationToken();
             }
 
