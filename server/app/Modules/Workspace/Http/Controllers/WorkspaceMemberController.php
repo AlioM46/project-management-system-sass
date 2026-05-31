@@ -4,25 +4,32 @@ namespace App\Modules\Workspace\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\AcceptWorkspaceInvite;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\CancelInvite;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\ChangeWorkspaceMemberRole;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\GetInvitesList;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\InviteWorkspaceMember;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\ListWorkspaceMembers;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\PreviewWorkspaceInvite;
+use App\Modules\Workspace\Actions\WorkspaceMemberActions\ResendInvite;
 use App\Modules\Workspace\Actions\WorkspaceMemberActions\RemoveWorkspaceMember;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\AcceptWorkspaceInviteRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\InviteWorkspaceMemberRequest;
+use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\PreviewWorkspaceInviteRequest;
 use App\Modules\Workspace\Http\Requests\WorkspaceMembersRequests\UpdateWorkspaceMemberRequest;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use App\Modules\Workspace\Services\WorkspaceMembersService;
 use App\Shared\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class WorkspaceMemberController extends Controller
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService
-    ) {}
+    ) {
+    }
 
     /*
         WorkspaceMemberController.php handles membership inside the active workspace:
@@ -31,6 +38,40 @@ class WorkspaceMemberController extends Controller
             update member
             remove member
             */
+
+    public function previewInvite(PreviewWorkspaceInviteRequest $request, PreviewWorkspaceInvite $action): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Workspace invitation preview retrieved successfully.',
+            data: $action->execute($request->validated())
+        );
+    }
+
+    public function cancelInvite(int $invitationId, Request $request, CancelInvite $action): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Workspace invitation cancelled successfully.',
+            data: $action->execute($invitationId, $request->user())
+        );
+    }
+
+    public function resendInvite(int $invitationId, Request $request, ResendInvite $action): JsonResponse
+    {
+        return ApiResponse::success(
+            message: 'Workspace invitation resent successfully.',
+            data: $action->execute($invitationId, $request->user())
+        );
+    }
+
+    public function inviteList(GetInvitesList $action): JsonResponse
+    {
+
+        return ApiResponse::success(
+            message: 'Workspace invitations retrieved successfully.',
+            data: $action->execute()
+        );
+
+    }
     public function members(ListWorkspaceMembers $action): JsonResponse
     {
         return ApiResponse::success(
