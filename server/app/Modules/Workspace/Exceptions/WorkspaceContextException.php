@@ -181,6 +181,19 @@ class WorkspaceContextException extends BusinessException
         );
     }
 
+    public static function invitationNotFound(int $invitationId, int $workspaceId): self
+    {
+        return new self(
+            message: 'Invitation not found.',
+            errorCode: 'WORKSPACE_INVITE_NOT_FOUND',
+            status: 404,
+            meta: [
+                'invitation_id' => $invitationId,
+                'workspace_id' => $workspaceId,
+            ]
+        );
+    }
+
     public static function invitationExpired(int $invitationId, int $workspaceId): self
     {
         return new self(
@@ -295,6 +308,26 @@ class WorkspaceContextException extends BusinessException
         return new self(
             message: 'You do not have permission to change this member role.',
             errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_CHANGE_ROLE',
+            status: 403,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function insufficientPermissionToCancelInvite(int $workspaceId): self
+    {
+        return new self(
+            message: 'You do not have permission to cancel this invitation.',
+            errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_CANCEL_INVITE',
+            status: 403,
+            meta: ['workspace_id' => $workspaceId]
+        );
+    }
+
+    public static function insufficientPermissionToResendInvite(int $workspaceId): self
+    {
+        return new self(
+            message: 'You do not have permission to resend this invitation.',
+            errorCode: 'WORKSPACE_CONTEXT_INSUFFICIENT_PERMISSION_TO_RESEND_INVITE',
             status: 403,
             meta: ['workspace_id' => $workspaceId]
         );
