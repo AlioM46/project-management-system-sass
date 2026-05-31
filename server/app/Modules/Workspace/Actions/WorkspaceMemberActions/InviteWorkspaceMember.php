@@ -23,7 +23,8 @@ class InviteWorkspaceMember
         private readonly WorkspaceMembersService $workspaceMembersService,
         private readonly WorkspaceInvitationService $workspaceInvitationService,
         private readonly AuditLogger $auditLogger
-    ) {}
+    ) {
+    }
 
     public function execute(array $data): array
     {
@@ -56,16 +57,7 @@ class InviteWorkspaceMember
         $expiresAt = $this->workspaceInvitationService->defaultExpiryAt();
         $inviteMessage = isset($data['message']) ? trim((string) $data['message']) : null;
 
-        $invitation = DB::transaction(function () use (
-            $currentWorkspace,
-            $inviteeEmail,
-            $currentMembership,
-            $inviteMessage,
-            $invitedUserRole,
-            $tokenHash,
-            $expiresAt,
-            $plainToken
-        ) {
+        $invitation = DB::transaction(function () use ($currentWorkspace, $inviteeEmail, $currentMembership, $inviteMessage, $invitedUserRole, $tokenHash, $expiresAt, $plainToken) {
             $invitation = $this->workspaceInvitationService->upsertPendingInvitation(
                 workspace: $currentWorkspace,
                 email: $inviteeEmail,
@@ -90,8 +82,7 @@ class InviteWorkspaceMember
                 )
             );
 
-            $invitation->sent_at = now();
-            $invitation->save();
+            $this->workspaceInvitationService->markInvitationSent($invitation);
 
             $this->auditLogger->record(
                 workspace: $currentWorkspace,
@@ -114,15 +105,7 @@ class InviteWorkspaceMember
         });
 
         return [
-            'invitation' => [
-                'id' => $invitation->id,
-                'workspace_id' => $invitation->workspace_id,
-                'email' => $invitation->email,
-                'role_id' => $invitation->role_id,
-                'status' => $invitation->status,
-                'expires_at' => $invitation->expires_at,
-                'sent_at' => $invitation->sent_at,
-            ],
+            'invitation' => $this->workspaceInvitationService->serializeInvitation($invitation),
         ];
     }
 
