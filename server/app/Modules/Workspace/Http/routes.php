@@ -8,6 +8,11 @@ use App\Shared\Http\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('workspaces')->group(function () {
+    Route::get('/members/invitations/preview', [WorkspaceMemberController::class, 'previewInvite'])
+        ->name('workspaces.members.invite.preview');
+});
+
 Route::middleware('auth:api')->prefix('workspaces')->group(function () {
 
     Route::get('/', [WorkspaceController::class, 'listUserWorkspaces'])
@@ -69,6 +74,21 @@ Route::middleware('auth:api')->prefix('workspaces')->group(function () {
             ->whereNumber('member')
             ->name('workspaces.members.destroy')
             ->middleware('hasPermission:member.remove');
+
+        Route::get("/members/invite-list", [WorkspaceMemberController::class, 'inviteList'])
+            ->name('workspaces.members.invite-list')
+            ->middleware('hasPermission:member.view');
+
+        Route::delete('/members/invitations/{invitationId}', [WorkspaceMemberController::class, 'cancelInvite'])
+            ->whereNumber('invitationId')
+            ->name('workspaces.members.cancel-invite')
+            ->middleware('hasPermission:member.invite');
+
+        Route::post('/members/invitations/{invitationId}/resend', [WorkspaceMemberController::class, 'resendInvite'])
+            ->whereNumber('invitationId')
+            ->name('workspaces.members.resend-invite')
+            ->middleware('hasPermission:member.invite');
+
     });
 });
 
