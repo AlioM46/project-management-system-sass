@@ -31,7 +31,8 @@ class ChangeWorkspaceMemberRole
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService,
         private readonly AuditLogger $auditLogger
-    ) {}
+    ) {
+    }
 
     public function execute(int $memberId, array $data): array
     {
@@ -158,7 +159,7 @@ class ChangeWorkspaceMemberRole
         // 3. cannot assign admin
 
         // if not owner, must be admin to proceed with any role change.
-        if (! $this->isCurrentUserAdmin()) {
+        if (!$this->isCurrentUserAdmin()) {
             throw WorkspaceContextException::insufficientPermissionToChangeRole($this->workspace->id);
         }
 
