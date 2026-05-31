@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('workspace_invitations', function (Blueprint $table) {
@@ -26,7 +25,7 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->enum('status', ['pending', 'accepted', 'revoked', 'expired'])->default('pending');
+            $table->enum('status', ['pending', 'accepted', 'revoked', 'expired', 'cancelled'])->default('pending');
             $table->string('token_hash', 64);
             $table->string('message', 1000)->nullable();
             $table->timestamp('expires_at');
