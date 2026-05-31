@@ -9,13 +9,15 @@ const protectedRoutes = ["/dashboard", "/onboarding"];
 
 export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const next = request.nextUrl.searchParams.get("next");
     
     // Check if the user has an access token in their cookies
     const token = request.cookies.get("access_token")?.value;
+    const isInviteResumeFlow = typeof next === "string" && next.startsWith("/accept-invite");
 
     // 1. If they HAVE a token, but are trying to access a guest route (like /login)
     // Redirect them to the dashboard.
-    if (token && guestRoutes.some(route => pathname.startsWith(route))) {
+    if (token && guestRoutes.some(route => pathname.startsWith(route)) && !isInviteResumeFlow) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 

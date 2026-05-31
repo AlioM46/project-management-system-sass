@@ -11,15 +11,17 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle } from "lucide-react";
 import { AuthLayout } from "../components/AuthLayout";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const next = searchParams.get("next") || "/dashboard";
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -65,7 +67,7 @@ export default function Login() {
 
             toast.success("Login successful!");
             setTimeout(() => {
-                router.push("/dashboard");
+                router.push(next);
             }, 2000);
         } catch (err) {
             if (err instanceof ApiError) {
@@ -145,10 +147,10 @@ export default function Login() {
 
             <div className="mt-8 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <p className="text-sm text-muted-foreground">
-                    Don't have an account?
+                    Don&apos;t have an account?
                 </p>
                 <Link 
-                    href="/register" 
+                    href={next !== "/dashboard" ? `/register?next=${encodeURIComponent(next)}` : "/register"} 
                     className={cn(
                         buttonVariants({ variant: "outline" }),
                         "rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all"
