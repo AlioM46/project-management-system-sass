@@ -14,7 +14,8 @@ class NotificationsController extends Controller
 {
     public function __construct(
         private readonly WorkspaceContextService $contextService
-    ) {}
+    ) {
+    }
 
     public function index(): JsonResponse
     {
@@ -38,7 +39,7 @@ class NotificationsController extends Controller
             ->where('user_id', auth()->id())
             ->first();
 
-        if (! $notification) {
+        if (!$notification) {
             return ApiResponse::error(
                 'Notification not found',
                 'NOT_FOUND',
@@ -69,7 +70,7 @@ class NotificationsController extends Controller
         $userId = auth()->id();
         $workspaceId = $this->contextService->currentWorkspaceId();
 
-        if (! $workspaceId) {
+        if (!$workspaceId) {
             return ApiResponse::error(
                 'Workspace context not found',
                 'WORKSPACE_CONTEXT_NOT_FOUND',
