@@ -1,8 +1,8 @@
 "use client";
 
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Button } from "@/components/ui/button";
-import { Bell, Search, Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { LogoutButton } from "./LogoutButton";
 
 export function DashboardNavbar() {
@@ -37,13 +37,7 @@ export function DashboardNavbar() {
           />
         </form>
         <div className="flex items-center gap-x-4 lg:gap-x-6">
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300"
-          >
-            <span className="sr-only">View notifications</span>
-            <Bell className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <NotificationCenter />
 
           {/* Separator */}
           <div
