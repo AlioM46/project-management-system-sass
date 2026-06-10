@@ -4,9 +4,9 @@ use App\Modules\Audit\AuditServiceProvider;
 use App\Modules\Auth\AuthServiceProvider;
 use App\Modules\Comments\CommentsServiceProvider;
 use App\Modules\Notifications\NotificationsServiceProvider;
-use App\Modules\Projects\ProjectsServiceProvider;
+use App\Modules\Courses\CoursesServiceProvider;
 use App\Modules\RolesPermissions\RolesPermissionsServiceProvider;
-use App\Modules\Tasks\TasksServiceProvider;
+use App\Modules\Leads\LeadsServiceProvider;
 use App\Modules\Workspace\WorkspaceServiceProvider;
 use App\Providers\AppServiceProvider;
 
@@ -14,9 +14,9 @@ return [
     AppServiceProvider::class,
     AuthServiceProvider::class,
     AuditServiceProvider::class,
-    ProjectsServiceProvider::class,
+    CoursesServiceProvider::class,
     RolesPermissionsServiceProvider::class,
-    TasksServiceProvider::class,
+    LeadsServiceProvider::class,
     WorkspaceServiceProvider::class,
     CommentsServiceProvider::class,
     NotificationsServiceProvider::class,
