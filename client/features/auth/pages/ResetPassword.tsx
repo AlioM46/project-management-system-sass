@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import Link from "next/link";
 import { resetPassword } from "../api/auth.api";
@@ -13,6 +12,7 @@ import { AuthLayout } from "../components/AuthLayout";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 interface ResetPasswordProps {
     email?: string;
@@ -20,6 +20,7 @@ interface ResetPasswordProps {
 }
 
 export default function ResetPassword({ email, token }: ResetPasswordProps) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [password, setPassword] = useState("");
     const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -32,20 +33,20 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
         setError(null);
 
         if (!email || !token) {
-            setError("Invalid reset link. Please request a new one.");
-            toast.error("Invalid reset link.");
+            setError(t("auth_reset_invalid_link_err"));
+            toast.error(t("auth_reset_invalid_link_err"));
             return;
         }
 
         if (password.length < 8) {
-            setError("Password must be at least 8 characters long.");
-            toast.error("Password must be at least 8 characters long.");
+            setError(t("auth_reset_password_len_err"));
+            toast.error(t("auth_reset_password_len_err"));
             return;
         }
 
         if (password !== passwordConfirmation) {
-            setError("Passwords do not match.");
-            toast.error("Passwords do not match.");
+            setError(t("auth_reset_confirm_password_err"));
+            toast.error(t("auth_reset_confirm_password_err"));
             return;
         }
 
@@ -59,15 +60,15 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                 password_confirmation: passwordConfirmation
             });
 
-            toast.success("Password reset successfully!");
+            toast.success(t("auth_reset_toast_success"));
             setShowSuccessDialog(true);
         } catch (err) {
             if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Failed to reset password. The link might be expired.");
-                toast.error(err.getFriendlyMessage() ?? "Failed to reset password.");
+                setError(err.getFriendlyMessage() ?? t("auth_reset_toast_failed"));
+                toast.error(err.getFriendlyMessage() ?? t("auth_reset_toast_failed"));
             } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
+                setError(t("auth_unexpected_error"));
+                toast.error(t("auth_unexpected_error"));
             }
         } finally {
             setIsLoading(false);
@@ -86,32 +87,31 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Password Reset Complete! 🎉</DialogTitle>
-                        <DialogDescription className="text-base pt-2">
-                            Your password has been successfully reset.
-                            You can now use your new password to log in to your account.
+                        <DialogTitle className="text-2xl text-start">{t("auth_reset_dialog_title")}</DialogTitle>
+                        <DialogDescription className="text-base pt-2 text-start">
+                            {t("auth_reset_dialog_desc")}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-4">
                         <Button onClick={() => router.push("/login")} className="w-full sm:w-auto">
-                            Go to Login
+                            {t("auth_reset_dialog_btn_login")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <div className="text-center lg:text-left mb-8">
-                <h2 className="text-3xl font-bold tracking-tight mb-2">Create New Password</h2>
-                <p className="text-muted-foreground">Please enter your new password below.</p>
+            <div className="text-center lg:text-start mb-8">
+                <h2 className="text-3xl font-bold tracking-tight mb-2">{t("auth_reset_title")}</h2>
+                <p className="text-muted-foreground">{t("auth_reset_subtitle")}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 text-start">
                 {(!email || !token) && (
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Invalid Link</AlertTitle>
+                        <AlertTitle>{t("auth_reset_invalid_link_title")}</AlertTitle>
                         <AlertDescription>
-                            The reset link is incomplete or invalid. Please <Link href="/forgot-password" className="underline">request a new one</Link>.
+                            {t("auth_reset_invalid_link_desc")}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -119,13 +119,13 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                 {error && (
                     <Alert variant="destructive" className="animate-in zoom-in-95 duration-300">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Problem</AlertTitle>
+                        <AlertTitle>{t("auth_problem")}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
 
                 <div className="space-y-2">
-                    <Label htmlFor="password">New Password</Label>
+                    <Label htmlFor="password">{t("auth_reset_new_password")}</Label>
                     <Input
                         id="password"
                         type="password"
@@ -133,12 +133,12 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="passwordConfirmation">Confirm New Password</Label>
+                    <Label htmlFor="passwordConfirmation">{t("auth_reset_confirm_password")}</Label>
                     <Input
                         id="passwordConfirmation"
                         type="password"
@@ -146,7 +146,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                         required
                         value={passwordConfirmation}
                         onChange={(e) => setPasswordConfirmation(e.target.value)}
-                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                     />
                 </div>
 
@@ -158,10 +158,10 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Resetting...
+                            {t("auth_resetting")}
                         </>
                     ) : (
-                        "Reset Password"
+                        t("auth_forgot_title")
                     )}
                 </Button>
             </form>
