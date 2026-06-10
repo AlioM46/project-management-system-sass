@@ -4,6 +4,7 @@ import { TeamMemberActionsMenu } from "@/components/Team/members/TeamMemberActio
 import { TeamMemberIdentity } from "@/components/Team/members/TeamMemberIdentity";
 import { TeamMemberRoleBadge } from "@/components/Team/members/TeamMemberRoleBadge";
 import { Member } from "@/features/team/types";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMemberRowProps = {
     actionRef?: RefObject<HTMLDivElement | null>;
@@ -22,6 +23,7 @@ export function TeamMemberRow({
     onCloseActions,
     onToggleActions,
 }: TeamMemberRowProps) {
+    const { t } = useTranslation();
     const roleName = member.role?.name || "member";
 
     return (
@@ -33,9 +35,9 @@ export function TeamMemberRow({
                 <TeamMemberRoleBadge roleName={roleName} />
             </td>
             <td className="px-6 py-4 text-zinc-500">
-                {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : "Unknown"}
+                {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : t("team_unknown_user")}
             </td>
-            <td className="px-6 py-4 text-right">
+            <td className="px-6 py-4 text-end">
                 <TeamMemberActionsMenu
                     actionRef={actionRef}
                     isOpen={isActionsOpen}

@@ -16,6 +16,7 @@ import {
 import { getRoles, sendInvite } from "@/features/team/api/team.api";
 import { Role } from "@/features/team/types";
 import { ApiError } from "@/shared/api/ApiError";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type InviteMemberDialogProps = {
     onOpenChange: (open: boolean) => void;
@@ -23,6 +24,7 @@ type InviteMemberDialogProps = {
 };
 
 export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogProps) {
+    const { t } = useTranslation();
     const [inviteEmail, setInviteEmail] = useState("");
     const [roles, setRoles] = useState<Role[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -50,8 +52,8 @@ export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogPro
             } catch (err) {
                 const message =
                     err instanceof ApiError
-                        ? err.getFriendlyMessage() ?? "Failed to load roles."
-                        : "Failed to load roles.";
+                        ? err.getFriendlyMessage() ?? t("team_invite_toast_load_roles_error")
+                        : t("team_invite_toast_load_roles_error");
 
                 setRolesError(message);
             } finally {
@@ -60,7 +62,7 @@ export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogPro
         };
 
         fetchWorkspaceRoles();
-    }, [open]);
+    }, [open, t]);
 
     const handleInvite = async (event: FormEvent) => {
         event.preventDefault();
@@ -74,15 +76,15 @@ export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogPro
                 message: inviteMessage,
             });
 
-            toast.success("Invitation sent successfully.");
+            toast.success(t("team_invite_toast_sent_success"));
             setInviteEmail("");
             setInviteMessage("");
             onOpenChange(false);
         } catch (err) {
             const message =
                 err instanceof ApiError
-                    ? err.getFriendlyMessage() ?? "Failed to send invitation."
-                    : "Failed to send invitation.";
+                    ? err.getFriendlyMessage() ?? t("team_invite_toast_sent_error")
+                    : t("team_invite_toast_sent_error");
 
             setError(message);
             toast.error(message);
@@ -93,7 +95,7 @@ export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogPro
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl overflow-hidden rounded-[28px] border border-white/60 bg-white p-0 shadow-2xl shadow-blue-950/10 dark:border-white/10 dark:bg-[#101218]">
+            <DialogContent className="max-w-xl overflow-hidden rounded-[28px] border border-white/60 bg-white p-0 shadow-2xl shadow-blue-950/10 dark:border-white/10 dark:bg-[#101218] text-start">
                 <div className="relative">
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600" />
                     <div className="absolute inset-x-6 top-6 h-24 rounded-full bg-white/20 blur-3xl" />
@@ -106,14 +108,13 @@ export function InviteMemberDialog({ onOpenChange, open }: InviteMemberDialogPro
                         <DialogHeader className="space-y-3">
                             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
                                 <Sparkles className="h-3.5 w-3.5" />
-                                Invite Teammate
+                                {t("team_invite_dialog_title")}
                             </div>
                             <DialogTitle className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-                                Add someone to your workspace
+                                {t("team_invite_dialog_subtitle")}
                             </DialogTitle>
                             <DialogDescription className="max-w-lg text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                Send an invitation by email so your teammate can join projects,
-                                collaborate faster, and get access without extra setup friction.
+                                {t("team_invite_dialog_desc")}
                             </DialogDescription>
                         </DialogHeader>
 

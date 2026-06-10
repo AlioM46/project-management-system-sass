@@ -3,6 +3,7 @@ import { RefObject } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMemberActionsMenuProps = {
     actionRef?: RefObject<HTMLDivElement | null>;
@@ -19,10 +20,12 @@ export function TeamMemberActionsMenu({
     onToggle,
     onClose,
 }: TeamMemberActionsMenuProps) {
+    const { t } = useTranslation();
+
     return (
         <div
             ref={actionRef}
-            className="relative inline-block text-left opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+            className="relative inline-block text-start opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
         >
             <Button
                 variant="ghost"
@@ -37,26 +40,26 @@ export function TeamMemberActionsMenu({
             </Button>
 
             {isOpen && (
-                <div className="absolute top-full right-0 z-10 mt-1 w-36 overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-lg dark:border-white/10 dark:bg-[#0f0f0f]">
+                <div className="absolute top-full end-0 z-10 mt-1 w-36 overflow-hidden rounded-xl border border-zinc-200 bg-white text-start shadow-lg dark:border-white/10 dark:bg-[#0f0f0f]">
                     <button
-                        className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5"
+                        className="w-full px-4 py-2 text-start text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5"
                         onClick={(e) => {
                             e.stopPropagation();
-                            toast.info("Change role feature coming soon!");
+                            toast.info(t("team_toast_role_soon"));
                             onClose();
                         }}
                     >
-                        Change Role
+                        {t("team_change_role")}
                     </button>
                     <button
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                        className="w-full px-4 py-2 text-start text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                         onClick={(e) => {
                             e.stopPropagation();
-                            toast.info("Remove member feature coming soon!");
+                            toast.info(t("team_toast_remove_soon"));
                             onClose();
                         }}
                     >
-                        Remove
+                        {t("team_remove_member")}
                     </button>
                 </div>
             )}
