@@ -19,7 +19,8 @@ export interface CommentAuthor {
 
 export interface Comment {
     id: string;
-    task_id: string;
+    lead_id: string;
+    task_id?: string;
     author_id: string;
     parent_id?: string | null;
     content: string;
@@ -35,7 +36,8 @@ export interface Comment {
 }
 
 export interface CreateCommentInput {
-    taskId: string;
+    leadId?: string;
+    taskId?: string;
     content: string;
     attachments?: File[];
     parentId?: string;
@@ -47,7 +49,7 @@ export interface UpdateCommentInput {
     newAttachments?: File[];
 }
 
-export interface ListTaskCommentsResponse {
+export interface ListLeadCommentsResponse {
     comments: Comment[];
     count: number;
 }

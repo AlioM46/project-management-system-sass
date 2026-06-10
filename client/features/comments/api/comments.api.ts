@@ -1,9 +1,9 @@
 import { apiClient } from "@/shared/api/apiClient";
-import { Comment, CreateCommentInput, ListTaskCommentsResponse, UpdateCommentInput } from "../types";
+import { Comment, CreateCommentInput, ListLeadCommentsResponse, UpdateCommentInput } from "../types";
 
 function buildCommentFormData(input: CreateCommentInput): FormData {
     const formData = new FormData();
-    formData.append("task_id", input.taskId);
+    formData.append("lead_id", input.leadId || input.taskId || "");
     formData.append("content", input.content);
 
     if (input.parentId) {
@@ -18,7 +18,7 @@ function buildCommentFormData(input: CreateCommentInput): FormData {
 }
 
 export async function getCommentsByTask(taskId: string): Promise<Comment[]> {
-    const response = await apiClient.getPaginated<ListTaskCommentsResponse>(`/comments/task/${taskId}`);
+    const response = await apiClient.getPaginated<ListLeadCommentsResponse>(`/comments/lead/${taskId}`);
     return response.data.comments || [];
 }
 

@@ -9,9 +9,9 @@ use App\Modules\Audit\Enums\AuditTargetType;
 use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Comments\Model\Comment;
 use App\Modules\Comments\Model\CommentAttachment;
+use App\Modules\Leads\Model\Lead;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Services\NotificationService;
-use App\Modules\Tasks\Model\Task;
 use App\Modules\Workspace\Services\WorkspaceContextService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -27,39 +27,38 @@ class CommentService
         private NotificationService $notificationService
     ) {}
 
-    public function create(Task $task, User $user, string $content, ?int $parentId = null): Comment
+    public function create(Lead $lead, User $user, string $content, ?int $parentId = null): Comment
     {
         $parent = null;
 
-        // If parentId is provided, optionally verify it exists and belongs to the same task
         if ($parentId) {
             $parent = Comment::findOrFail($parentId);
-            if ($parent->task_id !== $task->id) {
-                throw new \Exception('Parent comment belongs to a different task');
+            if ($parent->lead_id !== $lead->id) {
+                throw new \Exception('Parent comment belongs to a different lead');
             }
         }
 
-        $comment = DB::transaction(function () use ($task, $user, $parentId, $content): Comment {
+        $comment = DB::transaction(function () use ($lead, $user, $parentId, $content): Comment {
             $comment = Comment::create([
-                'task_id' => $task->id,
+                'lead_id' => $lead->id,
                 'author_id' => $user->id,
                 'parent_id' => $parentId,
                 'content' => $content,
             ]);
 
             $this->auditLogger->record(
-                workspace: $task->workspace,
+                workspace: $lead->workspace,
                 action: AuditAction::CommentCreated,
                 targetType: AuditTargetType::Comment,
                 targetId: $comment->id,
                 actor: $user,
                 newValues: [
-                    'task_id' => $task->id,
+                    'lead_id' => $lead->id,
                     'parent_id' => $parentId,
                     'content' => $content,
                 ],
                 metadata: [
-                    AuditMetadataKey::TaskId->value => $task->id,
+                    AuditMetadataKey::LeadId->value => $lead->id,
                 ]
             );
 
@@ -68,14 +67,14 @@ class CommentService
 
         if ($parent && (int) $parent->author_id !== (int) $user->id) {
             $this->notificationService->send(
-                $this->workspaceContext->currentWorkspaceId() ?? (int) $task->workspace_id,
+                $this->workspaceContext->currentWorkspaceId() ?? (int) $lead->workspace_id,
                 (int) $parent->author_id,
                 NotificationType::COMMENT_REPLIED,
                 [
                     'source_type' => 'comment',
                     'source_id' => $comment->id,
                     'parent_comment_id' => $parent->id,
-                    'task_id' => $task->id,
+                    'lead_id' => $lead->id,
                     'replied_by_user_id' => $user->id,
                 ]
             );
@@ -84,18 +83,13 @@ class CommentService
         return $comment;
     }
 
-    public function createWithAttachments(Task $task, User $user, string $content, array $attachments = [], ?int $parentId = null): Comment
+    public function createWithAttachments(Lead $lead, User $user, string $content, array $attachments = [], ?int $parentId = null): Comment
     {
-        return DB::transaction(function () use ($task, $user, $content, $attachments, $parentId): Comment {
-            $comment = $this->create($task, $user, $content, $parentId);
-
-            $usernames = $this->mentionService
-                ->extractUsernames($content);
-
+        return DB::transaction(function () use ($lead, $user, $content, $attachments, $parentId): Comment {
+            $comment = $this->create($lead, $user, $content, $parentId);
+            $usernames = $this->mentionService->extractUsernames($content);
             $workspaceId = $this->workspaceContext->currentWorkspaceId();
-
-            $users = $this->mentionService
-                ->resolveUsers($usernames, $workspaceId);
+            $users = $this->mentionService->resolveUsers($usernames, $workspaceId);
 
             $this->mentionService->store(
                 users: $users,
@@ -121,26 +115,24 @@ class CommentService
 
         DB::transaction(function () use ($comment, $actor): void {
             $oldValues = [
-                'task_id' => $comment->task_id,
+                'lead_id' => $comment->lead_id,
                 'parent_id' => $comment->parent_id,
                 'content' => $comment->content,
             ];
 
-            // Delete attachments via service
             $this->attachmentService->deleteAll($comment);
-
             $comment->delete();
             $this->mentionService->deleteBySource('comment', $comment->id);
 
             $this->auditLogger->record(
-                workspace: $comment->task->workspace,
+                workspace: $comment->lead->workspace,
                 action: AuditAction::CommentDeleted,
                 targetType: AuditTargetType::Comment,
                 targetId: $comment->id,
                 actor: $actor,
                 oldValues: $oldValues,
                 metadata: [
-                    AuditMetadataKey::TaskId->value => $comment->task_id,
+                    AuditMetadataKey::LeadId->value => $comment->lead_id,
                 ]
             );
         });
@@ -148,36 +140,31 @@ class CommentService
 
     public function deleteAttachment(CommentAttachment $attachment, User $actor): void
     {
-        $comment = $attachment->comment;
-
-        if ($comment->author_id !== $actor->id) {
+        if ($attachment->comment->author_id !== $actor->id) {
             throw new \Exception('Unauthorized');
         }
 
         $this->attachmentService->delete($attachment);
     }
 
-    public function listByTask(int $taskId): Collection
+    public function listByLead(int $leadId): Collection
     {
         return Comment::query()
-            ->forTask($taskId)
+            ->forLead($leadId)
             ->whereNull('parent_id')
             ->with(['author', 'attachments', 'recursiveReplies'])
             ->latestFirst()
             ->get();
     }
 
-    public function listByTaskPaginated(int $taskId, array $filters = []): LengthAwarePaginator
+    public function listByLeadPaginated(int $leadId, array $filters = []): LengthAwarePaginator
     {
-        $page = max(1, (int) ($filters['page'] ?? 1));
-        $perPage = max(1, min(100, (int) ($filters['per_page'] ?? 15)));
-
         return Comment::query()
-            ->forTask($taskId)
+            ->forLead($leadId)
             ->whereNull('parent_id')
             ->with(['author', 'attachments', 'recursiveReplies'])
             ->latestFirst()
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->paginate(max(1, min(100, (int) ($filters['per_page'] ?? 15))), ['*'], 'page', max(1, (int) ($filters['page'] ?? 1)));
     }
 
     public function update(Comment $comment, User $user, string $content, ?array $attachments = null): Comment
@@ -186,22 +173,15 @@ class CommentService
             throw new \Exception('Unauthorized');
         }
 
-        // Handle attachment sync
         if ($attachments !== null) {
             $this->attachmentService->sync($comment, $attachments);
         }
 
         return DB::transaction(function () use ($comment, $user, $content): Comment {
             $workspaceId = $this->workspaceContext->currentWorkspaceId();
-            $oldValues = [
-                'content' => $comment->content,
-            ];
+            $oldValues = ['content' => $comment->content];
 
             $comment->content = $content;
-            $newValues = [
-                'content' => $comment->content,
-            ];
-
             $comment->save();
 
             $this->mentionService->syncForSource(
@@ -212,17 +192,17 @@ class CommentService
                 mentionedBy: $user->id
             );
 
-            if ($oldValues !== $newValues) {
+            if ($oldValues['content'] !== $comment->content) {
                 $this->auditLogger->record(
-                    workspace: $comment->task->workspace,
+                    workspace: $comment->lead->workspace,
                     action: AuditAction::CommentUpdated,
                     targetType: AuditTargetType::Comment,
                     targetId: $comment->id,
                     actor: $user,
                     oldValues: $oldValues,
-                    newValues: $newValues,
+                    newValues: ['content' => $comment->content],
                     metadata: [
-                        AuditMetadataKey::TaskId->value => $comment->task_id,
+                        AuditMetadataKey::LeadId->value => $comment->lead_id,
                     ]
                 );
             }
