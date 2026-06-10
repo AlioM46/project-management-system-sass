@@ -14,8 +14,10 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 export default function Register() {
+    const { t } = useTranslation();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [name, setName] = useState("");
@@ -33,20 +35,23 @@ export default function Register() {
 
         const usernameRegex = /^[a-zA-Z0-9_-]+$/;
         if (!usernameRegex.test(username)) {
-            setError("Username can only contain letters, numbers, dashes, and underscores.");
-            toast.error("Username can only contain letters, numbers, dashes, and underscores.");
+            const err = t("auth_register_username_chars_err");
+            setError(err);
+            toast.error(err);
             return;
         }
 
         if (username.length < 3 || username.length > 12) {
-            setError("Username must be between 3 and 12 characters.");
-            toast.error("Username must be between 3 and 12 characters.");
+            const err = t("auth_register_username_len_err");
+            setError(err);
+            toast.error(err);
             return;
         }
 
         if (password.length < 8) {
-            setError("Password must be at least 8 characters long.");
-            toast.error("Password must be at least 8 characters long.");
+            const err = t("auth_register_password_len_err");
+            setError(err);
+            toast.error(err);
             return;
         }
 
@@ -60,15 +65,15 @@ export default function Register() {
                 password: password
             });
 
-            toast.success("Welcome aboard!");
+            toast.success(t("auth_register_welcome_toast"));
             setShowSuccessDialog(true);
         } catch (err) {
             if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Registration failed. Try a different email.");
-                toast.error(err.getFriendlyMessage() ?? "Registration failed. Try a different email.");
+                setError(err.getFriendlyMessage() ?? t("auth_register_failed_err"));
+                toast.error(err.getFriendlyMessage() ?? t("auth_register_failed_err"));
             } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
+                setError(t("auth_unexpected_error"));
+                toast.error(t("auth_unexpected_error"));
             }
             setIsLoading(false);
         }
@@ -86,40 +91,39 @@ export default function Register() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Welcome aboard!</DialogTitle>
-                        <DialogDescription className="text-base pt-2">
-                            We&apos;ve sent a verification link to your email address. 
-                            Please check your inbox (and spam folder) to activate your account.
+                        <DialogTitle className="text-2xl text-start">{t("auth_register_dialog_title")}</DialogTitle>
+                        <DialogDescription className="text-base pt-2 text-start">
+                            {t("auth_register_dialog_desc")}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-4">
                         <Button onClick={() => router.push(next)} className="w-full sm:w-auto">
-                            {next === "/dashboard" ? "Go to Dashboard" : "Continue"}
+                            {next === "/dashboard" ? t("auth_register_dialog_btn_dashboard") : t("auth_register_dialog_btn_continue")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <div className="text-center lg:text-left mb-8">
-                <h2 className="text-3xl font-bold tracking-tight mb-2">Get started for free</h2>
-                <p className="text-muted-foreground">No credit card required. Cancel anytime.</p>
+            <div className="text-center lg:text-start mb-8">
+                <h2 className="text-3xl font-bold tracking-tight mb-2">{t("auth_register_free_title")}</h2>
+                <p className="text-muted-foreground">{t("auth_register_free_subtitle")}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 text-start">
                 {error && (
                     <Alert variant="destructive" className="animate-in zoom-in-95 duration-300">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Problem</AlertTitle>
+                        <AlertTitle>{t("auth_problem")}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">{t("auth_register_name")}</Label>
                         <Input
                             id="name"
-                            placeholder="John Doe"
+                            placeholder={t("auth_register_name")}
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -127,10 +131,10 @@ export default function Register() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
+                        <Label htmlFor="username">{t("auth_register_username")}</Label>
                         <Input
                             id="username"
-                            placeholder="johndoe"
+                            placeholder={t("auth_register_username")}
                             required
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -140,7 +144,7 @@ export default function Register() {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">{t("auth_register_email")}</Label>
                     <Input
                         id="email"
                         type="email"
@@ -148,12 +152,12 @@ export default function Register() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t("auth_register_password")}</Label>
                     <Input
                         id="password"
                         type="password"
@@ -161,7 +165,7 @@ export default function Register() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                     />
                 </div>
 
@@ -173,24 +177,24 @@ export default function Register() {
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating account...
+                            {t("auth_register_creating")}
                         </>
                     ) : (
-                        "Create Account"
+                        t("auth_register_create_btn")
                     )}
                 </Button>
             </form>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
-                By signing up, you agree to our{" "}
+                {t("auth_register_terms")}{" "}
                 <Link href="/terms" className="text-foreground underline underline-offset-4 hover:text-primary transition-colors">
-                    Terms of Service
+                    {t("auth_register_tos")}
                 </Link>
             </p>
 
             <div className="mt-8 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <p className="text-sm text-muted-foreground">
-                    Already have an account?
+                    {t("auth_register_have_account")}
                 </p>
                 <Link 
                     href={next !== "/dashboard" ? `/login?next=${encodeURIComponent(next)}` : "/login"} 
@@ -199,7 +203,7 @@ export default function Register() {
                         "rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all"
                     )}
                 >
-                    Log In
+                    {t("auth_register_login_btn")}
                 </Link>
             </div>
         </AuthLayout>

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkspace, getWorkspaces } from "../api/workspace.api";
@@ -11,19 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle, Building2, Mail } from "lucide-react";
 import { toast } from "sonner";
-// We'll reuse the AuthLayout to keep the aesthetic consistent for onboarding
 import { AuthLayout } from "@/features/auth/components/AuthLayout";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 export default function Onboarding() {
+    const { t } = useTranslation();
     const router = useRouter();
     const [workspaceName, setWorkspaceName] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-
-    /**
-     * Handles the form submission to create a new workspace.
-     */
 
     const hasFetched = useRef(false);
 
@@ -38,7 +34,6 @@ export default function Onboarding() {
             }
         };
 
-        // 2. Call it
         fetchData();
     }, [router])
 
@@ -48,19 +43,17 @@ export default function Onboarding() {
             const data = await getWorkspaces();
 
             if (data && data.workspaces && data.workspaces.length > 0) {
-                // They accepted an invite! Set the cookie and go to dashboard
                 setCookie("workspace_id", data.workspaces[0].id);
-                toast.success("Welcome to " + data.workspaces[0].name);
+                toast.success(t("onboard_toast_welcome", { name: data.workspaces[0].name }));
                 router.push("/dashboard");
             } else {
-                // Still zero workspaces
                 if (showToast) {
-                    toast.info("No workspaces found yet. Please create a workspace to continue");
+                    toast.info(t("onboard_toast_none_found"));
                 }
                 setIsRefreshing(false);
             }
         } catch (err) {
-            if (showToast) toast.error("Failed to check status.");
+            if (showToast) toast.error(t("onboard_toast_check_failed"));
             setIsRefreshing(false);
         }
     }
@@ -69,40 +62,33 @@ export default function Onboarding() {
         event.preventDefault();
         setError(null);
 
-        // Basic validation: Ensure they typed something
         if (workspaceName.trim().length < 3) {
-            setError("Workspace name must be at least 3 characters.");
-            toast.error("Workspace name must be at least 3 characters.");
+            const err = t("onboard_validation_len");
+            setError(err);
+            toast.error(err);
             return;
         }
 
         setIsCreating(true);
 
         try {
-            // 1. Call our API to create the workspace in the backend
             const newWorkspace = await createWorkspace({ name: workspaceName.trim() });
 
-            // 2. We just created our first workspace! We need to set it as our "Active" context.
-            // By saving the workspace ID into the "workspace_id" cookie, our apiClient 
-            // will automatically attach it to all future requests.
             setCookie("workspace_id", newWorkspace.id);
 
-            toast.success("Workspace created successfully! 🎉");
+            toast.success(t("onboard_toast_success"));
 
-            // 3. Now that we have a valid context, we can safely enter the dashboard.
-            // We use setTimeout to let the user see the success toast briefly.
             setTimeout(() => {
                 router.push("/dashboard");
             }, 1000);
 
         } catch (err) {
-            // Error handling: same pattern we used in Auth
             if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Failed to create workspace.");
-                toast.error(err.getFriendlyMessage() ?? "Failed to create workspace.");
+                setError(err.getFriendlyMessage() ?? t("modal_course_created_error"));
+                toast.error(err.getFriendlyMessage() ?? t("modal_course_created_error"));
             } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
+                setError(t("auth_unexpected_error"));
+                toast.error(t("auth_unexpected_error"));
             }
             setIsCreating(false);
         }
@@ -110,41 +96,40 @@ export default function Onboarding() {
 
     return (
         <AuthLayout>
-            <div className="text-center lg:text-left mb-8">
-                <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome to the App!</h2>
+            <div className="text-center lg:text-start mb-8">
+                <h2 className="text-3xl font-bold tracking-tight mb-2">{t("onboard_welcome")}</h2>
                 <p className="text-muted-foreground">
-                    It looks like you don't belong to any workspaces yet. Let's get you set up.
+                    {t("onboard_no_workspaces")}
                 </p>
             </div>
 
-            {/* Path A: Create a New Workspace */}
-            <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm mb-8">
+            <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm mb-8 text-start">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold">Create a Workspace</h3>
+                    <h3 className="text-lg font-semibold">{t("onboard_create_title")}</h3>
                 </div>
 
                 <form onSubmit={handleCreateWorkspace} className="space-y-4">
                     {error && (
                         <Alert variant="destructive" className="animate-in zoom-in-95 duration-300">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Problem</AlertTitle>
+                            <AlertTitle>{t("auth_problem")}</AlertTitle>
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="workspaceName">Workspace Name</Label>
+                        <Label htmlFor="workspaceName">{t("onboard_ws_name")}</Label>
                         <Input
                             id="workspaceName"
                             type="text"
-                            placeholder="e.g. Acme Corp, My Startup, Project Phoenix..."
+                            placeholder={t("onboard_ws_placeholder")}
                             required
                             value={workspaceName}
                             onChange={(e) => setWorkspaceName(e.target.value)}
-                            className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                            className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                         />
                     </div>
 
@@ -156,22 +141,21 @@ export default function Onboarding() {
                         {isCreating ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Creating...
+                                {t("onboard_creating")}
                             </>
                         ) : (
-                            "Create Workspace"
+                            t("onboard_create_btn")
                         )}
                     </Button>
                 </form>
             </div>
 
-            {/* Path B: Wait for an Invite */}
             <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-4 text-muted-foreground font-medium tracking-wider">Or</span>
+                    <span className="bg-background px-4 text-muted-foreground font-medium tracking-wider">{t("onboard_or")}</span>
                 </div>
             </div>
 
@@ -179,10 +163,9 @@ export default function Onboarding() {
                 <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
                     <Mail className="w-6 h-6 text-secondary-foreground" />
                 </div>
-                <h3 className="text-base font-semibold mb-1">Waiting for an invite?</h3>
+                <h3 className="text-base font-semibold mb-1">{t("onboard_waiting_invite")}</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    If your team is already using the app, ask them to send you an invite link.
-                    Once you click the link in your email, you'll be added automatically!
+                    {t("onboard_waiting_invite_desc")}
                 </p>
                 <Button
                     variant="outline"
@@ -191,7 +174,7 @@ export default function Onboarding() {
                     onClick={async () => await detectWorkspaces()}
                 >
                     {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Refresh Status
+                    {t("onboard_refresh_btn")}
                 </Button>
             </div>
         </AuthLayout >

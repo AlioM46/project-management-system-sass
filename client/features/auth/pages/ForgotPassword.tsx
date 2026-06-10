@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import Link from "next/link";
 import { forgotPassword } from "../api/auth.api";
@@ -14,8 +13,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 export default function ForgotPassword() {
+    const { t } = useTranslation();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -28,8 +29,9 @@ export default function ForgotPassword() {
 
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(email)) {
-            setError("Invalid email address.");
-            toast.error("Invalid email address.");
+            const err = t("auth_forgot_invalid_email_err");
+            setError(err);
+            toast.error(err);
             return;
         }
 
@@ -38,15 +40,15 @@ export default function ForgotPassword() {
         try {
             await forgotPassword({ email });
 
-            toast.success("Reset link sent successfully!");
+            toast.success(t("auth_forgot_success_toast"));
             setShowSuccessDialog(true);
         } catch (err) {
             if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Failed to send reset link. Try again.");
-                toast.error(err.getFriendlyMessage() ?? "Failed to send reset link. Try again.");
+                setError(err.getFriendlyMessage() ?? t("auth_forgot_failed_err"));
+                toast.error(err.getFriendlyMessage() ?? t("auth_forgot_failed_err"));
             } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
+                setError(t("auth_unexpected_error"));
+                toast.error(t("auth_unexpected_error"));
             }
         } finally {
             setIsLoading(false);
@@ -55,8 +57,8 @@ export default function ForgotPassword() {
 
     return (
         <AuthLayout>
-            <Dialog 
-                open={showSuccessDialog} 
+            <Dialog
+                open={showSuccessDialog}
                 onOpenChange={(open) => {
                     if (!open) {
                         router.push("/login");
@@ -65,36 +67,35 @@ export default function ForgotPassword() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Check your email</DialogTitle>
-                        <DialogDescription className="text-base pt-2">
-                            We've sent a password reset link to <strong>{email}</strong>. 
-                            Please check your inbox and click the link to reset your password.
+                        <DialogTitle className="text-2xl text-start">{t("auth_forgot_dialog_title")}</DialogTitle>
+                        <DialogDescription className="text-base pt-2 text-start">
+                            {t("auth_forgot_dialog_desc", { email })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-4">
                         <Button onClick={() => router.push("/login")} className="w-full sm:w-auto">
-                            Back to Login
+                            {t("auth_forgot_dialog_btn_login")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            <div className="text-center lg:text-left mb-8">
-                <h2 className="text-3xl font-bold tracking-tight mb-2">Reset Password</h2>
-                <p className="text-muted-foreground">Enter your email and we'll send you a link to reset your password.</p>
+            <div className="text-center lg:text-start mb-8">
+                <h2 className="text-3xl font-bold tracking-tight mb-2">{t("auth_forgot_title")}</h2>
+                <p className="text-muted-foreground">{t("auth_forgot_subtitle")}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 text-start">
                 {error && (
                     <Alert variant="destructive" className="animate-in zoom-in-95 duration-300">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Problem</AlertTitle>
+                        <AlertTitle>{t("auth_problem")}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
 
                 <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">{t("auth_forgot_email")}</Label>
                     <Input
                         id="email"
                         type="email"
@@ -102,7 +103,7 @@ export default function ForgotPassword() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all"
+                        className="h-11 px-4 rounded-xl border-border/50 focus-visible:ring-primary/20 transition-all text-start"
                     />
                 </div>
 
@@ -114,26 +115,26 @@ export default function ForgotPassword() {
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending link...
+                            {t("auth_forgot_sending")}
                         </>
                     ) : (
-                        "Send Reset Link"
+                        t("auth_forgot_send_btn")
                     )}
                 </Button>
             </form>
 
             <div className="mt-8 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <p className="text-sm text-muted-foreground">
-                    Remember your password?
+                    {t("auth_forgot_remember")}
                 </p>
-                <Link 
-                    href="/login" 
+                <Link
+                    href="/login"
                     className={cn(
                         buttonVariants({ variant: "outline" }),
                         "rounded-xl h-9 px-5 cursor-pointer hover:bg-muted/50 transition-all"
                     )}
                 >
-                    Back to Login
+                    {t("auth_forgot_dialog_btn_login")}
                 </Link>
             </div>
         </AuthLayout>
