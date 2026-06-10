@@ -14,6 +14,7 @@ import { TaskDetailsHeader } from "./task-details/TaskDetailsHeader";
 import { CommentsComposer } from "./task-details/CommentsComposer";
 import { CommentsThread } from "./task-details/CommentsThread";
 import { TaskDetailsSidebar } from "./task-details/TaskDetailsSidebar";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 const MAX_COMMENT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const MAX_COMMENT_ATTACHMENTS = 10;
@@ -79,6 +80,7 @@ function mapTaskAssignees(task: Task): AssigneeSummary[] {
 }
 
 function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalContentProps) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description || "");
     const [isSaving, setIsSaving] = useState(false);
@@ -112,6 +114,7 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
     const [isPriorityOpen, setIsPriorityOpen] = useState(false);
     const [isAssigneesOpen, setIsAssigneesOpen] = useState(false);
     const [allowedTransitions, setAllowedTransitions] = useState<string[]>([]);
+    const [stages, setStages] = useState<Array<{ stage_id: string | number, name: string, is_success?: boolean }>>([]);
     const [isLoadingTransitions, setIsLoadingTransitions] = useState(false);
 
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,10 +164,10 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
 
                 try {
                     await updateTask(task.id, { title, description });
-                    toast.success("Task updated.");
+                    toast.success("Lead updated.");
                     onUpdate?.();
                 } catch {
-                    toast.error("Failed to update task.");
+                    toast.error("Failed to update lead.");
                 } finally {
                     setIsSaving(false);
                 }
@@ -205,10 +208,10 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
 
         try {
             await updateTask(task.id, { title: currentTitle, description: currentDesc });
-            toast.success("Task updated.");
+            toast.success("Lead updated.");
             onUpdate?.();
         } catch {
-            toast.error("Failed to update task.");
+            toast.error("Failed to update lead.");
         } finally {
             setIsSaving(false);
         }
@@ -519,26 +522,42 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
         try {
             const response = await getTaskTransitions(task.id);
             setAllowedTransitions(response.allowed_transitions);
+            setStages(response.stages || []);
         } catch {
             setAllowedTransitions([]);
-            toast.error("Failed to load allowed transitions.");
+            setStages([]);
+            toast.error(t("modal_lead_details_transitions_error"));
         } finally {
             setIsLoadingTransitions(false);
         }
     }
 
     async function handleStatusChange(status: Task["status"]) {
-        await updateTask(task.id, { status });
-        onUpdate?.();
+        let lost_reason: string | null = null;
+        if (status === "LOST") {
+            const reason = window.prompt(t("modal_lead_details_lost_prompt"));
+            if (reason === null) return;
+            lost_reason = reason.trim() || t("modal_lead_details_no_reason");
+        }
+        try {
+            await updateTask(task.id, { status, lost_reason });
+            onUpdate?.();
+        } catch {
+            toast.error(t("modal_lead_details_update_error"));
+        }
     }
 
     async function handlePriorityChange(priority: Task["priority"]) {
-        await updateTask(task.id, { priority });
-        onUpdate?.();
+        try {
+            await updateTask(task.id, { priority });
+            onUpdate?.();
+        } catch {
+            toast.error(t("modal_lead_details_update_error"));
+        }
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0 text-start">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleForceClose} />
             <div className="relative flex h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0a0a0a] sm:h-[80vh]">
                 <TaskDetailsHeader
@@ -549,29 +568,38 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
                 />
 
                 <div className="flex flex-1 flex-col overflow-y-auto md:flex-row">
-                    <div className="flex-1 space-y-6 p-6 md:border-r md:border-zinc-200 dark:md:border-white/10">
+                    <div className="flex-1 space-y-6 p-6 md:border-e md:border-zinc-200 dark:md:border-white/10">
                         <div>
                             <input
                                 type="text"
                                 value={title}
                                 onChange={(event) => setTitle(event.target.value)}
-                                className="w-full border-none bg-transparent text-2xl font-bold text-zinc-900 outline-none placeholder:text-zinc-300 focus:ring-0 dark:text-white dark:placeholder:text-zinc-700"
-                                placeholder="Task title"
+                                className="w-full border-none bg-transparent text-2xl font-bold text-zinc-900 outline-none placeholder:text-zinc-300 focus:ring-0 dark:text-white dark:placeholder:text-zinc-700 text-start"
+                                placeholder={t("modal_lead_details_name_placeholder")}
                             />
                         </div>
 
                         <div>
-                            <h3 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">Description</h3>
+                            <h3 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">{t("modal_lead_details_desc_label")}</h3>
                             <textarea
                                 value={description}
                                 onChange={(event) => setDescription(event.target.value)}
-                                placeholder="Add a more detailed description..."
-                                className="min-h-[150px] w-full resize-y rounded-xl border border-zinc-200 bg-zinc-50 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-[#0f0f0f] dark:text-white"
+                                placeholder={t("modal_lead_details_desc_placeholder")}
+                                className="min-h-[150px] w-full resize-y rounded-xl border border-zinc-200 bg-zinc-50 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-[#0f0f0f] dark:text-white text-start"
                             />
                         </div>
 
+                        {task.status === "LOST" && (
+                            <div className="rounded-xl border border-red-200/50 bg-red-50/50 p-4 dark:border-red-500/10 dark:bg-red-500/5 text-start">
+                                <h3 className="text-sm font-bold text-red-800 dark:text-red-400 mb-1">{t("modal_lead_details_lost_reason")}</h3>
+                                <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                                    {task.lost_reason || t("modal_lead_details_no_reason")}
+                                </p>
+                            </div>
+                        )}
+
                         <div className="border-t border-zinc-200 pt-6 dark:border-white/10">
-                            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-white">Activity & Comments</h3>
+                            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-white">{t("modal_lead_details_comments")}</h3>
 
                             <CommentsComposer
                                 commentDraft={commentDraft}
@@ -631,6 +659,7 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
                         assignedUserIds={assignedUserIds}
                         assignedUsers={assignedUsers}
                         allowedTransitions={allowedTransitions}
+                        stages={stages}
                         isLoadingTransitions={isLoadingTransitions}
                         isStatusOpen={isStatusOpen}
                         isPriorityOpen={isPriorityOpen}
@@ -645,7 +674,6 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
                         onStatusChange={(status) => void handleStatusChange(status)}
                         onPriorityChange={(priority) => void handlePriorityChange(priority)}
                         onToggleAssignee={(memberUserId) => void toggleAssignee(memberUserId)}
-                        onUpdate={onUpdate}
                     />
                 </div>
             </div>

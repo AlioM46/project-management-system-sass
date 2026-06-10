@@ -2,6 +2,7 @@
 
 import { CheckSquare, Loader2, MoreHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 interface TaskDetailsHeaderProps {
     taskId: string;
@@ -11,13 +12,15 @@ interface TaskDetailsHeaderProps {
 }
 
 export function TaskDetailsHeader({ taskId, projectId, isSaving, onClose }: TaskDetailsHeaderProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex items-center justify-between border-b border-zinc-200 p-4 dark:border-white/10">
             <div className="flex items-center gap-2 text-sm font-medium text-zinc-500">
                 <CheckSquare className="h-4 w-4" />
-                <span>Task-{taskId}</span>
+                <span>Lead-{taskId}</span>
                 <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs dark:bg-white/5">
-                    {projectId ? `Project #${projectId}` : "General"}
+                    {projectId ? `Course #${projectId}` : t("lead_details_general")}
                 </span>
                 {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             </div>

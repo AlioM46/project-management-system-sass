@@ -10,10 +10,16 @@ export function getNotificationTitle(notification: NotificationItem) {
             return "You were mentioned";
         case "comment_replied":
             return "New reply";
-        case "task_assigned":
-            return "Task assigned";
-        case "task_updated":
-            return "Task updated";
+        case "lead_assigned":
+            return "Lead assigned";
+        case "lead_updated":
+            return "Lead updated";
+        case "lead_converted":
+            return "Lead converted";
+        case "student_created":
+            return "Student created";
+        case "whatsapp_send_failed":
+            return "WhatsApp failed";
         case "chat_message":
             return "New message";
         case "workspace_invite":
@@ -35,10 +41,16 @@ export function getNotificationDescription(notification: NotificationItem) {
             return "Someone mentioned you in a discussion.";
         case "comment_replied":
             return "Someone replied to your comment.";
-        case "task_assigned":
-            return "A task was assigned to you.";
-        case "task_updated":
-            return "A task you follow was updated.";
+        case "lead_assigned":
+            return "A lead was assigned to you.";
+        case "lead_updated":
+            return "A lead you follow was updated.";
+        case "lead_converted":
+            return "A lead moved into the student lifecycle.";
+        case "student_created":
+            return "A new student record was created.";
+        case "whatsapp_send_failed":
+            return "An enrollment WhatsApp message failed to send.";
         case "chat_message":
             return "A new chat message needs your attention.";
         case "workspace_invite":
