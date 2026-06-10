@@ -116,7 +116,7 @@ class WorkspaceMemberController extends Controller
         $membership = $this->workspaceMembersService->resolveWorkspaceMember($workspace, $memberId);
         $membership->load([
             'user:id,name,email',
-            'role:id,workspace_id,name,description,is_system',
+            'role:id,workspace_id,name,description,slug,is_system',
         ]);
 
         return ApiResponse::success(
