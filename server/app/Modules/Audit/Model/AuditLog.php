@@ -36,6 +36,11 @@ class AuditLog extends Model
         'occurred_at' => 'datetime',
     ];
 
+    public function getEventTypeAttribute($value)
+    {
+        return __($value);
+    }
+
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');

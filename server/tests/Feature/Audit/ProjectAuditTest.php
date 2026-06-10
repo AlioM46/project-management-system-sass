@@ -10,10 +10,10 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 uses(RefreshDatabase::class);
 
-function makeProjectAuditUser(string $email): User
+function makeCourseAuditUser(string $email): User
 {
     return User::query()->create([
-        'name' => 'Project Audit User',
+        'name' => 'Course Audit User',
         'username' => str_replace(['@', '.'], '', $email),
         'email' => $email,
         'password' => Hash::make('password123'),
@@ -21,26 +21,27 @@ function makeProjectAuditUser(string $email): User
     ]);
 }
 
-it('records project created audit log through the API', function () {
-    $user = makeProjectAuditUser('project-audit@example.com');
-    $workspace = app(CreateWorkspace::class)->execute(['name' => 'Project WS'], $user);
+it('records course created audit log through the API', function () {
+    $user = makeCourseAuditUser('course-audit@example.com');
+    $workspace = app(CreateWorkspace::class)->execute(['name' => 'Course WS'], $user);
 
     $response = $this->withToken(JWTAuth::fromUser($user))
         ->withHeader('X-Workspace-Id', (string) $workspace->id)
-        ->postJson('/api/projects', [
-            'name' => 'Audit Project',
+        ->postJson('/api/courses', [
+            'name' => 'Audit Course',
             'description' => 'For audit test',
+            'price' => 950,
+            'duration_hours' => 18,
         ]);
 
     $response->assertCreated();
 
-    $projectId = $response->json('data.project.id');
+    $courseId = $response->json('data.course.id');
 
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
         ->where('actor_user_id', $user->id)
-        ->where('event_type', AuditAction::ProjectCreated->value)
-        ->where('target_id', $projectId)
+        ->where('event_type', AuditAction::CourseCreated->value)
+        ->where('target_id', $courseId)
         ->exists())->toBeTrue();
 });
-
