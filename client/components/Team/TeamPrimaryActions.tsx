@@ -1,6 +1,7 @@
 import { RefreshCw, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamPrimaryActionsProps = {
     onInvite: () => void;
@@ -13,6 +14,8 @@ export function TeamPrimaryActions({
     onRefresh,
     isRefreshing = false,
 }: TeamPrimaryActionsProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex flex-wrap items-center gap-3">
             {onRefresh && (
@@ -24,7 +27,7 @@ export function TeamPrimaryActions({
                     className="h-11 rounded-2xl px-4"
                 >
                     <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    Refresh
+                    {t("team_refresh")}
                 </Button>
             )}
             <Button
@@ -33,7 +36,7 @@ export function TeamPrimaryActions({
                 className="h-11 rounded-2xl px-5 shadow-md shadow-blue-950/10"
             >
                 <UserPlus className="h-4 w-4" />
-                Invite Member
+                {t("team_invite_member")}
             </Button>
         </div>
     );

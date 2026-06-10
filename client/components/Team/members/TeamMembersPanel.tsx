@@ -7,6 +7,7 @@ import { TeamMembersTable } from "@/components/Team/members/TeamMembersTable";
 import { TeamMembersToolbar } from "@/components/Team/members/TeamMembersToolbar";
 import { TeamSectionError } from "@/components/Team/TeamSectionError";
 import { Member } from "@/features/team/types";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMembersPanelProps = {
     currentUserId: string | null;
@@ -23,6 +24,7 @@ export function TeamMembersPanel({
     members,
     onRefresh,
 }: TeamMembersPanelProps) {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const actionsRef = useRef<HTMLDivElement | null>(null);
@@ -57,10 +59,10 @@ export function TeamMembersPanel({
 
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0a0a0a]">
                 {isLoading ? (
-                    <div className="p-12 text-center text-zinc-500">Loading members...</div>
+                    <div className="p-12 text-center text-zinc-500">{t("team_loading_members")}</div>
                 ) : error ? (
                     <div className="p-6">
-                        <TeamSectionError title="Could not load members" message={error} />
+                        <TeamSectionError title={t("team_load_error_title")} message={error} />
                     </div>
                 ) : filteredMembers.length === 0 ? (
                     <TeamMembersEmptyState hasSearchQuery={searchQuery.trim().length > 0} />

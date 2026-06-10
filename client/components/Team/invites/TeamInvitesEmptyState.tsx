@@ -1,4 +1,5 @@
 import { Mail, ShieldAlert } from "lucide-react";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamInvitesEmptyStateProps = {
     hasFilters: boolean;
@@ -9,17 +10,19 @@ export function TeamInvitesEmptyState({
     hasFilters,
     hasInvites,
 }: TeamInvitesEmptyStateProps) {
+    const { t } = useTranslation();
+
     const title = !hasInvites
-        ? "No invite history yet"
+        ? t("team_invite_empty_no_history")
         : hasFilters
-          ? "No invites match these filters"
-          : "No pending invites";
+          ? t("team_invite_empty_no_match")
+          : t("team_invite_empty_no_pending");
 
     const description = !hasInvites
-        ? "Send your first invitation to start building the workspace team."
+        ? t("team_invite_empty_desc_no_history")
         : hasFilters
-          ? "Try another email or status filter to find the invitation you need."
-          : "Everyone has either joined, expired, or been cancelled.";
+          ? t("team_invite_empty_desc_no_match")
+          : t("team_invite_empty_desc_no_pending");
 
     const Icon = !hasInvites ? Mail : ShieldAlert;
 

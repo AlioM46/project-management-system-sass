@@ -1,4 +1,5 @@
 import { Send, Users2 } from "lucide-react";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamTab = "members" | "invites";
 
@@ -8,6 +9,8 @@ type TeamTabsProps = {
 };
 
 export function TeamTabs({ activeTab, onChange }: TeamTabsProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="inline-flex rounded-2xl bg-zinc-100 p-1 dark:bg-white/5">
             <button
@@ -20,7 +23,7 @@ export function TeamTabs({ activeTab, onChange }: TeamTabsProps) {
                 }`}
             >
                 <Users2 className="h-4 w-4" />
-                Members
+                {t("team_tab_members")}
             </button>
             <button
                 type="button"
@@ -32,7 +35,7 @@ export function TeamTabs({ activeTab, onChange }: TeamTabsProps) {
                 }`}
             >
                 <Send className="h-4 w-4" />
-                Invites
+                {t("team_tab_invites")}
             </button>
         </div>
     );

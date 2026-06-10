@@ -2,6 +2,7 @@ import { RefObject } from "react";
 
 import { TeamMemberRow } from "@/components/Team/members/TeamMemberRow";
 import { Member } from "@/features/team/types";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMembersTableProps = {
     actionRef: RefObject<HTMLDivElement | null>;
@@ -20,15 +21,17 @@ export function TeamMembersTable({
     onCloseActions,
     onToggleActions,
 }: TeamMembersTableProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-start text-sm">
                 <thead className="border-b border-zinc-200 bg-zinc-50 font-medium text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                     <tr>
-                        <th className="rounded-tl-2xl px-6 py-4">User</th>
-                        <th className="px-6 py-4">Role</th>
-                        <th className="px-6 py-4">Joined</th>
-                        <th className="rounded-tr-2xl px-6 py-4 text-right">Actions</th>
+                        <th className="rounded-ss-2xl px-6 py-4">{t("team_col_member")}</th>
+                        <th className="px-6 py-4">{t("team_col_role")}</th>
+                        <th className="px-6 py-4">{t("team_col_joined")}</th>
+                        <th className="rounded-se-2xl px-6 py-4 text-end">{t("courses_col_actions")}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-white/10">

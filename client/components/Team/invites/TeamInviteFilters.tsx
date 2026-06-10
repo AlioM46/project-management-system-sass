@@ -4,15 +4,7 @@ import { TeamInviteSearch } from "@/components/Team/invites/TeamInviteSearch";
 import { Button } from "@/components/ui/button";
 import { InviteStatus } from "@/features/team/types";
 import { InviteFilterStatus } from "@/features/team/hooks/useWorkspaceInvites";
-
-const statusOptions: Array<{ label: string; value: InviteFilterStatus }> = [
-    { label: "All statuses", value: "all" },
-    { label: "Pending", value: "pending" },
-    { label: "Accepted", value: "accepted" },
-    { label: "Expired", value: "expired" },
-    { label: "Cancelled", value: "cancelled" },
-    { label: "Revoked", value: "revoked" },
-];
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamInviteFiltersProps = {
     isRefreshing: boolean;
@@ -31,6 +23,17 @@ export function TeamInviteFilters({
     setStatusFilter,
     statusFilter,
 }: TeamInviteFiltersProps) {
+    const { t } = useTranslation();
+
+    const statusOptions: Array<{ label: string; value: InviteFilterStatus }> = [
+        { label: t("team_invite_all_statuses"), value: "all" },
+        { label: t("team_invite_pending"), value: "pending" },
+        { label: t("team_invite_accepted"), value: "accepted" },
+        { label: t("team_invite_expired"), value: "expired" },
+        { label: t("team_invite_cancelled"), value: "cancelled" },
+        { label: t("team_invite_revoked"), value: "revoked" },
+    ];
+
     return (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0a0a0a]">
             <TeamInviteSearch value={searchQuery} onChange={setSearchQuery} />
@@ -53,7 +56,7 @@ export function TeamInviteFilters({
                 className="h-10 rounded-xl px-4"
             >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh
+                {t("team_invite_refresh")}
             </Button>
         </div>
     );

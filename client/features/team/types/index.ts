@@ -6,6 +6,7 @@ export interface Member {
         id: string;
         workspace_id: string;
         name: string;
+        slug?: string;
         description?: string | null;
         is_system: boolean;
     };

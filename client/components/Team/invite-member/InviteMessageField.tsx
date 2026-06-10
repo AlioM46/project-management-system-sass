@@ -1,20 +1,24 @@
+import { useTranslation } from "@/lib/context/LanguageContext";
+
 type InviteMessageFieldProps = {
     value: string;
     onChange: (value: string) => void;
 };
 
 export function InviteMessageField({ value, onChange }: InviteMessageFieldProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-3">
             <label
                 htmlFor="invite-message"
                 className="block text-sm font-medium text-slate-800 dark:text-slate-100"
             >
-                Message
+                {t("team_invite_msg_label")}
             </label>
             <textarea
                 id="invite-message"
-                placeholder="Optional message..."
+                placeholder={t("team_invite_msg_placeholder")}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 rows={4}

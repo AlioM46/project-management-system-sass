@@ -2,6 +2,7 @@ import { RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { TeamMembersSearch } from "@/components/Team/members/TeamMembersSearch";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMembersToolbarProps = {
     isRefreshing: boolean;
@@ -16,6 +17,8 @@ export function TeamMembersToolbar({
     searchQuery,
     setSearchQuery,
 }: TeamMembersToolbarProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0a0a0a]">
             <TeamMembersSearch value={searchQuery} onChange={setSearchQuery} />
@@ -27,7 +30,7 @@ export function TeamMembersToolbar({
                 className="h-10 rounded-xl px-4"
             >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh
+                {t("team_refresh")}
             </Button>
         </div>
     );
