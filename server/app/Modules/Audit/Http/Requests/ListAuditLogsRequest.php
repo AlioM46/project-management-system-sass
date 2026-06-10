@@ -22,6 +22,9 @@ class ListAuditLogsRequest extends FormRequest
             'targetType' => 'target_type',
             'targetId' => 'target_id',
             'actorUserId' => 'actor_user_id',
+            'assigneeUserId' => 'assignee_user_id',
+            'leadId' => 'lead_id',
+            'courseId' => 'course_id',
             'perPage' => 'per_page',
         ];
 
@@ -72,6 +75,9 @@ After: ( the request (it self) information )
             'target_type' => ['sometimes', Rule::in(AuditTargetType::values())],
             'target_id' => ['sometimes', 'integer', 'min:1', 'required_with:target_type'],
             'actor_user_id' => ['sometimes', 'integer', 'exists:users,id'],
+            'assignee_user_id' => ['sometimes', 'integer', 'exists:users,id'],
+            'lead_id' => ['sometimes', 'integer', 'min:1'],
+            'course_id' => ['sometimes', 'integer', 'min:1'],
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
             'page' => ['sometimes', 'integer', 'min:1'],

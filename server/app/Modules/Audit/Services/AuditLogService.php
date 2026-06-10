@@ -7,6 +7,7 @@ use App\Modules\Audit\Enums\AuditAction;
 use App\Modules\Audit\Enums\AuditMetadataKey;
 use App\Modules\Audit\Enums\AuditTargetType;
 use App\Modules\Audit\Model\AuditLog;
+use App\Modules\Leads\Model\LeadAssignment;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Model\Workspace;
 use App\Modules\Workspace\Services\WorkspaceContextService;
@@ -183,12 +184,70 @@ So the per_page can never be less than 1 or more than 100.
             $query->where('actor_user_id', (int) $filters['actor_user_id']);
         }
 
+        if (!empty($filters['lead_id'])) {
+            $leadId = (int) $filters['lead_id'];
+            $query->where(function (Builder $builder) use ($leadId): void {
+                $builder
+                    ->where(function (Builder $leadTargetQuery) use ($leadId): void {
+                        $leadTargetQuery
+                            ->where('target_type', AuditTargetType::Lead->value)
+                            ->where('target_id', $leadId);
+                    })
+                    ->orWhereJsonContains('metadata->'.AuditMetadataKey::LeadId->value, $leadId);
+            });
+        }
+
+        if (!empty($filters['course_id'])) {
+            $courseId = (int) $filters['course_id'];
+            $query->where(function (Builder $builder) use ($courseId): void {
+                $builder
+                    ->where(function (Builder $courseTargetQuery) use ($courseId): void {
+                        $courseTargetQuery
+                            ->where('target_type', AuditTargetType::Course->value)
+                            ->where('target_id', $courseId);
+                    })
+                    ->orWhereJsonContains('metadata->'.AuditMetadataKey::CourseId->value, $courseId);
+            });
+        }
+
+        if (!empty($filters['assignee_user_id'])) {
+            $assigneeUserId = (int) $filters['assignee_user_id'];
+            $assignedLeadIds = LeadAssignment::query()
+                ->where('user_id', $assigneeUserId)
+                ->pluck('lead_id')
+                ->map(fn (mixed $leadId): int => (int) $leadId)
+                ->all();
+
+            if ($assignedLeadIds === []) {
+                $query->whereRaw('1 = 0');
+
+                return $query;
+            }
+
+            $query->where(function (Builder $builder) use ($assignedLeadIds): void {
+                $builder
+                    ->where(function (Builder $leadTargetQuery) use ($assignedLeadIds): void {
+                        $leadTargetQuery
+                            ->where('target_type', AuditTargetType::Lead->value)
+                            ->whereIn('target_id', $assignedLeadIds);
+                    })
+                    ->orWhere(function (Builder $metadataLeadQuery) use ($assignedLeadIds): void {
+                        foreach ($assignedLeadIds as $leadId) {
+                            $metadataLeadQuery->orWhereJsonContains(
+                                'metadata->'.AuditMetadataKey::LeadId->value,
+                                $leadId
+                            );
+                        }
+                    });
+            });
+        }
+
         if (!empty($filters['from'])) {
-            $query->where('occurred_at', '>=', $filters['from']);
+            $query->where('occurred_at', '>=', $filters['from'].' 00:00:00');
         }
 
         if (!empty($filters['to'])) {
-            $query->where('occurred_at', '<=', $filters['to']);
+            $query->where('occurred_at', '<=', $filters['to'].' 23:59:59');
         }
 
         return $query;
