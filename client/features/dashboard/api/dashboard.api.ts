@@ -2,9 +2,8 @@ import { apiClient } from "@/shared/api/apiClient";
 
 export interface DashboardSummary {
     stats: {
-        total_projects: number;
-        active_tasks: number;
-        completed_tasks: number;
+        total_courses: number;
+        total_leads: number;
         total_members: number;
     };
     recent_activity: Array<{
@@ -15,11 +14,7 @@ export interface DashboardSummary {
         target_type: string;
         metadata: any;
     }>;
-    task_distribution: Record<string, number>;
-    completions_chart: Array<{
-        date: string;
-        completed: number;
-    }>;
+    lead_distribution: Record<string, number>;
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {

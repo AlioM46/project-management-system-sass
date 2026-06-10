@@ -2,10 +2,14 @@
 
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Menu, Search } from "lucide-react";
+import { Menu, Search, Languages } from "lucide-react";
 import { LogoutButton } from "./LogoutButton";
+import { useTranslation } from "@/lib/context/LanguageContext";
+import { Button } from "@/components/ui/button";
 
 export function DashboardNavbar() {
+  const { t, locale, setLocale } = useTranslation();
+
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#050505] px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-colors duration-300">
       <button
@@ -25,13 +29,13 @@ export function DashboardNavbar() {
             Search
           </label>
           <Search
-            className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-zinc-400"
+            className="pointer-events-none absolute inset-y-0 start-0 h-full w-5 text-zinc-400"
             aria-hidden="true"
           />
           <input
             id="search-field"
-            className="block h-full w-full border-0 py-0 pl-8 pr-0 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:ring-0 sm:text-sm bg-transparent outline-none"
-            placeholder="Search projects, tasks, or members..."
+            className="block h-full w-full border-0 py-0 ps-8 pe-0 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:ring-0 sm:text-sm bg-transparent outline-none text-start"
+            placeholder={t("topbar_search")}
             type="search"
             name="search"
           />
@@ -46,6 +50,16 @@ export function DashboardNavbar() {
           />
 
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocale(locale === "en" ? "ar" : "en")}
+              className="h-9 w-9 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5"
+              title={locale === "en" ? "العربية" : "English"}
+            >
+              <Languages className="h-4 w-4" />
+            </Button>
+
             <ThemeToggle />
             
             {/* User Profile / Logout Mock */}

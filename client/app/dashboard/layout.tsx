@@ -14,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <DashboardSidebar />
 
                     {/* Main Content Area */}
-                    <div className="flex flex-col flex-1 w-full md:pl-64 transition-all duration-300">
+                    <div className="flex flex-col flex-1 w-full md:ps-64 transition-all duration-300">
                         <DashboardNavbar />
                         
                         <main className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent">

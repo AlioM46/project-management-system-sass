@@ -73,8 +73,8 @@ it('marks all notifications as read only inside the active workspace', function 
     $workspaceB = createNotificationWorkspace($user, 'Workspace B');
 
     $workspaceAFirst = createWorkspaceNotification($workspaceA, $user, 'mentioned');
-    $workspaceASecond = createWorkspaceNotification($workspaceA, $user, 'task_updated');
-    $workspaceARead = createWorkspaceNotification($workspaceA, $user, 'task_assigned', now()->subMinute()->toISOString());
+    $workspaceASecond = createWorkspaceNotification($workspaceA, $user, 'lead_updated');
+    $workspaceARead = createWorkspaceNotification($workspaceA, $user, 'lead_assigned', now()->subMinute()->toISOString());
     $workspaceBNotification = createWorkspaceNotification($workspaceB, $user, 'mentioned');
 
     $response = $this->withToken(JWTAuth::fromUser($user))

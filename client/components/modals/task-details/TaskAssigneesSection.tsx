@@ -3,6 +3,7 @@
 import { CheckSquare, Loader2, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Member } from "@/features/team/types";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 interface AssignedUserSummary {
     id: string;
@@ -50,6 +51,7 @@ export function TaskAssigneesSection({
     setSearchQuery,
     onToggleAssignee,
 }: TaskAssigneesSectionProps) {
+    const { t } = useTranslation();
     const assignedLookup = new Set(assignedUserIds.map((id) => normalizeId(id)));
 
     const filteredMembers = members.filter((member) => {
@@ -68,18 +70,18 @@ export function TaskAssigneesSection({
             .filter((member) => assignedLookup.has(normalizeId(member.user_id)))
             .map((member) => ({
                 id: normalizeId(member.user_id),
-                name: member.user?.name || "Unknown user",
+                name: member.user?.name || t("team_unknown_user"),
                 email: member.user?.email || "",
             }));
 
     return (
         <div>
-            <div className="mb-2 flex items-center justify-between">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Assignees</h4>
-                <span className="text-xs text-zinc-400">{assignedUserIds.length} selected</span>
+            <div className="mb-2 flex items-center justify-between text-start">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{t("modal_lead_details_assignees")}</h4>
+                <span className="text-xs text-zinc-400">{t("courses_hours") === "ساعة" ? `${assignedUserIds.length} تم اختيارهم` : `${assignedUserIds.length} selected`}</span>
             </div>
 
-            <div className="relative flex w-full flex-wrap items-center gap-2">
+            <div className="relative flex w-full flex-wrap items-center gap-2 text-start">
                 {renderedAssignedUsers.map((assignee) => (
                     <div
                         key={assignee.id}
@@ -103,7 +105,7 @@ export function TaskAssigneesSection({
                 </Button>
 
                 {isOpen && (
-                    <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0f0f0f]">
+                    <div className="absolute start-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0f0f0f] text-start">
                         <div className="border-b border-zinc-200 p-3 dark:border-white/10">
                             <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
                                 <Search className="h-4 w-4 text-zinc-400" />
@@ -111,7 +113,7 @@ export function TaskAssigneesSection({
                                     type="text"
                                     value={searchQuery}
                                     onChange={(event) => setSearchQuery(event.target.value)}
-                                    placeholder="Search members..."
+                                    placeholder={t("team_search_placeholder")}
                                     className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-white"
                                 />
                                 {searchQuery && (
@@ -128,7 +130,7 @@ export function TaskAssigneesSection({
 
                         <div className="max-h-64 overflow-y-auto">
                             {filteredMembers.length === 0 ? (
-                                <div className="p-4 text-center text-sm text-zinc-500">No members match your search.</div>
+                                <div className="p-4 text-center text-sm text-zinc-500">{t("team_empty_no_match")}</div>
                             ) : (
                                 filteredMembers.map((member) => {
                                     const normalizedMemberUserId = normalizeId(member.user_id);
@@ -146,12 +148,12 @@ export function TaskAssigneesSection({
                                             }}
                                             disabled={isUpdating}
                                         >
-                                            <div className="flex min-w-0 items-center gap-2">
+                                            <div className="flex min-w-0 items-center gap-2 text-start">
                                                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-[10px] font-bold text-white">
                                                     {getInitials(member.user?.name)}
                                                 </div>
-                                                <div className="min-w-0 text-left">
-                                                    <div className="truncate">{member.user?.name || "Unknown user"}</div>
+                                                <div className="min-w-0 text-start">
+                                                    <div className="truncate">{member.user?.name || t("team_unknown_user")}</div>
                                                     <div className="truncate text-xs text-zinc-500">
                                                         @{member.user?.username || member.user?.email || normalizedMemberUserId}
                                                     </div>

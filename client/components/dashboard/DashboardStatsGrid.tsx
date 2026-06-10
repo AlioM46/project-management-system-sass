@@ -1,7 +1,6 @@
 import {
-    Activity,
-    CheckSquare,
-    FolderKanban,
+    GraduationCap,
+    Layers,
     LucideIcon,
     Users,
 } from "lucide-react";
@@ -22,40 +21,37 @@ type StatConfig = {
     value: number;
 };
 
+import { useTranslation } from "@/lib/context/LanguageContext";
+
 export function DashboardStatsGrid({ isLoading, summary }: DashboardStatsGridProps) {
+    const { t } = useTranslation();
+
     const stats: StatConfig[] = [
         {
-            title: "Total Projects",
-            value: summary?.stats.total_projects ?? 0,
-            description: "Projects in this workspace",
-            icon: FolderKanban,
-            color: "text-blue-500",
-        },
-        {
-            title: "Active Tasks",
-            value: summary?.stats.active_tasks ?? 0,
-            description: "Work in progress",
-            icon: Activity,
-            color: "text-amber-500",
-        },
-        {
-            title: "Completed Tasks",
-            value: summary?.stats.completed_tasks ?? 0,
-            description: "Tasks marked as Done",
-            icon: CheckSquare,
+            title: t("db_courses_title"),
+            value: summary?.stats.total_courses ?? 0,
+            description: t("db_courses_desc"),
+            icon: GraduationCap,
             color: "text-emerald-500",
         },
         {
-            title: "Team Members",
+            title: t("db_leads_title"),
+            value: summary?.stats.total_leads ?? 0,
+            description: t("db_leads_desc"),
+            icon: Layers,
+            color: "text-blue-500",
+        },
+        {
+            title: t("db_members_title"),
             value: summary?.stats.total_members ?? 0,
-            description: "Total collaborators",
+            description: t("db_members_desc"),
             icon: Users,
-            color: "text-purple-500",
+            color: "text-amber-500",
         },
     ];
 
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {stats.map((stat) => (
                 <DashboardStatCard key={stat.title} isLoading={isLoading} {...stat} />
             ))}
