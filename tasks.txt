@@ -1,0 +1,9 @@
+Building
+ - Tasks Page
+ - Tasks Card
+ - Moving Tasks with out drag & drop
+ - Handle workflow of task status
+ -                                  
+
+---- studying TaskDetailsModal.tsx
+Fully Understand it. 2-4 hrs
