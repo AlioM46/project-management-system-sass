@@ -645,7 +645,6 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
                         onStatusChange={(status) => void handleStatusChange(status)}
                         onPriorityChange={(priority) => void handlePriorityChange(priority)}
                         onToggleAssignee={(memberUserId) => void toggleAssignee(memberUserId)}
-                        onUpdate={onUpdate}
                     />
                 </div>
             </div>

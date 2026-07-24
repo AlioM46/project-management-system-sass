@@ -1,5 +1,5 @@
 type DashboardOverviewHeaderProps = {
-    workspaceId: string | undefined;
+    workspaceId: string | null | undefined;
 };
 
 export function DashboardOverviewHeader({ workspaceId }: DashboardOverviewHeaderProps) {
