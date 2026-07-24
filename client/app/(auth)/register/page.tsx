@@ -1,6 +1,7 @@
 // This file creates the actual URL for your app. 
 // Because it's in 'app/register/page.tsx', it will be visible at 'http://localhost:3000/register'
 
+import { Suspense } from "react";
 import Register from "@/features/auth/pages/Register";
 
 /**
@@ -8,5 +9,9 @@ import Register from "@/features/auth/pages/Register";
  */
 export default function RegisterPage() {
     // We just show the Register component we built in the 'features' folder
-    return <Register />;
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <Register />
+        </Suspense>
+    );
 }
