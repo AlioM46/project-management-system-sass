@@ -12,7 +12,7 @@ import { getErrorMessage } from "@/shared/api/ApiError";
 import useChatChannel from "@/features/chat/hooks/useChatChannel";
 import { getCookie } from "@/shared/utils/cookies";
 import { useNotifications } from "@/features/notifications/components/NotificationsProvider";
-import usePresenceChannel from "@/features/chat/hooks/usePresenceChannel";
+import { usePresence } from "@/features/chat/components/PresenceProvider";
 
 export default function ChatPage() {
     const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
@@ -22,7 +22,7 @@ export default function ChatPage() {
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { markConversationAsReadLocally } = useNotifications();
-    const { onlineUserIds, isUserOnline } = usePresenceChannel(getCookie("access_token") || "", getCookie("workspace_id") || "")
+    const { onlineUserIds, isUserOnline } = usePresence();
 
 
     const [inputText, setInputText] = useState("");
