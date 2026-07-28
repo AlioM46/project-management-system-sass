@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Login as LoginAPI } from "../api/auth.api";
-import { ApiError } from "../../../shared/api/ApiError";
+import { ApiError, getErrorMessage } from "@/shared/api/ApiError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,13 +70,9 @@ export default function Login() {
                 router.push(next);
             }, 2000);
         } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Login failed. Try a different email or username.");
-                toast.error(err.getFriendlyMessage() ?? "Login failed. Try a different email or username.");
-            } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
-            }
+            const errorMsg = getErrorMessage(err, "Login failed. Try a different email or username.");
+            setError(errorMsg);
+            toast.error(errorMsg);
             setIsLoading(false);
         }
     };

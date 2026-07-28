@@ -19,8 +19,12 @@ export async function sendInvite(data: SendInviteInput): Promise<void> {
     await apiClient.post("/workspaces/members/send-invite", data);
 }
 
-export async function removeMember(memberId: string): Promise<void> {
+export async function removeMember(memberId: string | number): Promise<void> {
     await apiClient.delete(`/workspaces/members/${memberId}`);
+}
+
+export async function updateMemberRole(memberId: string | number, roleId: number | string): Promise<void> {
+    await apiClient.patch(`/workspaces/members/${memberId}`, { role_id: Number(roleId) });
 }
 
 

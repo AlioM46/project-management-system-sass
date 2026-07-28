@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { register } from "../api/auth.api";
-import { ApiError } from "../../../shared/api/ApiError";
+import { ApiError, getErrorMessage } from "@/shared/api/ApiError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,13 +63,9 @@ export default function Register() {
             toast.success("Welcome aboard!");
             setShowSuccessDialog(true);
         } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Registration failed. Try a different email.");
-                toast.error(err.getFriendlyMessage() ?? "Registration failed. Try a different email.");
-            } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
-            }
+            const errorMsg = getErrorMessage(err, "Registration failed. Try a different email.");
+            setError(errorMsg);
+            toast.error(errorMsg);
             setIsLoading(false);
         }
     };

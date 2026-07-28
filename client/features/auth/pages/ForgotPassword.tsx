@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { forgotPassword } from "../api/auth.api";
-import { ApiError } from "../../../shared/api/ApiError";
+import { ApiError, getErrorMessage } from "@/shared/api/ApiError";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,13 +41,9 @@ export default function ForgotPassword() {
             toast.success("Reset link sent successfully!");
             setShowSuccessDialog(true);
         } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Failed to send reset link. Try again.");
-                toast.error(err.getFriendlyMessage() ?? "Failed to send reset link. Try again.");
-            } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
-            }
+            const errorMsg = getErrorMessage(err, "Failed to send reset link. Try again.");
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }

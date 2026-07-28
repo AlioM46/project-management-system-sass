@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { resetPassword } from "../api/auth.api";
-import { ApiError } from "../../../shared/api/ApiError";
+import { ApiError, getErrorMessage } from "@/shared/api/ApiError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,13 +62,9 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
             toast.success("Password reset successfully!");
             setShowSuccessDialog(true);
         } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.getFriendlyMessage() ?? "Failed to reset password. The link might be expired.");
-                toast.error(err.getFriendlyMessage() ?? "Failed to reset password.");
-            } else {
-                setError("An unexpected error occurred.");
-                toast.error("An unexpected error occurred.");
-            }
+            const errorMsg = getErrorMessage(err, "Failed to reset password. The link might be expired.");
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }
