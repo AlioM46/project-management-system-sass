@@ -12,6 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSummary } from "@/features/dashboard/api/dashboard.api";
 
+import { useTranslation } from "@/lib/context/LanguageContext";
+
 type PerformanceChartCardProps = {
     isLoading: boolean;
     summary: DashboardSummary | null;
@@ -21,15 +23,35 @@ export function PerformanceChartCard({
     isLoading,
     summary,
 }: PerformanceChartCardProps) {
+    const { t } = useTranslation();
+    const chartData = Object.values(
+        (summary?.recent_activity || []).reduce<Record<string, { date: string; completed: number }>>(
+            (carry, activity) => {
+                const date = new Date(activity.occurred_at).toLocaleDateString();
+
+                if (!carry[date]) {
+                    carry[date] = { date, completed: 0 };
+                }
+
+                if (["lead_converted_to_student", "student_created"].includes(activity.event_type)) {
+                    carry[date].completed += 1;
+                }
+
+                return carry;
+            },
+            {}
+        )
+    );
+
     return (
-        <Card className="col-span-4 overflow-hidden border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d]">
+        <Card className="col-span-4 overflow-hidden border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d] text-start">
             <CardHeader className="flex flex-row items-center justify-between pb-8">
                 <div>
                     <CardTitle className="text-xl font-bold text-zinc-900 dark:text-white">
-                        Performance Overview
+                        {t("db_conversion_title")}
                     </CardTitle>
                     <p className="mt-1 text-xs text-zinc-500">
-                        Daily task completions (Last 7 days)
+                        {t("db_conversion_desc")}
                     </p>
                 </div>
                 <TrendingUp className="h-5 w-5 text-emerald-500" />
@@ -40,7 +62,7 @@ export function PerformanceChartCard({
                         <div className="h-full w-full animate-pulse rounded-2xl bg-zinc-100 dark:bg-white/5" />
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={summary?.completions_chart}>
+                            <AreaChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />

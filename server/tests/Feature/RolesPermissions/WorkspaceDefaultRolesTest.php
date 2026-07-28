@@ -36,7 +36,7 @@ function workspaceRolesFor(int $workspaceId)
     return Role::query()
         ->withoutGlobalScopes()
         ->where('workspace_id', $workspaceId)
-        ->with(['permissions' => fn ($query) => $query->orderBy('key')])
+        ->with(['permissions' => fn($query) => $query->orderBy('key')])
         ->orderBy('slug')
         ->get()
         ->keyBy('slug');
@@ -61,16 +61,22 @@ function expectedGranularPermissionKeys(): array
         'comment.moderate',
         'comment.update',
         'comment.view',
+        'course.archive',
+        'course.create',
+        'course.delete',
+        'course.restore',
+        'course.update',
+        'course.view',
+        'lead.assign',
+        'lead.change_stage',
+        'lead.create',
+        'lead.delete',
+        'lead.update',
+        'lead.view',
         'member.invite',
         'member.remove',
         'member.update',
         'member.view',
-        'project.archive',
-        'project.create',
-        'project.delete',
-        'project.restore',
-        'project.update',
-        'project.view',
         'report.create',
         'report.export',
         'report.view',
@@ -79,12 +85,6 @@ function expectedGranularPermissionKeys(): array
         'role.delete',
         'role.update',
         'role.view',
-        'task.assign',
-        'task.change_status',
-        'task.create',
-        'task.delete',
-        'task.update',
-        'task.view',
         'workspace.delete',
         'workspace.update',
         'workspace.view',

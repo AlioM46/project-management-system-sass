@@ -1,4 +1,5 @@
 import { Shield } from "lucide-react";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamMemberRoleBadgeProps = {
     roleName: string;
@@ -19,14 +20,24 @@ function getRoleTone(roleName: string) {
 }
 
 export function TeamMemberRoleBadge({ roleName }: TeamMemberRoleBadgeProps) {
+    const { t } = useTranslation();
+    const normalizedRole = roleName.toLowerCase();
+    const displayRole = normalizedRole === "owner"
+        ? t("team_role_owner")
+        : normalizedRole === "admin"
+        ? t("team_role_admin")
+        : normalizedRole === "member"
+        ? t("team_role_member")
+        : roleName;
+
     return (
         <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${getRoleTone(
                 roleName
             )}`}
         >
-            {roleName.toLowerCase() === "owner" && <Shield className="h-3 w-3" />}
-            {roleName}
+            {normalizedRole === "owner" && <Shield className="h-3 w-3" />}
+            {displayRole}
         </span>
     );
 }

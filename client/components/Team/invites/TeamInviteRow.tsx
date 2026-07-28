@@ -9,6 +9,7 @@ import {
     formatSentHoursLabel,
     isInviteExpiringSoon,
 } from "@/features/team/utils/team-invite-formatters";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamInviteRowProps = {
     cancellingInviteId: number | null;
@@ -25,6 +26,7 @@ export function TeamInviteRow({
     onResend,
     resendingInviteId,
 }: TeamInviteRowProps) {
+    const { t } = useTranslation();
     const expiringSoon = isInviteExpiringSoon(invite);
 
     return (
@@ -37,8 +39,8 @@ export function TeamInviteRow({
                     <div>
                         <p className="font-semibold text-zinc-900 dark:text-white">{invite.email}</p>
                         <p className="mt-0.5 text-xs text-zinc-500">
-                            {invite.role?.name ?? "Role unavailable"}
-                            {invite.inviter?.name ? ` • Invited by ${invite.inviter.name}` : ""}
+                            {invite.role?.name ?? t("team_invite_role_unavailable")}
+                            {invite.inviter?.name ? ` • ${t("team_invite_invited_by").replace("{name}", invite.inviter.name)}` : ""}
                         </p>
                     </div>
                 </div>
@@ -67,10 +69,10 @@ export function TeamInviteRow({
                 {invite.message ? (
                     <span className="line-clamp-2 max-w-xs">{invite.message}</span>
                 ) : (
-                    <span className="text-zinc-400">No message</span>
+                    <span className="text-zinc-400">{t("team_invite_no_message")}</span>
                 )}
             </td>
-            <td className="px-6 py-4 text-right">
+            <td className="px-6 py-4 text-end">
                 <TeamInviteActions
                     cancellingInviteId={cancellingInviteId}
                     invite={invite}

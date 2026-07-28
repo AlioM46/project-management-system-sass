@@ -3,8 +3,7 @@
 namespace App\Modules\Comments\Model;
 
 use App\Models\User;
-use App\Modules\Comments\Model\Mention;
-use App\Modules\Tasks\Model\Task;
+use App\Modules\Leads\Model\Lead;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,10 +11,10 @@ class Comment extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'comments'; // Ensure this matches your migration
+    protected $table = 'comments';
 
     protected $fillable = [
-        'task_id',
+        'lead_id',
         'author_id',
         'parent_id',
         'content',
@@ -37,17 +36,14 @@ class Comment extends Model
         return $this->hasMany(Comment::class, 'parent_id');
     }
 
-    /**
-     * Recursive relationship for loading all nested replies.
-     */
     public function recursiveReplies()
     {
         return $this->replies()->with(['recursiveReplies', 'author', 'attachments']);
     }
 
-    public function task()
+    public function lead()
     {
-        return $this->belongsTo(Task::class);
+        return $this->belongsTo(Lead::class);
     }
 
     public function author()
@@ -60,19 +56,14 @@ class Comment extends Model
         return $this->hasMany(CommentAttachment::class);
     }
 
-    public function scopeForTask($query, int $taskId)
+    public function scopeForLead($query, int $leadId)
     {
-        return $query->where('task_id', $taskId);
+        return $query->where('lead_id', $leadId);
     }
 
     public function scopeLatestFirst($query)
     {
         return $query->orderByDesc('created_at');
-    }
-
-    public function scopeOldestFirst($query)
-    {
-        return $query->orderBy('created_at');
     }
 
     public function mentions()
@@ -83,26 +74,14 @@ class Comment extends Model
 
     public function getFormattedContentAttribute(): string
     {
-        $escaped = e((string) $this->content);
-
-        $formatted = preg_replace(
-            '/(^|\\s)(@([\\w-]+))/u',
-            '$1<span style="display:inline-block;border-radius:0.375rem;background:rgba(59,130,246,0.12);padding:0.125rem 0.375rem;color:#2563eb;font-weight:600;">$2</span>',
-            $escaped
-        );
-
-        return nl2br((string) $formatted);
+        return nl2br((string) e((string) $this->content));
     }
 
     public function getCanUpdateAttribute(): bool
     {
         $user = auth()->user();
 
-        if (! $user) {
-            return false;
-        }
-
-        return (int) $this->author_id === (int) $user->id;
+        return $user ? (int) $this->author_id === (int) $user->id : false;
     }
 
     public function getCanDeleteAttribute(): bool

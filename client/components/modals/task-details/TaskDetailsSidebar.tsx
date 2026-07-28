@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Task } from "@/features/tasks/types";
 import { Member } from "@/features/team/types";
 import { TaskAssigneesSection } from "./TaskAssigneesSection";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 interface TaskDetailsSidebarProps {
     sidebarRef: RefObject<HTMLDivElement | null>;
@@ -14,6 +15,7 @@ interface TaskDetailsSidebarProps {
     assignedUserIds: string[];
     assignedUsers: Array<{ id: string; name: string; email: string }>;
     allowedTransitions: string[];
+    stages: Array<{ stage_id: string | number, name: string, is_success?: boolean }>;
     isLoadingTransitions: boolean;
     isStatusOpen: boolean;
     isPriorityOpen: boolean;
@@ -37,6 +39,7 @@ export function TaskDetailsSidebar({
     assignedUserIds,
     assignedUsers,
     allowedTransitions,
+    stages,
     isLoadingTransitions,
     isStatusOpen,
     isPriorityOpen,
@@ -52,20 +55,43 @@ export function TaskDetailsSidebar({
     onPriorityChange,
     onToggleAssignee,
 }: TaskDetailsSidebarProps) {
+    const { t } = useTranslation();
+    const currentStageName = task.stage?.name || task.status.replace("_", " ");
+
+    const getTranslatedStageName = (name: string) => {
+        const lower = name.toLowerCase();
+        if (lower === "new inquiry") return t("lead_stage_new_inquiry");
+        if (lower === "qualified") return t("lead_stage_qualified");
+        if (lower === "test drive session") return t("lead_stage_test_drive");
+        if (lower === "won") return t("lead_stage_won");
+        if (lower === "lost") return t("lead_stage_lost");
+        return name;
+    };
+
+    const getTranslatedPriorityName = (priority: string) => {
+        const lower = priority.toLowerCase();
+        if (lower === "high") return t("priority_urgent");
+        if (lower === "medium") return t("priority_high");
+        if (lower === "low") return t("priority_normal");
+        return priority;
+    };
+
+    const stagesList = stages.length > 0 ? stages : [
+        { stage_id: "NEW_INQUIRY", name: "New Inquiry" },
+        { stage_id: "QUALIFIED", name: "Qualified" },
+        { stage_id: "TEST_DRIVE_SESSION", name: "Test Drive Session" },
+        { stage_id: "WON", name: "Won", is_success: true },
+        { stage_id: "LOST", name: "Lost" }
+    ];
+
     return (
-        <div ref={sidebarRef} className="w-full space-y-8 bg-zinc-50/50 p-6 md:w-64 dark:bg-transparent">
+        <div ref={sidebarRef} className="w-full space-y-8 bg-zinc-50/50 p-6 md:w-64 dark:bg-transparent text-start">
             <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</h4>
-                <div className="relative inline-block w-full">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">{t("modal_lead_details_status")}</h4>
+                <div className="relative inline-block w-full text-start">
                     <Button
                         variant="outline"
-                        className={`w-full justify-start border-0 text-left font-medium shadow-sm ${
-                            task.status === "DONE" ? "bg-emerald-500 text-white hover:bg-emerald-600" :
-                            task.status === "IN_PROGRESS" ? "bg-blue-500 text-white hover:bg-blue-600" :
-                            task.status === "BLOCKED" ? "bg-orange-500 text-white hover:bg-orange-600" :
-                            task.status === "CANCELLED" ? "bg-zinc-400 text-white hover:bg-zinc-500" :
-                            "bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-                        }`}
+                        className={`w-full justify-start border-0 font-medium shadow-sm text-start`}
                         onClick={(event) => {
                             event.stopPropagation();
                             const opening = !isStatusOpen;
@@ -78,29 +104,25 @@ export function TaskDetailsSidebar({
                             }
                         }}
                     >
-                        {task.status.replace("_", " ").toUpperCase()}
+                        {getTranslatedStageName(currentStageName).toUpperCase()}
                     </Button>
 
                     {isStatusOpen && (
-                        <div className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0f0f0f]">
+                        <div className="absolute start-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0f0f0f] text-start">
                             <div className="flex flex-col">
                                 {isLoadingTransitions ? (
-                                    <div className="p-3 text-center text-sm text-zinc-500">Loading transitions...</div>
+                                    <div className="p-3 text-center text-sm text-zinc-500">{t("status_loading")}</div>
                                 ) : (
-                                    [
-                                        { id: "TODO", label: "TO DO", color: "bg-zinc-200 dark:bg-zinc-700" },
-                                        { id: "IN_PROGRESS", label: "IN PROGRESS", color: "bg-blue-500" },
-                                        { id: "BLOCKED", label: "BLOCKED", color: "bg-orange-500" },
-                                        { id: "DONE", label: "DONE", color: "bg-emerald-500" },
-                                        { id: "CANCELLED", label: "CANCELLED", color: "bg-zinc-400" },
-                                    ].map((statusOption) => {
-                                        const isAllowed = allowedTransitions.includes(statusOption.id) || task.status === statusOption.id;
+                                    stagesList.map((stageOption) => {
+                                        const statusId = stageOption.name.trim().replace(/\s+/g, '_').toUpperCase();
+                                        const isAllowed = allowedTransitions.includes(statusId) || task.status === statusId;
+                                        const color = stageOption.is_success ? "bg-emerald-500" : (statusId === "LOST" ? "bg-red-500" : "bg-blue-500");
 
                                         return (
                                             <button
-                                                key={statusOption.id}
+                                                key={stageOption.stage_id}
                                                 disabled={!isAllowed}
-                                                className={`flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 ${
+                                                className={`flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 text-start w-full ${
                                                     isAllowed
                                                         ? "cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/5"
                                                         : "cursor-not-allowed bg-zinc-50 opacity-50 dark:bg-[#0a0a0a]"
@@ -112,14 +134,14 @@ export function TaskDetailsSidebar({
                                                         return;
                                                     }
 
-                                                    onStatusChange(statusOption.id as Task["status"]);
+                                                    onStatusChange(statusId as Task["status"]);
                                                     setIsStatusOpen(false);
                                                 }}
                                             >
-                                                <span className={`h-2 w-2 rounded-full ${statusOption.color}`} />
-                                                {statusOption.label}
-                                                {!isAllowed && task.status !== statusOption.id && <span className="ml-auto text-[10px] uppercase text-zinc-400">Locked</span>}
-                                                {task.status === statusOption.id && <span className="ml-auto text-[10px] uppercase text-blue-500">Current</span>}
+                                                <span className={`h-2 w-2 rounded-full ${color} shrink-0`} />
+                                                <span className="truncate">{getTranslatedStageName(stageOption.name).toUpperCase()}</span>
+                                                {!isAllowed && task.status !== statusId && <span className="ms-auto text-[10px] uppercase text-zinc-400">{t("status_locked")}</span>}
+                                                {task.status === statusId && <span className="ms-auto text-[10px] uppercase text-blue-500">{t("status_current")}</span>}
                                             </button>
                                         );
                                     })
@@ -143,11 +165,11 @@ export function TaskDetailsSidebar({
             />
 
             <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Priority</h4>
-                <div className="relative inline-block w-full">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">{t("modal_lead_details_priority")}</h4>
+                <div className="relative inline-block w-full text-start">
                     <Button
                         variant="ghost"
-                        className="w-full justify-start px-2 text-left hover:bg-zinc-100 dark:hover:bg-white/5"
+                        className="w-full justify-start px-2 text-start hover:bg-zinc-100 dark:hover:bg-white/5"
                         onClick={(event) => {
                             event.stopPropagation();
                             setIsPriorityOpen(!isPriorityOpen);
@@ -156,26 +178,26 @@ export function TaskDetailsSidebar({
                         }}
                     >
                         <Flag
-                            className={`mr-2 h-4 w-4 ${
+                            className={`me-2 h-4 w-4 ${
                                 task.priority === "high" ? "fill-red-500 text-red-500" :
                                 task.priority === "medium" ? "fill-amber-500 text-amber-500" :
                                 "fill-blue-500 text-blue-500"
                             }`}
                         />
-                        <span className="capitalize">{task.priority} Priority</span>
+                        <span className="capitalize">{t("priority_label").replace("{priority}", getTranslatedPriorityName(task.priority))}</span>
                     </Button>
 
                     {isPriorityOpen && (
-                        <div className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0f0f0f]">
-                            <div className="flex flex-col">
+                        <div className="absolute start-0 top-full z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0f0f0f] text-start">
+                            <div className="flex flex-col text-start">
                                 {[
-                                    { id: "high", label: "Urgent", color: "fill-red-500 text-red-500" },
-                                    { id: "medium", label: "High", color: "fill-amber-500 text-amber-500" },
-                                    { id: "low", label: "Normal", color: "fill-blue-500 text-blue-500" },
+                                    { id: "high", label: t("priority_urgent"), color: "fill-red-500 text-red-500" },
+                                    { id: "medium", label: t("priority_high"), color: "fill-amber-500 text-amber-500" },
+                                    { id: "low", label: t("priority_normal"), color: "fill-blue-500 text-blue-500" },
                                 ].map((priorityOption) => (
                                     <button
                                         key={priorityOption.id}
-                                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5"
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5 text-start w-full"
                                         onClick={(event) => {
                                             event.stopPropagation();
                                             onPriorityChange(priorityOption.id as Task["priority"]);
@@ -187,14 +209,14 @@ export function TaskDetailsSidebar({
                                     </button>
                                 ))}
                                 <button
-                                    className="flex items-center gap-2 border-t border-zinc-100 px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:border-white/10 dark:hover:bg-white/5"
+                                    className="flex items-center gap-2 border-t border-zinc-100 px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:border-white/10 dark:hover:bg-white/5 text-start w-full"
                                     onClick={(event) => {
                                         event.stopPropagation();
                                         setIsPriorityOpen(false);
                                     }}
                                 >
                                     <X className="h-4 w-4" />
-                                    Clear
+                                    {t("priority_clear")}
                                 </button>
                             </div>
                         </div>
@@ -203,10 +225,10 @@ export function TaskDetailsSidebar({
             </div>
 
             <div>
-                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Dates</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">{t("modal_lead_details_dates")}</h4>
                 <div className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-white/10 dark:bg-[#0f0f0f] dark:text-zinc-400 dark:hover:bg-white/5">
                     <Calendar className="h-4 w-4" />
-                    <span>No due date</span>
+                    <span>{t("modal_lead_details_no_date")}</span>
                 </div>
             </div>
         </div>

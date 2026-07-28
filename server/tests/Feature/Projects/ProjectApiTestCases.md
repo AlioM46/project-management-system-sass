@@ -4,7 +4,7 @@
 
 ### Case: creates a project in the active workspace
 - Setup: authenticated user is a member of workspace A and has `project.create`.
-- Request: `POST /api/projects` with `X-Workspace-Id: {workspaceA}` and body `{ "name": "Marketing Website", "description": "Tasks related to the new website launch" }`.
+- Request: `POST /api/courses` with `X-Workspace-Id: {workspaceA}` and body `{ "name": "Marketing Website", "description": "Tasks related to the new website launch" }`.
 - Expected status: `201`.
 - Expected assertions:
   - `data.project.name` is `Marketing Website`.
@@ -16,7 +16,7 @@
 
 ### Case: rejects an empty name
 - Setup: authenticated user has `project.create` in workspace A.
-- Request: `POST /api/projects` with body `{ "name": "" }`.
+- Request: `POST /api/courses` with body `{ "name": "" }`.
 - Expected status: `422`.
 - Expected assertions:
   - response error code is `VALIDATION_ERROR`.
@@ -25,7 +25,7 @@
 
 ### Case: rejects a whitespace-only name
 - Setup: authenticated user has `project.create` in workspace A.
-- Request: `POST /api/projects` with body `{ "name": "   " }`.
+- Request: `POST /api/courses` with body `{ "name": "   " }`.
 - Expected status: `422`.
 - Expected assertions:
   - response error code is `VALIDATION_ERROR`.
@@ -34,7 +34,7 @@
 
 ### Case: rejects a duplicate active name in the same workspace
 - Setup: workspace A already has active project `Roadmap`; authenticated user has `project.create`.
-- Request: `POST /api/projects` with body `{ "name": "Roadmap" }`.
+- Request: `POST /api/courses` with body `{ "name": "Roadmap" }`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_NAME_CONFLICT`.
@@ -42,7 +42,7 @@
 
 ### Case: rejects a case-insensitive duplicate in the same workspace
 - Setup: workspace A already has active project `Roadmap`; authenticated user has `project.create`.
-- Request: `POST /api/projects` with body `{ "name": "roadmap" }`.
+- Request: `POST /api/courses` with body `{ "name": "roadmap" }`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_NAME_CONFLICT`.
@@ -50,7 +50,7 @@
 
 ### Case: allows the same name in a different workspace
 - Setup: workspace A has active project `Roadmap`; authenticated user has `project.create` in workspace B.
-- Request: `POST /api/projects` with `X-Workspace-Id: {workspaceB}` and body `{ "name": "Roadmap" }`.
+- Request: `POST /api/courses` with `X-Workspace-Id: {workspaceB}` and body `{ "name": "Roadmap" }`.
 - Expected status: `201`.
 - Expected assertions:
   - created project belongs to workspace B.
@@ -58,7 +58,7 @@
 
 ### Case: blocks create without permission
 - Setup: authenticated user is a workspace member without `project.create`.
-- Request: `POST /api/projects` with valid body.
+- Request: `POST /api/courses` with valid body.
 - Expected status: `403`.
 - Expected assertions:
   - no `projects` row is created.
@@ -67,7 +67,7 @@
 
 ### Case: lists only projects in the active workspace
 - Setup: workspace A has projects A1 and A2, workspace B has project B1, authenticated user can view both workspaces separately.
-- Request: `GET /api/projects` with `X-Workspace-Id: {workspaceA}`.
+- Request: `GET /api/courses` with `X-Workspace-Id: {workspaceA}`.
 - Expected status: `200`.
 - Expected assertions:
   - `data.count` is `2`.
@@ -76,7 +76,7 @@
 
 ### Case: excludes deleted projects by default
 - Setup: workspace A has one active project and one soft-deleted project; authenticated user has `project.view`.
-- Request: `GET /api/projects`.
+- Request: `GET /api/courses`.
 - Expected status: `200`.
 - Expected assertions:
   - response includes only the active project.
@@ -84,7 +84,7 @@
 
 ### Case: includes deleted projects when explicitly requested
 - Setup: workspace A has one active project and one soft-deleted project; authenticated user has `project.view`.
-- Request: `GET /api/projects?include_deleted=true`.
+- Request: `GET /api/courses?include_deleted=true`.
 - Expected status: `200`.
 - Expected assertions:
   - response includes both projects.
@@ -92,7 +92,7 @@
 
 ### Case: filters project list by search term
 - Setup: workspace A has `Marketing Website`, `Engineering Roadmap`, and `Bug Bash`.
-- Request: `GET /api/projects?search=road`.
+- Request: `GET /api/courses?search=road`.
 - Expected status: `200`.
 - Expected assertions:
   - response includes `Engineering Roadmap`.
@@ -100,7 +100,7 @@
 
 ### Case: shows a project in the active workspace
 - Setup: workspace A has active project P1; authenticated user has `project.view`.
-- Request: `GET /api/projects/{P1}`.
+- Request: `GET /api/courses/{P1}`.
 - Expected status: `200`.
 - Expected assertions:
   - `data.project.id` equals P1.
@@ -108,14 +108,14 @@
 
 ### Case: hides a deleted project from normal detail reads
 - Setup: workspace A has soft-deleted project P1; authenticated user has `project.view`.
-- Request: `GET /api/projects/{P1}`.
+- Request: `GET /api/courses/{P1}`.
 - Expected status: `404`.
 - Expected assertions:
   - response error code is `PROJECT_NOT_FOUND`.
 
 ### Case: allows explicit deleted detail reads
 - Setup: workspace A has soft-deleted project P1; authenticated user has `project.view`.
-- Request: `GET /api/projects/{P1}?include_deleted=true`.
+- Request: `GET /api/courses/{P1}?include_deleted=true`.
 - Expected status: `200`.
 - Expected assertions:
   - returned project is P1.
@@ -123,7 +123,7 @@
 
 ### Case: blocks cross-workspace detail access
 - Setup: project P1 belongs to workspace B; authenticated user sends `X-Workspace-Id: {workspaceA}` and has `project.view` in workspace A.
-- Request: `GET /api/projects/{P1}`.
+- Request: `GET /api/courses/{P1}`.
 - Expected status: `404`.
 - Expected assertions:
   - response error code is `PROJECT_NOT_FOUND`.
@@ -132,7 +132,7 @@
 
 ### Case: updates name and description for an active project
 - Setup: workspace A has active project P1; authenticated user has `project.update`.
-- Request: `PATCH /api/projects/{P1}` with body `{ "name": "Website Relaunch", "description": "Updated scope and delivery plan" }`.
+- Request: `PATCH /api/courses/{P1}` with body `{ "name": "Website Relaunch", "description": "Updated scope and delivery plan" }`.
 - Expected status: `200`.
 - Expected assertions:
   - `data.project.name` is `Website Relaunch`.
@@ -141,7 +141,7 @@
 
 ### Case: rejects rename to a conflicting active name
 - Setup: workspace A has active projects `Roadmap` and `Backlog`; authenticated user has `project.update`.
-- Request: `PATCH /api/projects/{Backlog}` with body `{ "name": "roadmap" }`.
+- Request: `PATCH /api/courses/{Backlog}` with body `{ "name": "roadmap" }`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_NAME_CONFLICT`.
@@ -149,7 +149,7 @@
 
 ### Case: blocks updates to a deleted project
 - Setup: workspace A has soft-deleted project P1; authenticated user has `project.update`.
-- Request: `PATCH /api/projects/{P1}` with body `{ "name": "Recovered Name" }`.
+- Request: `PATCH /api/courses/{P1}` with body `{ "name": "Recovered Name" }`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_DELETED_IMMUTABLE`.
@@ -157,7 +157,7 @@
 
 ### Case: blocks update without permission
 - Setup: authenticated user is a member without `project.update`.
-- Request: `PATCH /api/projects/{P1}` with valid body.
+- Request: `PATCH /api/courses/{P1}` with valid body.
 - Expected status: `403`.
 - Expected assertions:
   - database row remains unchanged.
@@ -166,7 +166,7 @@
 
 ### Case: soft deletes an active project
 - Setup: workspace A has active project P1; authenticated user has `project.delete`.
-- Request: `DELETE /api/projects/{P1}`.
+- Request: `DELETE /api/courses/{P1}`.
 - Expected status: `204`.
 - Expected assertions:
   - response body is empty.
@@ -176,8 +176,8 @@
 ### Case: allows name reuse after delete
 - Setup: workspace A has active project `Roadmap`; authenticated user has `project.delete` and `project.create`.
 - Request:
-  - `DELETE /api/projects/{RoadmapId}`
-  - then `POST /api/projects` with body `{ "name": "Roadmap" }`
+  - `DELETE /api/courses/{RoadmapId}`
+  - then `POST /api/courses` with body `{ "name": "Roadmap" }`
 - Expected status:
   - delete: `204`
   - create: `201`
@@ -187,14 +187,14 @@
 
 ### Case: blocks delete of an already deleted project
 - Setup: workspace A has soft-deleted project P1; authenticated user has `project.delete`.
-- Request: `DELETE /api/projects/{P1}`.
+- Request: `DELETE /api/courses/{P1}`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_ALREADY_DELETED`.
 
 ### Case: blocks delete without permission
 - Setup: authenticated user is a member without `project.delete`.
-- Request: `DELETE /api/projects/{P1}`.
+- Request: `DELETE /api/courses/{P1}`.
 - Expected status: `403`.
 - Expected assertions:
   - project remains active in the database.
@@ -203,7 +203,7 @@
 
 ### Case: restores a deleted project
 - Setup: workspace A has soft-deleted project P1; authenticated user has `project.restore`.
-- Request: `POST /api/projects/{P1}/restore`.
+- Request: `POST /api/courses/{P1}/restore`.
 - Expected status: `200`.
 - Expected assertions:
   - `data.project.id` equals P1.
@@ -212,7 +212,7 @@
 
 ### Case: blocks restore when an active name conflict exists
 - Setup: workspace A has deleted project `Roadmap` and active project `roadmap`; authenticated user has `project.restore`.
-- Request: `POST /api/projects/{deletedRoadmapId}/restore`.
+- Request: `POST /api/courses/{deletedRoadmapId}/restore`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_NAME_CONFLICT`.
@@ -220,14 +220,14 @@
 
 ### Case: blocks restore of a non-deleted project
 - Setup: workspace A has active project P1; authenticated user has `project.restore`.
-- Request: `POST /api/projects/{P1}/restore`.
+- Request: `POST /api/courses/{P1}/restore`.
 - Expected status: `409`.
 - Expected assertions:
   - response error code is `PROJECT_NOT_DELETED`.
 
 ### Case: blocks restore without permission
 - Setup: authenticated user is a member without `project.restore`.
-- Request: `POST /api/projects/{P1}/restore`.
+- Request: `POST /api/courses/{P1}/restore`.
 - Expected status: `403`.
 - Expected assertions:
   - project remains deleted in the database.

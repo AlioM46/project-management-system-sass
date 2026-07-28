@@ -20,25 +20,29 @@ type TaskDistributionCardProps = {
     summary: DashboardSummary | null;
 };
 
+import { useTranslation } from "@/lib/context/LanguageContext";
+
 export function TaskDistributionCard({
     isLoading,
     summary,
 }: TaskDistributionCardProps) {
-    const distributionData = summary?.task_distribution
-        ? Object.entries(summary.task_distribution).map(([name, value]) => ({
-              name: name.replace("_", " "),
+    const { t } = useTranslation();
+
+    const distributionData = summary?.lead_distribution
+        ? Object.entries(summary.lead_distribution).map(([name, value]) => ({
+              name: `${t("db_stage")} ${name}`,
               value,
           }))
         : [];
 
     return (
-        <Card className="col-span-3 border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d]">
+        <Card className="col-span-3 border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d] text-start">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-xl font-bold text-zinc-900 dark:text-white">
-                        Task Distribution
+                        {t("db_distribution_title")}
                     </CardTitle>
-                    <p className="mt-1 text-xs text-zinc-500">Current status breakdown</p>
+                    <p className="mt-1 text-xs text-zinc-500">{t("db_distribution_desc")}</p>
                 </div>
                 <BarChart3 className="h-5 w-5 text-blue-500" />
             </CardHeader>

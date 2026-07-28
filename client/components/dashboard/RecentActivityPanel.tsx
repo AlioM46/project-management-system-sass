@@ -1,8 +1,11 @@
 import { Activity, ArrowUpRight } from "lucide-react";
 
+import { AuditLogsDialog } from "@/components/dashboard/AuditLogsDialog";
 import { RecentActivityItem } from "@/components/dashboard/RecentActivityItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSummary } from "@/features/dashboard/api/dashboard.api";
+
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type RecentActivityPanelProps = {
     isLoading: boolean;
@@ -13,11 +16,13 @@ export function RecentActivityPanel({
     isLoading,
     summary,
 }: RecentActivityPanelProps) {
+    const { t } = useTranslation();
+
     return (
-        <Card className="col-span-7 border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d]">
+        <Card className="col-span-7 border-zinc-200/50 shadow-sm dark:border-white/5 dark:bg-[#0d0d0d] text-start">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl font-bold text-zinc-900 dark:text-white">
-                    Recent Workspace Activity
+                    {t("db_activity_title")}
                 </CardTitle>
                 <ArrowUpRight className="h-5 w-5 text-zinc-400" />
             </CardHeader>
@@ -42,12 +47,8 @@ export function RecentActivityPanel({
                         ))
                     ) : (
                         <div className="col-span-3 flex flex-col items-center justify-center space-y-4 py-20 text-zinc-500">
-                            <div className="rounded-full bg-zinc-100 p-4 dark:bg-white/5">
-                                <Activity className="h-10 w-10 text-zinc-300" />
-                            </div>
-                            <p className="text-sm font-medium">
-                                No activity recorded in this workspace yet.
-                            </p>
+                             <Activity className="h-10 w-10 text-zinc-300" />
+                             <p className="text-sm font-medium">{t("db_no_activity")}</p>
                         </div>
                     )}
                 </div>

@@ -19,19 +19,16 @@ class CommentsController extends Controller
 {
     public function store(CreateCommentRequest $request, CreateCommentAction $action): JsonResponse
     {
-        $comment = $action->execute($request);
-
         return ApiResponse::success(
             message: 'Comment created successfully.',
-            data: ['comment' => $comment],
+            data: ['comment' => $action->execute($request)],
             status: Response::HTTP_CREATED
         );
     }
 
-    public function index(int $taskId, ListCommentsAction $action): JsonResponse
+    public function index(int $leadId, ListCommentsAction $action): JsonResponse
     {
-        $filters = request()->only(['page', 'per_page']);
-        $comments = $action->execute($taskId, $filters);
+        $comments = $action->execute($leadId, request()->only(['page', 'per_page']));
 
         return ApiResponse::success(
             message: 'Comments retrieved successfully.',
@@ -60,7 +57,6 @@ class CommentsController extends Controller
 
     public function update(UpdateCommentRequest $request, int $commentId, UpdateCommentAction $action): JsonResponse
     {
-        $content = $request->validated('content');
         $attachments = null;
 
         if ($request->hasFile('attachments') || $request->exists('attachments')) {
@@ -70,11 +66,9 @@ class CommentsController extends Controller
             );
         }
 
-        $comment = $action->execute($commentId, request()->user(), $content, $attachments);
-
         return ApiResponse::success(
             message: 'Comment updated successfully.',
-            data: ['comment' => $comment]
+            data: ['comment' => $action->execute($commentId, request()->user(), $request->validated('content'), $attachments)]
         );
     }
 

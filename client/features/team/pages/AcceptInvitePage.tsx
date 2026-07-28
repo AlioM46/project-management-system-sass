@@ -1,11 +1,9 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Mail, ShieldAlert, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AuthLayout } from "@/features/auth/components/AuthLayout";
@@ -14,6 +12,7 @@ import { AcceptInviteResult, Invite } from "@/features/team/types";
 import { ApiError } from "@/shared/api/ApiError";
 import { getCookie, setCookie } from "@/shared/utils/cookies";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type AcceptInvitePageProps = {
     invitationId?: number;
@@ -29,6 +28,7 @@ export default function AcceptInvitePage({
     invitationId,
     token,
 }: AcceptInvitePageProps) {
+    const { t } = useTranslation();
     const router = useRouter();
     const [previewState, setPreviewState] = useState<PreviewState>(() =>
         !invitationId || !token
@@ -70,8 +70,8 @@ export default function AcceptInvitePage({
 
                 const message =
                     error instanceof ApiError
-                        ? error.getFriendlyMessage() ?? "This invitation link is invalid."
-                        : "This invitation link is invalid.";
+                        ? error.getFriendlyMessage() ?? t("invite_toast_failed")
+                        : t("invite_toast_failed");
 
                 setPreviewState({
                     kind: "invalid",
@@ -85,7 +85,7 @@ export default function AcceptInvitePage({
         return () => {
             isActive = false;
         };
-    }, [invitationId, token]);
+    }, [invitationId, token, t]);
 
     useEffect(() => {
         if (previewState.kind !== "ready") return;
@@ -106,13 +106,13 @@ export default function AcceptInvitePage({
                 );
 
                 setCookie("workspace_id", String(response.workspace_id));
-                toast.success("Invitation accepted successfully.");
+                toast.success(t("invite_toast_success"));
                 router.push("/dashboard");
             } catch (error) {
                 const message =
                     error instanceof ApiError
-                        ? error.getFriendlyMessage() ?? "Failed to accept invitation."
-                        : "Failed to accept invitation.";
+                        ? error.getFriendlyMessage() ?? t("invite_toast_failed")
+                        : t("invite_toast_failed");
 
                 setAcceptError(message);
                 attemptedAcceptRef.current = false;
@@ -122,16 +122,16 @@ export default function AcceptInvitePage({
         };
 
         runAccept();
-    }, [hasAccessToken, previewState, router, token]);
+    }, [hasAccessToken, previewState, router, token, t]);
 
     const renderStatus = () => {
         if (previewState.kind === "loading") {
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
-                    <h2 className="text-2xl font-bold tracking-tight">Loading invitation</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("invite_loading_title")}</h2>
                     <p className="mt-2 text-muted-foreground">
-                        Verifying your invite link.
+                        {t("invite_loading_desc")}
                     </p>
                 </div>
             );
@@ -139,19 +139,19 @@ export default function AcceptInvitePage({
 
         if (previewState.kind === "invalid") {
             return (
-                <div className="space-y-6">
+                <div className="space-y-6 text-start">
                     <div className="text-center">
                         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-300">
                             <ShieldAlert className="h-8 w-8" />
                         </div>
-                        <h2 className="text-3xl font-bold tracking-tight">Invalid invite</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">{t("invite_invalid_title")}</h2>
                         <p className="mt-2 text-muted-foreground">{previewState.message}</p>
                     </div>
                     <Alert variant="destructive">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Invite unavailable</AlertTitle>
+                        <AlertTitle>{t("invite_invalid_desc")}</AlertTitle>
                         <AlertDescription>
-                            Ask the workspace owner to send you a fresh invitation link.
+                            {t("invite_invalid_ask_owner")}
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -165,7 +165,7 @@ export default function AcceptInvitePage({
         const isHandled = !isPending;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-6 text-start">
                 <div className="text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
                         {isAccepted ? (
@@ -175,12 +175,12 @@ export default function AcceptInvitePage({
                         )}
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {isPending ? "You’re invited to join a workspace" : "Invitation status"}
+                        {isPending ? t("invite_invited_title") : t("invite_status_title")}
                     </h2>
                     <p className="mt-2 text-muted-foreground">
                         {invitation.workspace?.name
-                            ? `Workspace: ${invitation.workspace.name}`
-                            : "Workspace invitation"}
+                            ? t("invite_workspace_label", { name: invitation.workspace.name })
+                            : t("invite_workspace_generic")}
                     </p>
                 </div>
 
@@ -189,31 +189,31 @@ export default function AcceptInvitePage({
                         <div className="flex items-center gap-3">
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             <div>
-                                <p className="font-medium">Invited email</p>
+                                <p className="font-medium">{t("invite_email_label")}</p>
                                 <p className="text-muted-foreground">{invitation.email}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <Users className="h-4 w-4 text-muted-foreground" />
                             <div>
-                                <p className="font-medium">Role</p>
+                                <p className="font-medium">{t("invite_role_label")}</p>
                                 <p className="text-muted-foreground">
                                     {invitation.role?.name ?? "Member"}
                                 </p>
                             </div>
                         </div>
                         <div>
-                            <p className="font-medium">Invited by</p>
+                            <p className="font-medium">{t("invite_invited_by")}</p>
                             <p className="text-muted-foreground">
-                                {invitation.inviter?.name ?? "A workspace member"}
+                                {invitation.inviter?.name ?? t("invite_invited_by_generic")}
                             </p>
                         </div>
                         <div>
-                            <p className="font-medium">Expires</p>
+                            <p className="font-medium">{t("invite_expires_label")}</p>
                             <p className="text-muted-foreground">
                                 {invitation.expires_at
                                     ? new Date(invitation.expires_at).toLocaleString()
-                                    : "Not available"}
+                                    : t("invite_expires_none")}
                             </p>
                         </div>
                     </div>
@@ -222,7 +222,7 @@ export default function AcceptInvitePage({
                 {acceptError && (
                     <Alert variant="destructive">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Acceptance failed</AlertTitle>
+                        <AlertTitle>{t("invite_toast_failed")}</AlertTitle>
                         <AlertDescription>{acceptError}</AlertDescription>
                     </Alert>
                 )}
@@ -230,9 +230,9 @@ export default function AcceptInvitePage({
                 {isAccepted && (
                     <Alert>
                         <CheckCircle2 className="h-4 w-4" />
-                        <AlertTitle>Invitation already accepted</AlertTitle>
+                        <AlertTitle>{t("invite_alert_used_title")}</AlertTitle>
                         <AlertDescription>
-                            This invitation has already been used.
+                            {t("invite_alert_used_desc")}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -240,9 +240,9 @@ export default function AcceptInvitePage({
                 {isExpired && (
                     <Alert variant="destructive">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Invitation expired</AlertTitle>
+                        <AlertTitle>{t("invite_alert_expired_title")}</AlertTitle>
                         <AlertDescription>
-                            Ask the workspace owner to resend the invitation.
+                            {t("invite_alert_expired_desc")}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -250,9 +250,9 @@ export default function AcceptInvitePage({
                 {isHandled && !isAccepted && !isExpired && (
                     <Alert variant="destructive">
                         <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Invitation no longer available</AlertTitle>
+                        <AlertTitle>{t("invite_alert_handled_title")}</AlertTitle>
                         <AlertDescription>
-                            This invitation has already been handled and cannot be used again.
+                            {t("invite_alert_handled_desc")}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -261,9 +261,9 @@ export default function AcceptInvitePage({
                     <div className="space-y-4">
                         <Alert>
                             <Mail className="h-4 w-4" />
-                            <AlertTitle>Sign in or create an account</AlertTitle>
+                            <AlertTitle>{t("invite_alert_auth_title")}</AlertTitle>
                             <AlertDescription>
-                                Use the invited email address to accept this workspace invitation.
+                                {t("invite_alert_auth_desc")}
                             </AlertDescription>
                         </Alert>
 
@@ -272,7 +272,7 @@ export default function AcceptInvitePage({
                                 href={`/login?next=${encodeURIComponent(nextUrl)}`}
                                 className={cn(buttonVariants(), "h-11 rounded-xl px-5")}
                             >
-                                Sign In to Accept
+                                {t("invite_btn_signin")}
                             </Link>
                             <Link
                                 href={`/register?next=${encodeURIComponent(nextUrl)}`}
@@ -281,7 +281,7 @@ export default function AcceptInvitePage({
                                     "h-11 rounded-xl px-5"
                                 )}
                             >
-                                Create Account
+                                {t("invite_btn_register")}
                             </Link>
                         </div>
                     </div>
@@ -292,12 +292,12 @@ export default function AcceptInvitePage({
                         <Alert>
                             <UserPlus className="h-4 w-4" />
                             <AlertTitle>
-                                {isAccepting ? "Accepting invitation..." : "Ready to join"}
+                                {isAccepting ? t("invite_alert_accepting_title") : t("invite_alert_ready_title")}
                             </AlertTitle>
                             <AlertDescription>
                                 {isAccepting
-                                    ? "We are connecting your account to this workspace."
-                                    : "If acceptance does not start automatically, continue manually."}
+                                    ? t("invite_alert_accepting_desc")
+                                    : t("invite_alert_ready_desc")}
                             </AlertDescription>
                         </Alert>
 
@@ -313,13 +313,13 @@ export default function AcceptInvitePage({
                                     try {
                                         const response = await acceptInvite(invitation.id, token as string);
                                         setCookie("workspace_id", String(response.workspace_id));
-                                        toast.success("Invitation accepted successfully.");
+                                        toast.success(t("invite_toast_success"));
                                         router.push("/dashboard");
                                     } catch (error) {
                                         const message =
                                             error instanceof ApiError
-                                                ? error.getFriendlyMessage() ?? "Failed to accept invitation."
-                                                : "Failed to accept invitation.";
+                                                ? error.getFriendlyMessage() ?? t("invite_toast_failed")
+                                                : t("invite_toast_failed");
 
                                         setAcceptError(message);
                                         attemptedAcceptRef.current = false;
@@ -332,10 +332,10 @@ export default function AcceptInvitePage({
                                 {isAccepting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Accepting...
+                                        {t("invite_btn_accepting")}
                                     </>
                                 ) : (
-                                    "Accept Invitation"
+                                    t("invite_btn_accept")
                                 )}
                             </Button>
                             <Link
@@ -345,7 +345,7 @@ export default function AcceptInvitePage({
                                     "h-11 rounded-xl px-5"
                                 )}
                             >
-                                Use Another Account
+                                {t("invite_btn_another_account")}
                             </Link>
                         </div>
                     </div>
