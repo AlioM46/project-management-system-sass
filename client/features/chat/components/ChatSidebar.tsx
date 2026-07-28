@@ -9,10 +9,11 @@ interface ChatSidebarProps {
     activeConversationId: number | null;
     onSelectConversation: (id: number) => void;
     onOpenNewConversationModal?: () => void;
-    isUserOnline: (userId: number | undefined | null) => boolean
+    isUserOnline: (userId: number | undefined | null) => boolean;
+    typingUsers?: { id: number; name: string }[];
 }
 
-export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, isUserOnline }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, isUserOnline, typingUsers = [] }: ChatSidebarProps) {
     // Helper: Get display name for a conversation
     const { currentUser, isLoading } = useCurrentUser();
 
@@ -151,7 +152,13 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
-                                                {conv.last_message?.body}
+                                                {isActive && typingUsers && typingUsers.length > 0 ? (
+                                                    <span className="text-blue-500 font-semibold animate-pulse">
+                                                        typing...
+                                                    </span>
+                                                ) : (
+                                                    conv.last_message?.body
+                                                )}
                                             </p>
                                             {conv.unread_count > 0 && (
                                                 <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-blue-600 text-[11px] font-bold text-white flex items-center justify-center shrink-0">
