@@ -13,8 +13,11 @@ import useChatChannel from "@/features/chat/hooks/useChatChannel";
 import { getCookie } from "@/shared/utils/cookies";
 import { useNotifications } from "@/features/notifications/components/NotificationsProvider";
 import { usePresence } from "@/features/chat/components/PresenceProvider";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function ChatPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -24,13 +27,21 @@ export default function ChatPage() {
     const { markConversationAsReadLocally } = useNotifications();
     const { onlineUserIds, isUserOnline } = usePresence();
 
-
     const [inputText, setInputText] = useState("");
     const [isSending, setIsSending] = useState(false);
 
     const activeConversation = conversations?.find((c) => c?.id === activeConversationId) || null;
 
+    const handleSelectConversation = (id: number) => {
+        setActiveConversationId(id);
+        router.replace(`/dashboard/chat?conversationId=${id}`, { scroll: false });
+    };
 
+    useEffect(() => {
+        const conversationId = searchParams.get("conversationId") || null;
+
+        setActiveConversationId(conversationId && !isNaN(Number(conversationId)) ? Number(conversationId) : null);
+    }, [searchParams])
 
     useEffect(() => {
         const handleGlobalMessage = (e: Event) => {
@@ -79,8 +90,16 @@ export default function ChatPage() {
                 const [convos, me] = await Promise.all([getConversations(), getMe()]);
                 setConversations(convos);
                 setCurrentUserId(Number(me.id));
-                if (convos?.length > 0) {
+
+                const paramId = searchParams.get("conversationId");
+                const targetId = paramId && !isNaN(Number(paramId)) ? Number(paramId) : null;
+                const exists = convos?.some((c) => c.id === targetId);
+
+                if (exists && targetId) {
+                    setActiveConversationId(targetId);
+                } else if (convos?.length > 0) {
                     setActiveConversationId(convos[0]?.id);
+                    router.replace(`/dashboard/chat?conversationId=${convos[0]?.id}`, { scroll: false });
                 }
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed To Load Conversations"));
@@ -89,7 +108,7 @@ export default function ChatPage() {
             }
         }
         loadConversations();
-    }, []);
+    }, [searchParams, router]);
 
     useEffect(() => {
         if (!activeConversationId) return;
@@ -160,7 +179,7 @@ export default function ChatPage() {
             const exists = prev?.some((c) => c.id === newConv.id);
             return exists ? prev : [newConv, ...(prev || [])];
         });
-        setActiveConversationId(newConv.id);
+        handleSelectConversation(newConv.id);
     };
 
     return (
@@ -170,7 +189,7 @@ export default function ChatPage() {
                 isUserOnline={isUserOnline}
                 conversations={conversations}
                 activeConversationId={activeConversationId}
-                onSelectConversation={setActiveConversationId}
+                onSelectConversation={handleSelectConversation}
                 onOpenNewConversationModal={() => setIsModalOpen(true)}
             />
 
