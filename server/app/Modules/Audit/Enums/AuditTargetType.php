@@ -16,7 +16,7 @@ enum AuditTargetType: string
     public static function values(): array
     {
         return array_map(
-            fn (self $targetType): string => $targetType->value,
+            fn(self $targetType): string => $targetType->value,
             self::cases()
         );
     }

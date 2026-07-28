@@ -5,8 +5,10 @@ namespace App\Modules\Projects\Model;
 use App\Models\User;
 use App\Modules\Workspace\Model\Concerns\BelongsToWorkspace;
 use App\Modules\Workspace\Model\Workspace;
+use App\Modules\Tasks\Model\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
@@ -42,5 +44,10 @@ class Project extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'project_id');
     }
 }

@@ -52,7 +52,7 @@ class CreateWorkspace
 
             return $workspace->load([
                 'owner:id,name,email',
-                'members.user:id,name,email',
+                'members.user:id,name,email,avatar_url',
             ])->loadCount('members');
         });
     }
