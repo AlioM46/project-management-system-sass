@@ -202,9 +202,9 @@ export default function TasksPage() {
                         onChange={(e) => setFilters(prev => ({ ...prev, project_id: e.target.value }))}
                         className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all min-w-[150px]"
                     >
-                        <option value="" className="dark:bg-zinc-900">All Projects</option>
+                        <option value="" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">All Projects</option>
                         {projects.map(p => (
-                            <option key={p.id} value={p.id} className="dark:bg-zinc-900">{p.name}</option>
+                            <option key={p.id} value={p.id} className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">{p.name}</option>
                         ))}
                     </select>
                 </div>
@@ -219,9 +219,9 @@ export default function TasksPage() {
                             onChange={(e) => setFilters(prev => ({ ...prev, assignee_id: e.target.value }))}
                             className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all min-w-[150px]"
                         >
-                            <option value="" className="dark:bg-zinc-900">All Assignees</option>
+                            <option value="" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">All Assignees</option>
                             {members.map(m => (
-                                <option key={m.id} value={m.user_id} className="dark:bg-zinc-900">{m.user?.name || m.user?.email}</option>
+                                <option key={m.id} value={m.user_id} className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">{m.user?.name || m.user?.email}</option>
                             ))}
                         </select>
                     </div>
@@ -255,10 +255,10 @@ export default function TasksPage() {
                         onChange={(e) => setFilters(prev => ({ ...prev, sort_by: e.target.value }))}
                         className="bg-transparent border-none text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:ring-0 cursor-pointer hover:text-blue-500 transition-colors"
                     >
-                        <option value="created_at" className="dark:bg-zinc-900">Creation Date</option>
-                        <option value="updated_at" className="dark:bg-zinc-900">Last Updated</option>
-                        <option value="title" className="dark:bg-zinc-900">Title</option>
-                        <option value="status" className="dark:bg-zinc-900">Status</option>
+                        <option value="created_at" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Creation Date</option>
+                        <option value="updated_at" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Last Updated</option>
+                        <option value="title" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Title</option>
+                        <option value="status" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Status</option>
                     </select>
                 </div>
 
@@ -269,8 +269,8 @@ export default function TasksPage() {
                         onChange={(e) => setFilters(prev => ({ ...prev, sort_dir: e.target.value }))}
                         className="bg-transparent border-none text-sm text-zinc-600 dark:text-zinc-300 outline-none focus:ring-0 cursor-pointer hover:text-blue-500 transition-colors"
                     >
-                        <option value="desc" className="dark:bg-zinc-900">Descending</option>
-                        <option value="asc" className="dark:bg-zinc-900">Ascending</option>
+                        <option value="desc" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Descending</option>
+                        <option value="asc" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Ascending</option>
                     </select>
                 </div>
             </div>

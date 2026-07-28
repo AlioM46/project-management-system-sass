@@ -32,9 +32,6 @@ export default function DashboardPage() {
                 <TaskDistributionCard isLoading={isLoading} summary={summary} />
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                <RecentActivityPanel isLoading={isLoading} summary={summary} />
-            </div>
         </div>
     );
 }

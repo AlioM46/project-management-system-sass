@@ -7,6 +7,7 @@ import { createTask } from "@/features/tasks/api/tasks.api";
 import { getProjects } from "@/features/projects/api/projects.api";
 import { Project } from "@/features/projects/types";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/shared/api/ApiError";
 
 interface CreateTaskModalProps {
     isOpen: boolean;
@@ -65,7 +66,7 @@ export function CreateTaskModal({ isOpen, onClose, onSuccess, defaultProjectId }
             onClose();
         } catch (error) {
             console.error("Failed to create task:", error);
-            toast.error("Failed to create task.");
+            toast.error(getErrorMessage(error, "Failed to create task."));
         } finally {
             setIsSubmitting(false);
         }
@@ -110,9 +111,9 @@ export function CreateTaskModal({ isOpen, onClose, onSuccess, defaultProjectId }
                                     disabled={isLoadingProjects}
                                     className="w-full px-4 py-2 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white disabled:opacity-50"
                                 >
-                                    <option value="">No Project</option>
+                                    <option value="" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">No Project</option>
                                     {projects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                        <option key={p.id} value={p.id} className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">{p.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -125,9 +126,9 @@ export function CreateTaskModal({ isOpen, onClose, onSuccess, defaultProjectId }
                                 onChange={(e) => setPriority(e.target.value as any)}
                                 className="w-full px-4 py-2 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
                             >
-                                <option value="low">Low Priority</option>
-                                <option value="medium">Medium Priority</option>
-                                <option value="high">High Priority</option>
+                                <option value="low" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Low Priority</option>
+                                <option value="medium" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">Medium Priority</option>
+                                <option value="high" className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">High Priority</option>
                             </select>
                         </div>
 

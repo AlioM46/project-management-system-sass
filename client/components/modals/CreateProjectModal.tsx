@@ -5,6 +5,7 @@ import { X, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createProject } from "@/features/projects/api/projects.api";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/shared/api/ApiError";
 
 interface CreateProjectModalProps {
     isOpen: boolean;
@@ -31,7 +32,7 @@ export function CreateProjectModal({ isOpen, onClose, onSuccess }: CreateProject
             onClose();
         } catch (error) {
             console.error("Failed to create project:", error);
-            toast.error("Failed to create project.");
+            toast.error(getErrorMessage(error, "Failed to create project."));
         } finally {
             setIsSubmitting(false);
         }

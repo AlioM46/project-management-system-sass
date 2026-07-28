@@ -5,6 +5,7 @@ import { Check, FileText, Loader2, Paperclip, Pencil, Send, Trash2, X } from "lu
 import { Button } from "@/components/ui/button";
 import { Comment } from "@/features/comments/types";
 import { AttachmentPreview, DraftAttachmentPreview, formatFileSize } from "./attachment-preview";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface CommentsThreadProps {
     comments: Comment[];
@@ -69,9 +70,11 @@ export function CommentsThread({
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-zinc-800 to-zinc-600 text-xs font-bold text-white dark:from-zinc-200 dark:to-zinc-400 dark:text-zinc-900">
-                        {getInitials(comment.author?.name)}
-                    </div>
+                    <UserAvatar
+                        name={comment.author?.name}
+                        avatarUrl={(comment.author as any)?.avatar_url || (comment.author as any)?.avatar}
+                        size="sm"
+                    />
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
                             <span className="truncate text-sm font-semibold text-zinc-900 dark:text-white">

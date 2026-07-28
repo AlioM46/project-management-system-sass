@@ -1,4 +1,5 @@
 import { Member } from "@/features/team/types";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type TeamMemberIdentityProps = {
     currentUserId: string | null;
@@ -6,11 +7,11 @@ type TeamMemberIdentityProps = {
 };
 
 export function TeamMemberIdentity({ currentUserId, member }: TeamMemberIdentityProps) {
+    const avatarUrl = member.user?.avatar_url || member.user?.avatar;
+
     return (
         <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 font-bold text-white">
-                {member.user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
+            <UserAvatar name={member.user?.name} avatarUrl={avatarUrl} size="md" />
             <div>
                 <p className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-white">
                     {member.user?.name || "Unknown User"}

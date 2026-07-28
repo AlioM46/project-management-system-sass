@@ -25,6 +25,11 @@ interface CommentsComposerProps {
     getInitials: (value?: string) => string;
 }
 
+import { useEffect, useState } from "react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { getMe } from "@/features/auth/api/auth.api";
+import { User } from "@/features/auth/types";
+
 export function CommentsComposer({
     commentDraft,
     commentFiles,
@@ -43,11 +48,17 @@ export function CommentsComposer({
     fileInputRef,
     getInitials,
 }: CommentsComposerProps) {
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        getMe().then(setCurrentUser).catch(() => {});
+    }, []);
+
+    const avatarUrl = currentUser?.avatar_url || currentUser?.avatar;
+
     return (
         <div className="flex items-start gap-3">
-            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white">
-                ME
-            </div>
+            <UserAvatar name={currentUser?.name} avatarUrl={avatarUrl} size="sm" className="mt-1" />
             <div className="flex-1 overflow-visible rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow focus-within:ring-2 focus-within:ring-blue-500 dark:border-white/10 dark:bg-[#0f0f0f]">
                 <div className="relative">
                     <textarea
@@ -69,9 +80,11 @@ export function CommentsComposer({
                                     className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-white/5"
                                     onClick={() => onMentionSelect(member.user?.username || "")}
                                 >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 text-xs font-bold text-white">
-                                        {getInitials(member.user?.name)}
-                                    </div>
+                                    <UserAvatar
+                                        name={member.user?.name}
+                                        avatarUrl={member.user?.avatar_url || member.user?.avatar}
+                                        size="sm"
+                                    />
                                     <div className="min-w-0">
                                         <div className="truncate text-zinc-900 dark:text-white">{member.user?.name}</div>
                                         <div className="truncate text-xs text-zinc-500">@{member.user?.username}</div>
