@@ -8,10 +8,12 @@ import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } 
 import { getNotificationDescription, getNotificationTitle } from "../lib/notification-copy";
 import { disconnectEchoClient, getEchoClient, leaveEchoChannel } from "../lib/echo";
 import { NotificationItem, NotificationState, RealtimeNotificationEvent } from "../types";
+import { usePathname, useRouter } from "next/navigation";
 
 type NotificationsContextValue = NotificationState & {
     markAsRead: (notificationId: number) => Promise<void>;
     markAllAsRead: () => Promise<void>;
+    markConversationAsReadLocally: (conversationId: number) => void;
     openPanel: () => void;
     closePanel: () => void;
     togglePanel: () => void;
@@ -45,6 +47,7 @@ function markAllAsReadLocally(items: NotificationItem[], workspaceId: number, re
     );
 }
 
+
 export function NotificationsProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<NotificationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +55,48 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const [connectionStatus, setConnectionStatus] = useState<NotificationState["connectionStatus"]>("idle");
     const workspaceIdRef = useRef<string | null>(null);
     const channelNameRef = useRef<string | null>(null);
+    const pathname = usePathname();
+    const router = useRouter();
+    const pathnameRef = useRef(pathname);
+
+    // Keep pathnameRef updated on every path change
+    useEffect(() => {
+        pathnameRef.current = pathname;
+    }, [pathname]);
+
+
+
+    async function handleChatMessageNotification(event: RealtimeNotificationEvent) {
+        if (pathnameRef.current === "/dashboard/chat") {
+            await markNotificationAsRead(event.id);
+
+            return; // or play soft sound
+        }
+
+        let redirectionText = ""
+        if (event?.data?.conversation?.type === "project") {
+            redirectionText = `in ${event?.data?.conversation?.project?.name} Project.`
+        } else if (event?.data?.conversation?.type === "group") {
+            redirectionText = `in ${event?.data?.conversation?.name} Group.`
+        } else {
+            redirectionText = `.`
+        }
+        const senderName = event?.data?.message?.sender?.username || event?.data?.message?.sender?.name || "Someone";
+        const messageBody = event?.data?.message?.body || event?.data?.message?.content || "";
+
+        toast.info(`New message from ${senderName} ${redirectionText}`, {
+            description: `Message: ${messageBody}`,
+            action: {
+                label: "Go to chat",
+                onClick: () => {
+                    router.push(`/dashboard/chat?conversationId=${event?.data?.conversationId}`);
+                },
+            },
+        });
+        setItems((currentItems) => upsertNotification(currentItems, event));
+
+    }
+
 
     useEffect(() => {
         let isMounted = true;
@@ -114,8 +159,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                     .stopListening(".notification.read")
                     .stopListening(".notification.read.all")
                     .listen(".notification.created", (event: RealtimeNotificationEvent) => {
+
+
+
                         if (String(event.workspace_id) !== workspaceIdRef.current) {
                             return;
+                        }
+
+
+                        if (event.type?.toLowerCase() === "chat_message") {
+
+                            window.dispatchEvent(new CustomEvent("new-chat-message", {
+                                detail: event.data.message
+                            }));
+
+                            handleChatMessageNotification(event);
+
+                            return
                         }
 
                         setItems((currentItems) => upsertNotification(currentItems, event));
@@ -189,6 +249,20 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         await markAllNotificationsAsRead();
     }
 
+    function handleMarkConversationAsReadLocally(conversationId: number) {
+        setItems((currentItems) =>
+            currentItems.map((item) => {
+                if (
+                    item.type?.toLowerCase() === "chat_message" &&
+                    Number(item.data?.conversationId) === Number(conversationId)
+                ) {
+                    return { ...item, read_at: new Date().toISOString() };
+                }
+                return item;
+            })
+        );
+    }
+
     return (
         <NotificationsContext.Provider
             value={{
@@ -197,6 +271,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                 isPanelOpen,
                 isLoading,
                 connectionStatus,
+                markConversationAsReadLocally: handleMarkConversationAsReadLocally,
                 markAsRead: handleMarkAsRead,
                 markAllAsRead: handleMarkAllAsRead,
                 openPanel: () => setIsPanelOpen(true),
@@ -218,3 +293,4 @@ export function useNotifications() {
 
     return context;
 }
+
