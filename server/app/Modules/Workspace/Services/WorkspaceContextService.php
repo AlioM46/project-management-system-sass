@@ -31,14 +31,14 @@ class WorkspaceContextService
             throw WorkspaceContextException::missingHeader(self::HEADER_NAME);
         }
 
-        if (! ctype_digit((string) $header)) {
+        if (!ctype_digit((string) $header)) {
             throw WorkspaceContextException::invalidHeader(self::HEADER_NAME);
         }
 
         $workspaceId = (int) $header;
         $workspace = Workspace::query()->find($workspaceId);
 
-        if (! $workspace) {
+        if (!$workspace) {
             throw WorkspaceContextException::workspaceNotFound($workspaceId);
         }
 
@@ -48,7 +48,7 @@ class WorkspaceContextService
             ->where('user_id', $user->id)
             ->first();
 
-        if (! $membership) {
+        if (!$membership) {
             throw WorkspaceContextException::notAMember($workspace->id);
         }
 
@@ -115,7 +115,7 @@ class WorkspaceContextService
 
     public function hasRole(string|array $roleSlugs): bool
     {
-        if (! $this->membership || ! $this->membership->role) {
+        if (!$this->membership || !$this->membership->role) {
             return false;
         }
 

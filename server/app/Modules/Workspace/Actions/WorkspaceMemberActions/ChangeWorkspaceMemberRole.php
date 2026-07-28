@@ -81,7 +81,7 @@ class ChangeWorkspaceMemberRole
 
         // #9: return the updated membership with user + role relations.
         $targetMembership->load([
-            'user:id,name,email',
+            'user:id,name,email,avatar_url',
             'role:id,workspace_id,name,description,is_system',
         ]);
 

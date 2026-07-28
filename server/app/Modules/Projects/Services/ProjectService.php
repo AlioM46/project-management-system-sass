@@ -187,6 +187,10 @@ class ProjectService
         DB::transaction(function () use ($project, $actor): void {
             $project->active_name_key = null;
             $project->save();
+
+            // Cascade soft-delete to project tasks
+            $project->tasks()->delete();
+
             $project->delete();
 
             $this->auditLogger->record(
@@ -215,6 +219,9 @@ class ProjectService
                     $deletedAt = $project->deleted_at?->toISOString();
                     $project->active_name_key = $activeNameKey;
                     $project->restore();
+
+                    // Restore associated project tasks
+                    $project->tasks()->onlyTrashed()->restore();
 
                     $this->auditLogger->record(
                         workspace: $project->workspace,

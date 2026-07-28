@@ -163,7 +163,7 @@ So the per_page can never be less than 1 or more than 100.
     {
         $query = AuditLog::query()
             ->forWorkspace((int) $workspace->id)
-            ->with('actor:id,name,email')
+            ->with('actor:id,name,email,avatar_url')
             ->orderByDesc('occurred_at')
             ->orderByDesc('id');
 

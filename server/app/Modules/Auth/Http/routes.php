@@ -3,6 +3,7 @@
 use App\Modules\Auth\Http\Controllers\AuthController;
 use App\Modules\Auth\Http\Controllers\EmailVerficationController;
 use App\Modules\Auth\Http\Controllers\PasswordResetController;
+use App\Modules\Auth\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -34,6 +35,12 @@ Route::prefix('auth')->group(function () {
         Route::prefix('password')->group(function () {
             Route::post('/change-password', [PasswordResetController::class, 'ChangePassword'])
                 ->name('password.change');
+        });
+
+        Route::prefix('profile')->group(function () {
+            Route::patch('/', [ProfileController::class, 'updateProfile']);
+            Route::post('/avatar', [ProfileController::class, 'uploadAvatar']);
+            Route::delete('/avatar', [ProfileController::class, 'removeAvatar']);
         });
 
     });

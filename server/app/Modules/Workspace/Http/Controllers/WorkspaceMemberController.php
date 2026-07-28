@@ -115,7 +115,7 @@ class WorkspaceMemberController extends Controller
 
         $membership = $this->workspaceMembersService->resolveWorkspaceMember($workspace, $memberId);
         $membership->load([
-            'user:id,name,email',
+            'user:id,name,email,avatar_url',
             'role:id,workspace_id,name,description,is_system',
         ]);
 
@@ -128,7 +128,7 @@ class WorkspaceMemberController extends Controller
     public function remove(int $memberId, RemoveWorkspaceMember $action): JsonResponse
     {
         return ApiResponse::success(
-            message: 'Workspace member removal endpoint scaffolded. Logic not implemented yet.',
+            message: 'Workspace member removed successfully.',
             data: $action->execute($memberId)
         );
     }

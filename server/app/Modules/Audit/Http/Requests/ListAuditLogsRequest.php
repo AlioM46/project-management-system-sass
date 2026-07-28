@@ -33,49 +33,30 @@ class ListAuditLogsRequest extends FormRequest
             }
         }
 
+        if ($this->has('target_type') || isset($payload['target_type'])) {
+            $val = $payload['target_type'] ?? $this->input('target_type');
+            if (is_string($val) && $val !== '') {
+                // Convert camelCase or StudlyCase to snake_case (e.g. AuditLog -> audit_log, Task -> task)
+                $payload['target_type'] = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $val));
+            }
+        }
+
         if ($payload !== []) {
             $this->merge($payload);
         }
-        /*
-
-
-    $payload = [
-        'event_type' => 'task.deleted',
-        'per_page' => 50,
-    ];
-
-    $this->merge($payload);
-
-    Before: ( The request (it self) information )
-
-    [
-        'eventType' => 'task.deleted',
-        'perPage' => 50,
-    ]
-
-After: ( the request (it self) information )
-
-[
-    'eventType' => 'task.deleted',
-    'perPage' => 50,
-
-    'event_type' => 'task.deleted',
-    'per_page' => 50,
-]
-         */
     }
 
     public function rules(): array
     {
         return [
-            'event_type' => ['sometimes', Rule::in(AuditAction::values())],
-            'target_type' => ['sometimes', Rule::in(AuditTargetType::values())],
-            'target_id' => ['sometimes', 'integer', 'min:1', 'required_with:target_type'],
-            'actor_user_id' => ['sometimes', 'integer', 'exists:users,id'],
-            'from' => ['sometimes', 'date'],
-            'to' => ['sometimes', 'date', 'after_or_equal:from'],
-            'page' => ['sometimes', 'integer', 'min:1'],
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'event_type' => ['sometimes', 'nullable', Rule::in(AuditAction::values())],
+            'target_type' => ['sometimes', 'nullable', Rule::in(AuditTargetType::values())],
+            'target_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'actor_user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
+            'from' => ['sometimes', 'nullable', 'date'],
+            'to' => ['sometimes', 'nullable', 'date', 'after_or_equal:from'],
+            'page' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 }
