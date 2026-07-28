@@ -192,8 +192,20 @@ export function ChatMessageArea({
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
                             {getHeaderName()}
                         </h3>
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            {getTypeLabel()}
+                        <p className="text-[11px] font-medium">
+                            {typingUsers && typingUsers.length > 0 ? (
+                                <span className="text-blue-500 font-semibold animate-pulse">
+                                    typing...
+                                </span>
+                            ) : conversation?.type === "direct" ? (
+                                isOnline ? (
+                                    <span className="text-emerald-600 dark:text-emerald-400">Online</span>
+                                ) : (
+                                    <span className="text-zinc-400">Offline</span>
+                                )
+                            ) : (
+                                <span className="text-zinc-500 dark:text-zinc-400">{getTypeLabel()}</span>
+                            )}
                         </p>
                     </div>
                 </div>

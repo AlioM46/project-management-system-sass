@@ -192,6 +192,7 @@ export default function ChatPage() {
                 activeConversationId={activeConversationId}
                 onSelectConversation={handleSelectConversation}
                 onOpenNewConversationModal={() => setIsModalOpen(true)}
+                typingUsers={typingUsers}
             />
 
             {/* Right: Message Area */}
