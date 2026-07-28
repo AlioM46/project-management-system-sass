@@ -13,25 +13,64 @@ interface ChatMessageAreaProps {
     isSending: boolean;
     onInputTextChange: (text: string) => void;
     handleSendMessage: (body: string, conversationId: number, messageId?: number) => Promise<void>;
-    isUserOnline: (userId: number | undefined | null) => boolean
-
+    isUserOnline: (userId: number | undefined | null) => boolean;
+    typingUsers?: { id: number; name: string }[];
+    onTyping?: (isTyping: boolean) => void;
 }
 
-export function ChatMessageArea({ conversation, messages, currentUserId, inputText, onInputTextChange, handleSendMessage, isSending, isUserOnline }: ChatMessageAreaProps) {
+export function ChatMessageArea({
+    conversation,
+    messages,
+    currentUserId,
+    inputText,
+    onInputTextChange,
+    handleSendMessage,
+    isSending,
+    isUserOnline,
+    typingUsers = [],
+    onTyping,
+}: ChatMessageAreaProps) {
     const [replyId, setReplyId] = useState<number | null>(null);
     const [replyingTo, setReplyingTo] = useState<any>(null);
-    const { currentUser } = useCurrentUser()
+    const { currentUser } = useCurrentUser();
     const [isOnline, setIsOnline] = useState(false);
-
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id)
-        const partnerId = partner?.user?.id
+        const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
+        const partnerId = partner?.user?.id;
 
         if (partnerId) {
-            setIsOnline(isUserOnline(partnerId))
+            setIsOnline(isUserOnline(partnerId));
         }
-    }, [conversation])
+    }, [conversation]);
+
+    const handleTextChange = (text: string) => {
+        onInputTextChange(text);
+
+        if (onTyping) {
+            onTyping(true);
+
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+                onTyping(false);
+            }, 1500);
+        }
+    };
+
+    const handleSend = async () => {
+        if (!inputText.trim() || isSending || !conversation) return;
+
+        if (onTyping) {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            onTyping(false);
+        }
+
+        await handleSendMessage(inputText.trim(), conversation.id);
+    };
 
 
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -243,6 +282,21 @@ export function ChatMessageArea({ conversation, messages, currentUserId, inputTe
 
             {/* ─── Message Input ────────────────────────────────────────── */}
             <div className="px-5 pb-4 pt-2 shrink-0">
+                {/* Typing Indicator Banner */}
+                {typingUsers && typingUsers.length > 0 && (
+                    <div className="px-3 py-1 mb-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
+                        <span>
+                            {typingUsers.map((u) => u.name).join(", ")}{" "}
+                            {typingUsers.length === 1 ? "is typing..." : "are typing..."}
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
                     {/* Attachment */}
                     <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
@@ -253,14 +307,11 @@ export function ChatMessageArea({ conversation, messages, currentUserId, inputTe
                     <textarea
                         ref={textAreaRef}
                         value={inputText}
-                        onChange={(e) => onInputTextChange(e.target.value)}
+                        onChange={(e) => handleTextChange(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
-                                if (!isSending) {
-                                    handleSendMessage(inputText, conversation.id, replyId || undefined);
-                                    textAreaRef.current?.focus();
-                                }
+                                handleSend();
                             }
                         }}
                         placeholder="Type a message..."
@@ -268,7 +319,6 @@ export function ChatMessageArea({ conversation, messages, currentUserId, inputTe
                         className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
                         disabled={isSending}
                     />
-
 
                     {/* Emoji */}
                     <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
@@ -283,7 +333,7 @@ export function ChatMessageArea({ conversation, messages, currentUserId, inputTe
                                 ? "bg-blue-600/70 cursor-not-allowed"
                                 : "bg-zinc-100 dark:bg-white/10 cursor-not-allowed"
                             }`}
-                        onClick={() => handleSendMessage(inputText, conversation.id, replyId || undefined)}
+                        onClick={handleSend}
                         disabled={!inputText.trim() || isSending}
                     >
                         {isSending ? (
