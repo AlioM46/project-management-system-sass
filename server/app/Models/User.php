@@ -25,6 +25,8 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'username',
         'email',
+        'avatar_url',
+        'timezone',
         'password',
         'status',
         'last_login_at',
@@ -69,6 +71,8 @@ class User extends Authenticatable implements JWTSubject
                 'name' => $this->name,
                 'username' => $this->username,
                 'email' => $this->email,
+                'avatar_url' => $this->avatar_url,
+                'timezone' => $this->timezone,
                 'status' => $this->status,
             ],
         ];
