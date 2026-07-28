@@ -12,7 +12,8 @@ export default function useChatChannel(
     workspaceId: string,
     conversationId: number | null,
     onMessageReceived: (message: any) => void,
-    currentUser?: { id: number; name?: string } | null
+    currentUserId?: number | null,
+    currentUserName?: string | null
 ) {
     const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
     const channelRef = useRef<any>(null);
@@ -30,14 +31,15 @@ export default function useChatChannel(
         });
 
         channel.listenForWhisper("typing", (event: { userId: number; userName: string; isTyping: boolean }) => {
-            if (currentUser && event.userId === currentUser.id) return;
+            console.log("RECEIVED WHISPER EVENT:", event);
+            if (currentUserId && Number(event.userId) === Number(currentUserId)) return;
 
             setTypingUsers((prev) => {
                 if (event.isTyping) {
-                    const exists = prev.some((u) => u.id === event.userId);
-                    return exists ? prev : [...prev, { id: event.userId, name: event.userName }];
+                    const exists = prev.some((u) => Number(u.id) === Number(event.userId));
+                    return exists ? prev : [...prev, { id: Number(event.userId), name: event.userName }];
                 } else {
-                    return prev.filter((u) => u.id !== event.userId);
+                    return prev.filter((u) => Number(u.id) !== Number(event.userId));
                 }
             });
         });
@@ -49,19 +51,19 @@ export default function useChatChannel(
             channelRef.current = null;
             setTypingUsers([]);
         };
-    }, [conversationId, accessToken, workspaceId, onMessageReceived, currentUser?.id]);
+    }, [conversationId, accessToken, workspaceId, onMessageReceived, currentUserId]);
 
     const sendTyping = useCallback(
         (isTyping: boolean) => {
-            if (channelRef.current && currentUser?.id) {
+            if (channelRef.current && currentUserId) {
                 channelRef.current.whisper("typing", {
-                    userId: currentUser.id,
-                    userName: currentUser.name || "Someone",
+                    userId: Number(currentUserId),
+                    userName: currentUserName || "Someone",
                     isTyping,
                 });
             }
         },
-        [currentUser?.id, currentUser?.name]
+        [currentUserId, currentUserName]
     );
 
     return { typingUsers, sendTyping };

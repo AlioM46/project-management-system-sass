@@ -159,7 +159,8 @@ export default function ChatPage() {
         getCookie("workspace_id") || "",
         activeConversationId,
         handleIncomingMessage,
-        authUser ? { id: authUser.id, name: authUser.name } : currentUserId ? { id: currentUserId } : null
+        currentUserId,
+        authUser?.name
     );
 
     async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
