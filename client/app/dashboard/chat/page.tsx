@@ -152,11 +152,12 @@ export default function ChatPage() {
         );
     };
 
-    useChatChannel(
+    const { typingUsers, sendTyping } = useChatChannel(
         getCookie("access_token") || "",
         getCookie("workspace_id") || "",
         activeConversationId,
-        handleIncomingMessage
+        handleIncomingMessage,
+        currentUserId ? { id: currentUserId } : null
     );
 
     async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
@@ -203,6 +204,8 @@ export default function ChatPage() {
                 handleSendMessage={handleSendMessage}
                 isSending={isSending}
                 isUserOnline={isUserOnline}
+                typingUsers={typingUsers}
+                onTyping={sendTyping}
             />
 
             {/* New Conversation Modal */}
