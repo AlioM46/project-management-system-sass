@@ -12,12 +12,14 @@ import { getErrorMessage } from "@/shared/api/ApiError";
 import useChatChannel from "@/features/chat/hooks/useChatChannel";
 import { getCookie } from "@/shared/utils/cookies";
 import { useNotifications } from "@/features/notifications/components/NotificationsProvider";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { usePresence } from "@/features/chat/components/PresenceProvider";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { currentUser: authUser } = useCurrentUser();
     const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -157,7 +159,7 @@ export default function ChatPage() {
         getCookie("workspace_id") || "",
         activeConversationId,
         handleIncomingMessage,
-        currentUserId ? { id: currentUserId } : null
+        authUser ? { id: authUser.id, name: authUser.name } : currentUserId ? { id: currentUserId } : null
     );
 
     async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
