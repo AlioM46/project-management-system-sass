@@ -10,6 +10,8 @@ export interface User {
     username: string;   // The user's unique username
     email: string;      // The user's email address
     avatar?: string;    // The '?' means this is optional (they might not have an image)
+    avatar_url?: string;// Cloudflare R2 or storage disk public URL
+    timezone?: string;  // User timezone
     role?: string;      // What they can do in the app
     created_at: string; // When the account was made
     updated_at: string; // When the account was last changed
