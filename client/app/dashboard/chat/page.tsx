@@ -3,7 +3,7 @@
 import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
 import { ChatMessageArea } from "@/features/chat/components/ChatMessageArea";
 import { NewConversationModal } from "@/features/chat/components/NewConversationModal";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getConversations, getMessages, sendMessage } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
 import { Conversation, Message } from "@/features/chat/types";
@@ -132,27 +132,28 @@ export default function ChatPage() {
         loadMessages();
     }, [activeConversationId]);
 
-    const handleIncomingMessage = (newMessage: Message) => {
-        setMessages((prev) => {
-            const exists = prev?.some((m) => m.id === newMessage.id);
-            return exists ? prev : [...prev, newMessage];
-        });
+    const handleIncomingMessage = useCallback(
+        (newMessage: Message) => {
+            setMessages((prev) => {
+                const exists = prev?.some((m) => m.id === newMessage.id);
+                return exists ? prev : [...prev, newMessage];
+            });
 
-
-
-        setConversations((prev) =>
-            prev.map((conv) => {
-                if (conv.id === newMessage.conversation_id) {
-                    return {
-                        ...conv,
-                        last_message: newMessage,
-                        unread_count: activeConversationId === conv.id ? 0 : (conv.unread_count || 0) + 1,
-                    };
-                }
-                return conv;
-            })
-        );
-    };
+            setConversations((prev) =>
+                prev.map((conv) => {
+                    if (conv.id === newMessage.conversation_id) {
+                        return {
+                            ...conv,
+                            last_message: newMessage,
+                            unread_count: activeConversationId === conv.id ? 0 : (conv.unread_count || 0) + 1,
+                        };
+                    }
+                    return conv;
+                })
+            );
+        },
+        [activeConversationId]
+    );
 
     const { typingUsers, sendTyping } = useChatChannel(
         getCookie("access_token") || "",
