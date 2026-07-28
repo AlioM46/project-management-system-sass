@@ -34,18 +34,14 @@ export default function ChatPage() {
 
     const handleSelectConversation = (id: number) => {
         setActiveConversationId(id);
-        window.history.replaceState(null, "", `/dashboard/chat?conversationId=${id}`);
+        router.replace(`/dashboard/chat?conversationId=${id}`, { scroll: false });
     };
 
     useEffect(() => {
-        const conversationId = searchParams.get("conversationId");
-        if (conversationId && !isNaN(Number(conversationId))) {
-            const targetId = Number(conversationId);
-            if (conversations.some((c) => c.id === targetId)) {
-                setActiveConversationId(targetId);
-            }
-        }
-    }, [searchParams, conversations]);
+        const conversationId = searchParams.get("conversationId") || null;
+
+        setActiveConversationId(conversationId && !isNaN(Number(conversationId)) ? Number(conversationId) : null);
+    }, [searchParams])
 
     useEffect(() => {
         const handleGlobalMessage = (e: Event) => {
@@ -103,7 +99,7 @@ export default function ChatPage() {
                     setActiveConversationId(targetId);
                 } else if (convos?.length > 0) {
                     setActiveConversationId(convos[0]?.id);
-                    window.history.replaceState(null, "", `/dashboard/chat?conversationId=${convos[0]?.id}`);
+                    router.replace(`/dashboard/chat?conversationId=${convos[0]?.id}`, { scroll: false });
                 }
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed To Load Conversations"));
