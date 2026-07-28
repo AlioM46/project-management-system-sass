@@ -5,8 +5,10 @@ namespace App\Modules\Audit\Enums;
 enum AuditTargetType: string
 {
     case Workspace = 'workspace';
-    case Project = 'project';
-    case Task = 'task';
+    case Course = 'course';
+    case Lead = 'lead';
+    case Student = 'student';
+    case OutboundMessage = 'outbound_message';
     case Comment = 'comment';
     case WorkspaceMember = 'workspace_member';
     case WorkspaceInvitation = 'workspace_invitation';

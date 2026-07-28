@@ -1,18 +1,20 @@
 import { Member } from "@/features/team/types";
+import { useTranslation } from "@/lib/context/LanguageContext";
 
 type TeamOverviewCardsProps = {
     members: Member[];
 };
 
 export function TeamOverviewCards({ members }: TeamOverviewCardsProps) {
+    const { t } = useTranslation();
     const totalMembers = members.length;
     const owners = members.filter((member) => member.role?.name?.toLowerCase() === "owner").length;
     const admins = members.filter((member) => member.role?.name?.toLowerCase() === "admin").length;
 
     const cards = [
-        { label: "Total Members", value: totalMembers },
-        { label: "Admins", value: admins },
-        { label: "Owners", value: owners },
+        { label: t("team_invite_total_members"), value: totalMembers },
+        { label: t("team_invite_admins"), value: admins },
+        { label: t("team_invite_owners"), value: owners },
     ];
 
     return (

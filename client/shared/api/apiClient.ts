@@ -56,6 +56,7 @@ async function _request<T>(
 
     const accessToken = getCookie("access_token");
     const workspaceId = getCookie("workspace_id");
+    const locale = getCookie("locale") || "en";
     const hasFormDataBody = isFormDataBody(fetchOptions.body);
 
     const response = await fetch(`${API_URL}${path}`, {
@@ -74,6 +75,8 @@ async function _request<T>(
                 workspaceId && {
                 "X-Workspace-Id": workspaceId,
             }),
+
+            "X-Locale": locale,
 
             ...headers,
         },

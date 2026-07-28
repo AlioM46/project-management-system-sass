@@ -1,5 +1,34 @@
 import { apiClient } from "@/shared/api/apiClient";
-import { Task, CreateTaskInput, UpdateTaskInput } from "../types";
+import { CreateLeadInput, CreateTaskInput, Lead, Task, UpdateLeadInput, UpdateTaskInput } from "../types";
+
+function normalizeStageStatus(name?: string | null): string {
+    return (name || "NEW_LEAD")
+        .trim()
+        .replace(/\s+/g, "_")
+        .toUpperCase();
+}
+
+function mapLead(lead: any): Lead {
+    return {
+        ...lead,
+        course_id: lead.course_id != null ? String(lead.course_id) : undefined,
+        stage_id: lead.stage_id != null ? String(lead.stage_id) : undefined,
+        project_id: lead.course_id != null ? String(lead.course_id) : undefined,
+        status: normalizeStageStatus(lead.stage?.name),
+        priority: "medium",
+    };
+}
+
+async function resolveStageIdFromStatus(leadId: string, status?: string): Promise<string | undefined> {
+    if (!status) {
+        return undefined;
+    }
+
+    const response = await getTaskTransitions(leadId);
+    const stage = response.stages.find((transition) => normalizeStageStatus(transition.name) === status);
+
+    return stage ? String(stage.stage_id) : undefined;
+}
 
 export async function getTasks(filters?: { 
     project_id?: string | number, 
@@ -14,36 +43,72 @@ export async function getTasks(filters?: {
             if (value) params.append(key, String(value));
         });
     }
-    const url = params.toString() ? `/tasks?${params.toString()}` : "/tasks";
-    const response = await apiClient.get<{ tasks: Task[] }>(url);
-    return response;
+    const filterEntries = new URLSearchParams();
+
+    if (filters?.project_id) filterEntries.append("course_id", String(filters.project_id));
+    if (filters?.assignee_id) filterEntries.append("assignee_id", String(filters.assignee_id));
+    if (filters?.sort_by) filterEntries.append("sort_by", String(filters.sort_by));
+    if (filters?.sort_dir) filterEntries.append("sort_dir", String(filters.sort_dir));
+
+    const url = filterEntries.toString() ? `/leads?${filterEntries.toString()}` : "/leads";
+    const response = await apiClient.get<{ leads: Lead[] }>(url);
+    const leads = (response.leads || []).map(mapLead);
+
+    return {
+        tasks: filters?.status ? leads.filter((lead) => lead.status === filters.status) : leads,
+    };
 }
 
 export async function getTask(taskId: string): Promise<Task> {
-    const response = await apiClient.get<{ task: Task }>(`/tasks/${taskId}`);
-    return response.task || response;
+    const response = await apiClient.get<{ lead: Lead }>(`/leads/${taskId}`);
+    return mapLead(response.lead || response);
 }
 
 export async function createTask(data: CreateTaskInput): Promise<Task> {
-    const response = await apiClient.post<{ task: Task }>("/tasks", data);
-    return response.task || response;
+    const payload: CreateLeadInput = {
+        title: data.title,
+        description: data.description,
+        course_id: data.project_id,
+    };
+
+    const response = await apiClient.post<{ lead: Lead }>("/leads", payload);
+    return mapLead(response.lead || response);
 }
 
 export async function updateTask(taskId: string, data: UpdateTaskInput): Promise<Task> {
-    const response = await apiClient.patch<{ task: Task }>(`/tasks/${taskId}`, data);
-    return response.task || response;
+    const payload: UpdateLeadInput = {
+        title: data.title,
+        description: data.description,
+        course_id: data.project_id ?? undefined,
+        lost_reason: data.lost_reason,
+        phone: data.phone,
+        source: data.source ?? undefined,
+    };
+
+    if (data.status) {
+        payload.stage_id = await resolveStageIdFromStatus(taskId, data.status);
+    }
+
+    const response = await apiClient.patch<{ lead: Lead }>(`/leads/${taskId}`, payload);
+    return mapLead(response.lead || response);
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
-    await apiClient.delete(`/tasks/${taskId}`);
+    await apiClient.delete(`/leads/${taskId}`);
 }
 
 export async function replaceTaskAssignees(taskId: string, userIds: string[]): Promise<Task> {
-    const response = await apiClient.put<{ task: Task }>(`/tasks/${taskId}/assignees`, { user_ids: userIds });
-    return response.task || response;
+    const response = await apiClient.put<{ lead: Lead }>(`/leads/${taskId}/assignees`, { user_ids: userIds });
+    return mapLead(response.lead || response);
 }
 
-export async function getTaskTransitions(taskId: string): Promise<{ current_status: string, allowed_transitions: string[] }> {
-    const response = await apiClient.get<{ current_status: string, allowed_transitions: string[] }>(`/tasks/${taskId}/allowed-transitions`);
-    return response;
+export async function getTaskTransitions(taskId: string): Promise<{ current_status: string, allowed_transitions: string[], stages: Array<{ stage_id: string | number, name: string, position?: number, is_success?: boolean, is_current?: boolean }> }> {
+    const response = await apiClient.get<{ current_stage_id: string | number, allowed_transitions: Array<{ stage_id: string | number, name: string, position?: number, is_success?: boolean, is_current?: boolean }> }>(`/leads/${taskId}/allowed-transitions`);
+    const current = response.allowed_transitions.find((transition) => transition.is_current);
+
+    return {
+        current_status: normalizeStageStatus(current?.name),
+        allowed_transitions: (response.allowed_transitions || []).map((transition) => normalizeStageStatus(transition.name)),
+        stages: response.allowed_transitions || [],
+    };
 }

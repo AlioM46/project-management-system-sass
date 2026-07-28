@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Project Management System API - Complete",
-    "description": "Full Postman collection for all registered application API routes under /api, including Auth, Workspace, Roles & Permissions, Projects, Tasks, Comments, and Notifications modules.",
+    "name": "Course Management System API - Complete",
+    "description": "Full Postman collection for all registered application API routes under /api, including Auth, Workspace, Roles & Permissions, Courses, Leads, Comments, and Notifications modules.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -81,42 +81,42 @@
     },
     {
       "key": "role_name",
-      "value": "Project Lead"
+      "value": "Course Lead"
     },
     {
       "key": "role_slug",
-      "value": "project-lead"
+      "value": "course-lead"
     },
     {
       "key": "role_description",
-      "value": "Custom role for project leadership."
+      "value": "Custom role for course leadership."
     },
     {
-      "key": "project_id",
+      "key": "course_id",
       "value": "0"
     },
     {
-      "key": "project_name",
+      "key": "course_name",
       "value": "Marketing Website"
     },
     {
-      "key": "project_description",
-      "value": "Tasks related to the new website launch"
+      "key": "course_description",
+      "value": "Leads related to the new website launch"
     },
     {
-      "key": "task_id",
+      "key": "lead_id",
       "value": "0"
     },
     {
-      "key": "task_title",
-      "value": "Design task board"
+      "key": "lead_title",
+      "value": "Design lead board"
     },
     {
-      "key": "task_description",
+      "key": "lead_description",
       "value": "Build the initial Kanban board screens and API integration."
     },
     {
-      "key": "task_status",
+      "key": "lead_stage",
       "value": "in_progress"
     },
     {
@@ -165,7 +165,7 @@
     },
     {
       "key": "comment_body",
-      "value": "This is a test comment for the task."
+      "value": "This is a test comment for the lead."
     },
     {
       "key": "attachment_id",
@@ -1377,10 +1377,10 @@
       ]
     },
     {
-      "name": "Projects",
+      "name": "Courses",
       "item": [
         {
-          "name": "List Projects",
+          "name": "List Courses",
           "request": {
             "method": "GET",
             "header": [
@@ -1391,12 +1391,12 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects",
+              "raw": "{{base_url}}/courses",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects"
+                "courses"
               ]
             }
           },
@@ -1411,14 +1411,14 @@
                   "  json = pm.response.json();",
                   "} catch (error) {}",
                   "const data = json && json.data ? json.data : null;",
-                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('project_id', String(data[0].id));"
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('course_id', String(data[0].id));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Create Project",
+          "name": "Create Course",
           "request": {
             "method": "POST",
             "header": [
@@ -1434,17 +1434,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects",
+              "raw": "{{base_url}}/courses",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects"
+                "courses"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
+              "raw": "{\n  \"name\": \"{{course_name}}\",\n  \"description\": \"{{course_description}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1463,16 +1463,16 @@
                   "  json = pm.response.json();",
                   "} catch (error) {}",
                   "const data = json && json.data ? json.data : null;",
-                  "const project = data && data.project ? data.project : null;",
-                  "if (project && project.id) pm.collectionVariables.set('project_id', String(project.id));",
-                  "if (project && project.name) pm.collectionVariables.set('project_name', project.name);"
+                  "const course = data && data.course ? data.course : null;",
+                  "if (course && course.id) pm.collectionVariables.set('course_id', String(course.id));",
+                  "if (course && course.name) pm.collectionVariables.set('course_name', course.name);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get Project",
+          "name": "Get Course",
           "request": {
             "method": "GET",
             "header": [
@@ -1483,19 +1483,19 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}",
+              "raw": "{{base_url}}/courses/{{course_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects",
-                "{{project_id}}"
+                "courses",
+                "{{course_id}}"
               ]
             }
           }
         },
         {
-          "name": "Update Project",
+          "name": "Update Course",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1511,18 +1511,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}",
+              "raw": "{{base_url}}/courses/{{course_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects",
-                "{{project_id}}"
+                "courses",
+                "{{course_id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{project_name}}\",\n  \"description\": \"{{project_description}}\"\n}",
+              "raw": "{\n  \"name\": \"{{course_name}}\",\n  \"description\": \"{{course_description}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1532,7 +1532,7 @@
           }
         },
         {
-          "name": "Delete Project",
+          "name": "Delete Course",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1543,19 +1543,19 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}",
+              "raw": "{{base_url}}/courses/{{course_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects",
-                "{{project_id}}"
+                "courses",
+                "{{course_id}}"
               ]
             }
           }
         },
         {
-          "name": "Restore Project",
+          "name": "Restore Course",
           "request": {
             "method": "POST",
             "header": [
@@ -1566,13 +1566,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}/restore",
+              "raw": "{{base_url}}/courses/{{course_id}}/restore",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "projects",
-                "{{project_id}}",
+                "courses",
+                "{{course_id}}",
                 "restore"
               ]
             }
@@ -1581,10 +1581,10 @@
       ]
     },
     {
-      "name": "Tasks",
+      "name": "Leads",
       "item": [
         {
-          "name": "List Tasks",
+          "name": "List Leads",
           "request": {
             "method": "GET",
             "header": [
@@ -1595,12 +1595,12 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks",
+              "raw": "{{base_url}}/leads",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "tasks"
+                "leads"
               ]
             }
           },
@@ -1615,14 +1615,14 @@
                   "  json = pm.response.json();",
                   "} catch (error) {}",
                   "const data = json && json.data ? json.data : null;",
-                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('task_id', String(data[0].id));"
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) pm.collectionVariables.set('lead_id', String(data[0].id));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Create Task",
+          "name": "Create Lead",
           "request": {
             "method": "POST",
             "header": [
@@ -1638,17 +1638,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks",
+              "raw": "{{base_url}}/leads",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "tasks"
+                "leads"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"project_id\": {{project_id}},\n  \"status\": \"{{task_status}}\"\n}",
+              "raw": "{\n  \"title\": \"{{lead_title}}\",\n  \"description\": \"{{lead_description}}\",\n  \"course_id\": {{course_id}},\n  \"status\": \"{{lead_stage}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1667,16 +1667,16 @@
                   "  json = pm.response.json();",
                   "} catch (error) {}",
                   "const data = json && json.data ? json.data : null;",
-                  "const task = data && data.task ? data.task : null;",
-                  "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));",
-                  "if (task && task.title) pm.collectionVariables.set('task_title', task.title);"
+                  "const lead = data && data.lead ? data.lead : null;",
+                  "if (lead && lead.id) pm.collectionVariables.set('lead_id', String(lead.id));",
+                  "if (lead && lead.title) pm.collectionVariables.set('lead_title', lead.title);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Get Task",
+          "name": "Get Lead",
           "request": {
             "method": "GET",
             "header": [
@@ -1687,19 +1687,19 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "raw": "{{base_url}}/leads/{{lead_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "tasks",
-                "{{task_id}}"
+                "leads",
+                "{{lead_id}}"
               ]
             }
           }
         },
         {
-          "name": "Update Task",
+          "name": "Update Lead",
           "request": {
             "method": "PUT",
             "header": [
@@ -1715,18 +1715,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "raw": "{{base_url}}/leads/{{lead_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "tasks",
-                "{{task_id}}"
+                "leads",
+                "{{lead_id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"{{task_title}}\",\n  \"description\": \"{{task_description}}\",\n  \"status\": \"{{task_status}}\"\n}",
+              "raw": "{\n  \"title\": \"{{lead_title}}\",\n  \"description\": \"{{lead_description}}\",\n  \"status\": \"{{lead_stage}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1736,7 +1736,7 @@
           }
         },
         {
-          "name": "Delete Task",
+          "name": "Delete Lead",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1747,13 +1747,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "raw": "{{base_url}}/leads/{{lead_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "tasks",
-                "{{task_id}}"
+                "leads",
+                "{{lead_id}}"
               ]
             }
           }
@@ -1773,13 +1773,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "raw": "{{base_url}}/leads/{{lead_id}}/assignees",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
-                    "tasks",
-                    "{{task_id}}",
+                    "leads",
+                    "{{lead_id}}",
                     "assignees"
                   ]
                 }
@@ -1818,13 +1818,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "raw": "{{base_url}}/leads/{{lead_id}}/assignees",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
-                    "tasks",
-                    "{{task_id}}",
+                    "leads",
+                    "{{lead_id}}",
                     "assignees"
                   ]
                 },
@@ -1849,8 +1849,8 @@
                       "  json = pm.response.json();",
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));"
+                      "const lead = data && data.lead ? data.lead : null;",
+                      "if (lead && lead.id) pm.collectionVariables.set('lead_id', String(lead.id));"
                     ]
                   }
                 }
@@ -1873,13 +1873,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "raw": "{{base_url}}/leads/{{lead_id}}/assignees",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
-                    "tasks",
-                    "{{task_id}}",
+                    "leads",
+                    "{{lead_id}}",
                     "assignees"
                   ]
                 },
@@ -1904,8 +1904,8 @@
                       "  json = pm.response.json();",
                       "} catch (error) {}",
                       "const data = json && json.data ? json.data : null;",
-                      "const task = data && data.task ? data.task : null;",
-                      "if (task && task.id) pm.collectionVariables.set('task_id', String(task.id));"
+                      "const lead = data && data.lead ? data.lead : null;",
+                      "if (lead && lead.id) pm.collectionVariables.set('lead_id', String(lead.id));"
                     ]
                   }
                 }
@@ -1928,13 +1928,13 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{base_url}}/tasks/{{task_id}}/assignees",
+                  "raw": "{{base_url}}/leads/{{lead_id}}/assignees",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
-                    "tasks",
-                    "{{task_id}}",
+                    "leads",
+                    "{{lead_id}}",
                     "assignees"
                   ]
                 },
@@ -1957,7 +1957,7 @@
       "name": "Comments",
       "item": [
         {
-          "name": "Get Comments by Task",
+          "name": "Get Comments by Lead",
           "request": {
             "method": "GET",
             "header": [
@@ -1968,14 +1968,14 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/comments/task/{{task_id}}",
+              "raw": "{{base_url}}/comments/lead/{{lead_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "comments",
-                "task",
-                "{{task_id}}"
+                "lead",
+                "{{lead_id}}"
               ]
             }
           },
@@ -2023,7 +2023,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"body\": \"{{comment_body}}\",\n  \"task_id\": {{task_id}}\n}",
+              "raw": "{\n  \"body\": \"{{comment_body}}\",\n  \"lead_id\": {{lead_id}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2250,3 +2250,4 @@
     }
   ]
 }
+

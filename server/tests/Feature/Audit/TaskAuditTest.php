@@ -3,6 +3,8 @@
 use App\Models\User;
 use App\Modules\Audit\Enums\AuditAction;
 use App\Modules\Audit\Model\AuditLog;
+use App\Modules\Courses\Model\Course;
+use App\Modules\Courses\Model\Stage;
 use App\Modules\Workspace\Actions\WorkspaceActions\CreateWorkspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -10,10 +12,10 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 uses(RefreshDatabase::class);
 
-function makeTaskAuditUser(string $email): User
+function makeLeadAuditUser(string $email): User
 {
     return User::query()->create([
-        'name' => 'Task Audit User',
+        'name' => 'Lead Audit User',
         'username' => str_replace(['@', '.'], '', $email),
         'email' => $email,
         'password' => Hash::make('password123'),
@@ -21,34 +23,55 @@ function makeTaskAuditUser(string $email): User
     ]);
 }
 
-it('records task status change audit log through the API', function () {
-    $user = makeTaskAuditUser('task-audit@example.com');
-    $workspace = app(CreateWorkspace::class)->execute(['name' => 'Task WS'], $user);
+it('records lead stage change audit log through the API', function () {
+    $user = makeLeadAuditUser('lead-audit@example.com');
+    $workspace = app(CreateWorkspace::class)->execute(['name' => 'Lead WS'], $user);
 
-    $projectResponse = $this->withToken(JWTAuth::fromUser($user))
-        ->withHeader('X-Workspace-Id', (string) $workspace->id)
-        ->postJson('/api/projects', ['name' => 'Task Project']);
-    $projectResponse->assertCreated();
+    $course = Course::query()->create([
+        'workspace_id' => $workspace->id,
+        'name' => 'Driving Fundamentals',
+        'description' => null,
+        'price' => 600,
+        'duration_hours' => 8,
+        'created_by_user_id' => $user->id,
+        'active_name_key' => 'driving fundamentals',
+    ]);
 
-    $taskResponse = $this->withToken(JWTAuth::fromUser($user))
+    $newStage = Stage::query()->create([
+        'workspace_id' => $workspace->id,
+        'course_id' => $course->id,
+        'name' => 'New Inquiry',
+        'position' => 1,
+        'is_success' => false,
+    ]);
+
+    $qualifiedStage = Stage::query()->create([
+        'workspace_id' => $workspace->id,
+        'course_id' => $course->id,
+        'name' => 'Qualified',
+        'position' => 2,
+        'is_success' => false,
+    ]);
+
+    $leadResponse = $this->withToken(JWTAuth::fromUser($user))
         ->withHeader('X-Workspace-Id', (string) $workspace->id)
-        ->postJson('/api/tasks', [
-            'project_id' => $projectResponse->json('data.project.id'),
-            'title' => 'Audit Task',
+        ->postJson('/api/leads', [
+            'course_id' => $course->id,
+            'stage_id' => $newStage->id,
+            'title' => 'Audit Lead',
         ]);
-    $taskResponse->assertCreated();
+    $leadResponse->assertCreated();
 
-    $taskId = $taskResponse->json('data.task.id');
+    $leadId = $leadResponse->json('data.lead.id');
 
     $this->withToken(JWTAuth::fromUser($user))
         ->withHeader('X-Workspace-Id', (string) $workspace->id)
-        ->patchJson("/api/tasks/{$taskId}", ['status' => 'IN_PROGRESS'])
+        ->patchJson("/api/leads/{$leadId}", ['stage_id' => $qualifiedStage->id])
         ->assertOk();
 
     expect(AuditLog::query()
         ->where('workspace_id', $workspace->id)
-        ->where('event_type', AuditAction::TaskStatusChanged->value)
-        ->where('target_id', $taskId)
+        ->where('event_type', AuditAction::LeadStageChanged->value)
+        ->where('target_id', $leadId)
         ->exists())->toBeTrue();
 });
-

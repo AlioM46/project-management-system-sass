@@ -8,9 +8,15 @@ class NotificationType
 
     const COMMENT_REPLIED = 'comment_replied';
 
-    const TASK_ASSIGNED = 'task_assigned';
+    const LEAD_ASSIGNED = 'lead_assigned';
 
-    const TASK_UPDATED = 'task_updated';
+    const LEAD_UPDATED = 'lead_updated';
+
+    const LEAD_CONVERTED = 'lead_converted';
+
+    const STUDENT_CREATED = 'student_created';
+
+    const WHATSAPP_SEND_FAILED = 'whatsapp_send_failed';
 
     const CHAT_MESSAGE = 'chat_message';
 

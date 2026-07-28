@@ -7,13 +7,11 @@ use App\Modules\Comments\Services\CommentService;
 
 class DeleteCommentAction
 {
-    public function __construct(
-        private CommentService $service
-    ) {}
+    public function __construct(private CommentService $service) {}
 
     public function execute(int $commentId, $user)
     {
-        $comment = Comment::with('task')->findOrFail($commentId);
+        $comment = Comment::with('lead')->findOrFail($commentId);
 
         $this->service->delete($comment, $user);
     }
