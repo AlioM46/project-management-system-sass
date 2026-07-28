@@ -36,14 +36,22 @@ export function ChatMessageArea({
     const [isOnline, setIsOnline] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
+    const partnerId = partner?.user?.id;
+    const isPartnerTyping = Boolean(
+        partnerId && typingUsers?.some((user) => Number(user.id) === Number(partnerId))
+    );
+
     useEffect(() => {
-        const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
-        const partnerId = partner?.user?.id;
 
         if (partnerId) {
             setIsOnline(isUserOnline(partnerId));
         }
     }, [conversation]);
+
+
+
+
 
     const handleTextChange = (text: string) => {
         onInputTextChange(text);
@@ -193,7 +201,7 @@ export function ChatMessageArea({
                             {getHeaderName()}
                         </h3>
                         <p className="text-[11px] font-medium">
-                            {typingUsers && typingUsers.length > 0 ? (
+                            {isPartnerTyping ? (
                                 <span className="text-blue-500 font-semibold animate-pulse">
                                     typing...
                                 </span>
