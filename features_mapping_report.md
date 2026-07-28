@@ -53,3 +53,27 @@ Based on what fits best to turn your current codebase into a commercial SaaS, he
 
 
 ## ### Handle Switching Workspaces.
+
+
+
+
+
+
+
+###  Task 2: "Typing..." Indicators (Client Whispering)
+### 
+###  Trigger channel.whisper('typing', { isTyping: true }) on textarea change.
+###  Add 1.5s inactivity timeout to automatically send isTyping: false.
+###  Render "Someone is typing..." indicator in ChatMessageArea.tsx.
+###  Task 3: Message Threading & Replies
+### 
+###  Add reply action button on message hover.
+###  Pass replyId when sending a message and render reply quote block.
+###  Task 4: Real-time Emoji Reactions
+### 
+###  Add emoji picker overlay to message items.
+###  Broadcast reaction events over WebSockets and update UI state.
+###  Task 5: File & Image Attachments
+### 
+###  Add file upload input to ChatMessageArea.tsx.
+###  Store attachments on server and render image/document previews in message bubbles.
