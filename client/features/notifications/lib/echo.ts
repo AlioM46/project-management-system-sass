@@ -24,7 +24,7 @@ function getRealtimeBaseUrl() {
         : apiBaseUrl;
 }
 
-export function getEchoClient(accessToken: string, workspaceId: string) {
+export function getEchoClient(accessToken: string, workspaceId: string | number) {
     const key = process.env.NEXT_PUBLIC_PUSHER_APP_KEY;
     const cluster = process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER;
 
@@ -32,11 +32,12 @@ export function getEchoClient(accessToken: string, workspaceId: string) {
         throw new Error("Pusher public configuration is missing.");
     }
 
-    if (typeof window !== "undefined") {
-        window.Pusher = Pusher;
+    if (!accessToken || !workspaceId) {
+        return echoInstance;
     }
 
-    const nextSignature = `${accessToken}:${workspaceId}`;
+    const cleanWorkspaceId = String(workspaceId).trim();
+    const nextSignature = `${accessToken}:${cleanWorkspaceId}`;
 
     if (echoInstance && echoSignature === nextSignature) {
         return echoInstance;
@@ -47,6 +48,10 @@ export function getEchoClient(accessToken: string, workspaceId: string) {
         echoInstance = null;
     }
 
+    if (typeof window !== "undefined") {
+        window.Pusher = Pusher;
+    }
+
     echoInstance = new Echo({
         broadcaster: "pusher",
         key,
@@ -55,7 +60,7 @@ export function getEchoClient(accessToken: string, workspaceId: string) {
         auth: {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                "X-Workspace-Id": workspaceId,
+                "X-Workspace-Id": cleanWorkspaceId,
             },
         },
     });

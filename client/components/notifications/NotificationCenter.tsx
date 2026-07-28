@@ -39,18 +39,16 @@ function NotificationRow({
                     void onRead(notification.id);
                 }
             }}
-            className={`group w-full rounded-3xl border px-5 py-4 text-left transition-all ${
-                isUnread
-                    ? "border-amber-200 bg-linear-to-br from-amber-50 via-white to-orange-50 shadow-[0_16px_40px_-28px_rgba(217,119,6,0.55)]"
-                    : "border-zinc-200/80 bg-white/85 hover:border-zinc-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/15"
-            }`}
+            className={`group w-full rounded-3xl border px-5 py-4 text-left transition-all ${isUnread
+                ? "border-amber-200 bg-linear-to-br from-amber-50 via-white to-orange-50 shadow-[0_16px_40px_-28px_rgba(217,119,6,0.55)]"
+                : "border-zinc-200/80 bg-white/85 hover:border-zinc-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/15"
+                }`}
         >
             <div className="flex items-start gap-4">
-                <div className={`mt-1 flex size-10 shrink-0 items-center justify-center rounded-2xl ${
-                    isUnread
-                        ? "bg-amber-500 text-white"
-                        : "bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-zinc-300"
-                }`}>
+                <div className={`mt-1 flex size-10 shrink-0 items-center justify-center rounded-2xl ${isUnread
+                    ? "bg-amber-500 text-white"
+                    : "bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-zinc-300"
+                    }`}>
                     <Bell className="size-4" />
                 </div>
 
