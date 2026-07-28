@@ -2,6 +2,7 @@
 
 use App\Modules\Audit\AuditServiceProvider;
 use App\Modules\Auth\AuthServiceProvider;
+use App\Modules\Chat\ChatServiceProvider;
 use App\Modules\Comments\CommentsServiceProvider;
 use App\Modules\Notifications\NotificationsServiceProvider;
 use App\Modules\Projects\ProjectsServiceProvider;
@@ -20,4 +21,6 @@ return [
     WorkspaceServiceProvider::class,
     CommentsServiceProvider::class,
     NotificationsServiceProvider::class,
+    ChatServiceProvider::class,
+
 ];
