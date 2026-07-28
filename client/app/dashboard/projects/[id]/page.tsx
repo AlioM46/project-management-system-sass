@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useParams } from "next/navigation";
 import { CreateTaskModal } from "@/components/modals/CreateTaskModal";
 import { TaskDetailsModal } from "@/components/modals/TaskDetailsModal";
+import { ProjectSettingsModal } from "@/components/modals/ProjectSettingsModal";
 import { getTasks } from "@/features/tasks/api/tasks.api";
 import { Task } from "@/features/tasks/types";
 
@@ -21,6 +22,7 @@ export default function ProjectDetailsPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     const fetchData = async () => {
@@ -46,14 +48,16 @@ export default function ProjectDetailsPage() {
     }, [projectId]);
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6">
-            {/* Breadcrumbs and Actions */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/dashboard/projects">
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5">
-                            <ArrowLeft className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-                        </Button>
+        <div className="flex-1 space-y-6 p-6 sm:p-8 max-w-7xl mx-auto">
+            {/* Header / Breadcrumb */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-white/10 pb-6">
+                <div>
+                    <Link 
+                        href="/dashboard/projects"
+                        className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors mb-2"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Projects
                     </Link>
                     <div>
                         {isLoading ? (
@@ -75,11 +79,12 @@ export default function ProjectDetailsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 rounded-xl">
-                        <Users className="h-4 w-4" />
-                        Members
-                    </Button>
-                    <Button variant="outline" className="gap-2 rounded-xl">
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsSettingsModalOpen(true)}
+                        disabled={!project || isLoading}
+                        className="gap-2 rounded-xl border-zinc-200 dark:border-white/10"
+                    >
                         <Settings className="h-4 w-4" />
                         Settings
                     </Button>
@@ -208,6 +213,15 @@ export default function ProjectDetailsPage() {
                 onClose={() => setSelectedTask(null)}
                 onUpdate={fetchData}
             />
+
+            {project && (
+                <ProjectSettingsModal
+                    isOpen={isSettingsModalOpen}
+                    onClose={() => setIsSettingsModalOpen(false)}
+                    project={project}
+                    onProjectUpdated={fetchData}
+                />
+            )}
         </div>
     );
 }

@@ -31,7 +31,7 @@ export function InviteRoleSelect({
                 disabled={disabled || roles.length === 0}
             >
                 {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
+                    <option key={role.id} value={role.id} className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">
                         {role.name}
                     </option>
                 ))}

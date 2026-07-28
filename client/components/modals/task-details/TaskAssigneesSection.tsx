@@ -3,11 +3,13 @@
 import { CheckSquare, Loader2, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Member } from "@/features/team/types";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface AssignedUserSummary {
     id: string;
     name: string;
     email: string;
+    avatar_url?: string;
 }
 
 interface TaskAssigneesSectionProps {
@@ -24,19 +26,6 @@ interface TaskAssigneesSectionProps {
 
 function normalizeId(value: string | number | null | undefined): string {
     return value == null ? "" : String(value);
-}
-
-function getInitials(value?: string): string {
-    if (!value) {
-        return "U";
-    }
-
-    return value
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
 }
 
 export function TaskAssigneesSection({
@@ -62,14 +51,23 @@ export function TaskAssigneesSection({
         return haystack.includes(searchQuery.toLowerCase());
     });
 
+    const memberLookup = new Map(members.map(m => [normalizeId(m.user_id), m]));
+
     const renderedAssignedUsers = assignedUsers.length > 0
-        ? assignedUsers
+        ? assignedUsers.map(a => {
+            const m = memberLookup.get(normalizeId(a.id));
+            return {
+                ...a,
+                avatar_url: a.avatar_url || m?.user?.avatar_url || m?.user?.avatar,
+            };
+        })
         : members
             .filter((member) => assignedLookup.has(normalizeId(member.user_id)))
             .map((member) => ({
                 id: normalizeId(member.user_id),
                 name: member.user?.name || "Unknown user",
                 email: member.user?.email || "",
+                avatar_url: member.user?.avatar_url || member.user?.avatar,
             }));
 
     return (
@@ -83,10 +81,10 @@ export function TaskAssigneesSection({
                 {renderedAssignedUsers.map((assignee) => (
                     <div
                         key={assignee.id}
-                        className="group relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-gradient-to-tr from-purple-500 to-pink-500 text-xs font-bold text-white shadow-sm transition-transform hover:scale-110 dark:border-[#0a0a0a]"
+                        className="group relative cursor-pointer transition-transform hover:scale-110"
                         title={assignee.name}
                     >
-                        {getInitials(assignee.name)}
+                        <UserAvatar name={assignee.name} avatarUrl={assignee.avatar_url} size="sm" />
                     </div>
                 ))}
 
@@ -147,9 +145,11 @@ export function TaskAssigneesSection({
                                             disabled={isUpdating}
                                         >
                                             <div className="flex min-w-0 items-center gap-2">
-                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 text-[10px] font-bold text-white">
-                                                    {getInitials(member.user?.name)}
-                                                </div>
+                                                <UserAvatar
+                                                    name={member.user?.name}
+                                                    avatarUrl={member.user?.avatar_url || member.user?.avatar}
+                                                    size="xs"
+                                                />
                                                 <div className="min-w-0 text-left">
                                                     <div className="truncate">{member.user?.name || "Unknown user"}</div>
                                                     <div className="truncate text-xs text-zinc-500">

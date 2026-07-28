@@ -6,6 +6,10 @@ import { TeamMembersEmptyState } from "@/components/Team/members/TeamMembersEmpt
 import { TeamMembersTable } from "@/components/Team/members/TeamMembersTable";
 import { TeamMembersToolbar } from "@/components/Team/members/TeamMembersToolbar";
 import { TeamSectionError } from "@/components/Team/TeamSectionError";
+import { toast } from "sonner";
+import { removeMember } from "@/features/team/api/team.api";
+import { getErrorMessage } from "@/shared/api/ApiError";
+import { ChangeMemberRoleModal } from "@/components/modals/ChangeMemberRoleModal";
 import { Member } from "@/features/team/types";
 
 type TeamMembersPanelProps = {
@@ -25,6 +29,8 @@ export function TeamMembersPanel({
 }: TeamMembersPanelProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const [selectedMemberForRole, setSelectedMemberForRole] = useState<Member | null>(null);
+    const [isChangeRoleOpen, setIsChangeRoleOpen] = useState(false);
     const actionsRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -39,6 +45,61 @@ export function TeamMembersPanel({
         document.addEventListener("click", handleClickOutside);
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
+
+    const isSelfOrOwner = (member: Member) => {
+        const isSelf = Boolean(
+            currentUserId && (
+                String(currentUserId) === String(member.user_id) ||
+                String(currentUserId) === String(member.user?.id)
+            )
+        );
+        const isOwner = Boolean(
+            member.role?.slug === "owner" ||
+            member.role?.name?.toLowerCase() === "owner"
+        );
+        return { isSelf, isOwner };
+    };
+
+    const handleChangeRole = (member: Member) => {
+        const { isSelf, isOwner } = isSelfOrOwner(member);
+        if (isSelf) {
+            toast.error("You cannot change your own role.");
+            return;
+        }
+        if (isOwner) {
+            toast.error("Role cannot be changed for the workspace owner.");
+            return;
+        }
+
+        setSelectedMemberForRole(member);
+        setIsChangeRoleOpen(true);
+    };
+
+    const handleRemoveMember = async (member: Member) => {
+        const { isSelf, isOwner } = isSelfOrOwner(member);
+        if (isSelf) {
+            toast.error("You cannot remove yourself from the team.");
+            return;
+        }
+        if (isOwner) {
+            toast.error("The workspace owner cannot be removed.");
+            return;
+        }
+
+        const memberName = member.user?.name || member.user?.email || "this member";
+        if (!confirm(`Are you sure you want to remove ${memberName} from this workspace?`)) {
+            return;
+        }
+
+        try {
+            await removeMember(member.id);
+            toast.success(`${memberName} has been removed from the workspace.`);
+            onRefresh();
+        } catch (err) {
+            console.error("Failed to remove member", err);
+            toast.error(getErrorMessage(err, "Failed to remove workspace member."));
+        }
+    };
 
     const filteredMembers = members.filter(
         (member) =>
@@ -74,9 +135,18 @@ export function TeamMembersPanel({
                         onToggleActions={(memberId) =>
                             setOpenDropdownId((currentId) => (currentId === memberId ? null : memberId))
                         }
+                        onChangeRole={handleChangeRole}
+                        onRemoveMember={handleRemoveMember}
                     />
                 )}
             </div>
+
+            <ChangeMemberRoleModal
+                member={selectedMemberForRole}
+                open={isChangeRoleOpen}
+                onOpenChange={setIsChangeRoleOpen}
+                onSuccess={onRefresh}
+            />
         </div>
     );
 }

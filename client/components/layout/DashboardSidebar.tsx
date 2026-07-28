@@ -7,10 +7,12 @@ import {
   CheckSquare, 
   FolderKanban, 
   Users, 
+  ScrollText,
   Settings, 
   Hexagon,
   ChevronsUpDown,
-  Building
+  Building,
+  MessageCircle
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCookie } from "@/shared/utils/cookies";
@@ -29,7 +31,9 @@ export function DashboardSidebar() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "My Tasks", href: "/dashboard/tasks", icon: CheckSquare },
     { name: "Projects", href: "/dashboard/projects", icon: FolderKanban },
+    { name: "Chat", href: "/dashboard/chat", icon: MessageCircle },
     { name: "Team", href: "/dashboard/team", icon: Users },
+    { name: "Audit Logs", href: "/dashboard/audit-logs", icon: ScrollText },
   ];
 
   return (
@@ -80,7 +84,7 @@ export function DashboardSidebar() {
         <Link
           href="/dashboard/settings"
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            pathname === "/dashboard/settings"
+            pathname.startsWith("/dashboard/settings")
               ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
               : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
           }`}

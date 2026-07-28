@@ -43,3 +43,29 @@ export class ApiError extends Error {
         return this.message;
     }
 }
+
+/**
+ * Universal helper to extract a clean user-facing error message
+ * from any error object (ApiError, standard Error, or API response).
+ */
+export function getErrorMessage(error: unknown, fallbackMessage: string = "An error occurred"): string {
+    if (error instanceof ApiError) {
+        return error.getFriendlyMessage() || error.message || fallbackMessage;
+    }
+
+    if (error && typeof error === "object") {
+        const errObj = error as Record<string, any>;
+        if (typeof errObj.message === "string" && errObj.message) {
+            return errObj.message;
+        }
+        if (errObj.response?.data?.error?.message) {
+            return errObj.response.data.error.message;
+        }
+        if (errObj.response?.data?.message) {
+            return errObj.response.data.message;
+        }
+    }
+
+    return fallbackMessage;
+}
+

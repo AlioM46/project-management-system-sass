@@ -10,6 +10,8 @@ type TeamMembersTableProps = {
     openDropdownId: string | null;
     onCloseActions: () => void;
     onToggleActions: (memberId: string) => void;
+    onChangeRole?: (member: Member) => void;
+    onRemoveMember?: (member: Member) => void;
 };
 
 export function TeamMembersTable({
@@ -19,6 +21,8 @@ export function TeamMembersTable({
     openDropdownId,
     onCloseActions,
     onToggleActions,
+    onChangeRole,
+    onRemoveMember,
 }: TeamMembersTableProps) {
     return (
         <div className="overflow-x-auto">
@@ -41,6 +45,8 @@ export function TeamMembersTable({
                             member={member}
                             onCloseActions={onCloseActions}
                             onToggleActions={onToggleActions}
+                            onChangeRole={onChangeRole}
+                            onRemoveMember={onRemoveMember}
                         />
                     ))}
                 </tbody>

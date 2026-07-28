@@ -40,7 +40,7 @@ export function TeamInviteFilters({
                 className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
             >
                 {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value} className="bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white">
                         {option.label}
                     </option>
                 ))}

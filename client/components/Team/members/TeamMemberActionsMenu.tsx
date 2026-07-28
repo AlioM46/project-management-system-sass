@@ -10,6 +10,8 @@ type TeamMemberActionsMenuProps = {
     memberId: string;
     onToggle: (memberId: string) => void;
     onClose: () => void;
+    onChangeRole?: () => void;
+    onRemoveMember?: () => void;
 };
 
 export function TeamMemberActionsMenu({
@@ -18,6 +20,8 @@ export function TeamMemberActionsMenu({
     memberId,
     onToggle,
     onClose,
+    onChangeRole,
+    onRemoveMember,
 }: TeamMemberActionsMenuProps) {
     return (
         <div
@@ -42,8 +46,8 @@ export function TeamMemberActionsMenu({
                         className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5"
                         onClick={(e) => {
                             e.stopPropagation();
-                            toast.info("Change role feature coming soon!");
                             onClose();
+                            onChangeRole?.();
                         }}
                     >
                         Change Role
@@ -52,8 +56,8 @@ export function TeamMemberActionsMenu({
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                         onClick={(e) => {
                             e.stopPropagation();
-                            toast.info("Remove member feature coming soon!");
                             onClose();
+                            onRemoveMember?.();
                         }}
                     >
                         Remove

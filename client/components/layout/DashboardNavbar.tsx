@@ -5,7 +5,18 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Menu, Search } from "lucide-react";
 import { LogoutButton } from "./LogoutButton";
 
+import { useEffect, useState } from "react";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import { getMe } from "@/features/auth/api/auth.api";
+import { User } from "@/features/auth/types";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+
 export function DashboardNavbar() {
+  const { currentUser, isLoading } = useCurrentUser();
+  const avatarUrl = currentUser?.avatar_url || currentUser?.avatar;
+
+
+
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#050505] px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-colors duration-300">
       <button
@@ -47,15 +58,13 @@ export function DashboardNavbar() {
 
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            
+
             {/* User Profile / Logout Mock */}
             <div className="hidden sm:block">
-               <LogoutButton />
+              <LogoutButton />
             </div>
 
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm cursor-pointer border border-white/20">
-              AL
-            </div>
+            <UserAvatar name={currentUser?.name} avatarUrl={avatarUrl} size="sm" />
           </div>
         </div>
       </div>
