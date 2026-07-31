@@ -10,6 +10,24 @@ use Illuminate\Support\Facades\Storage;
 
 class MessageAttachmentService
 {
+
+
+    public static function delete(MessageAttachment $attachment): void
+    {
+        try {
+            Storage::disk(MessageAttachmentStorage::diskName())->delete($attachment->object_key);
+            // $attachment->delete();
+        } catch (\Throwable $e) {
+            logger()->error('Chat attachment delete failed', [
+                'error' => $e->getMessage(),
+                'attachment_id' => $attachment->id,
+                'disk' => MessageAttachmentStorage::diskName(),
+            ]);
+
+            throw $e;
+        }
+    }
+
     /**
      * Upload and create attachment records for a message.
      *
@@ -17,6 +35,8 @@ class MessageAttachmentService
      */
     public function upload(Message $message, array $attachments): void
     {
+        // $attachments => array of "files"
+
         $diskName = MessageAttachmentStorage::diskName();
 
         foreach ($attachments as $attachment) {
@@ -26,6 +46,8 @@ class MessageAttachmentService
 
             $fileName = uniqid() . '.' . $attachment->getClientOriginalExtension();
             try {
+
+
                 $path = Storage::disk($diskName)->putFileAs(
                     'chat_attachments/' . $message->conversation_id,
                     $attachment,
@@ -43,8 +65,7 @@ class MessageAttachmentService
                     'file_type' => $attachment->getMimeType(),
                     'file_size' => $attachment->getSize(),
                 ]);
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 logger()->error('Chat attachment upload failed', [
                     'error' => $e->getMessage(),
                     'message_id' => $message->id,

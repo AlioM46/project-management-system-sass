@@ -2,6 +2,7 @@
 
 namespace App\Modules\Chat\Model;
 
+use App\Modules\Chat\Services\MessageAttachmentService;
 use App\Modules\Chat\Support\MessageAttachmentStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ class MessageAttachment extends Model
 
     protected $fillable = [
         'message_id',
+        //object_key: chat_attachments/15/64c8f9b2d3.png
         'object_key',
         'original_name',
         'file_type',
@@ -31,6 +33,7 @@ class MessageAttachment extends Model
 
     public function getFileNameAttribute(): string
     {
+        // if original_name exist -> use it : else -> use the object_key
         return (string) ($this->original_name ?: basename((string) $this->object_key));
     }
 
@@ -47,5 +50,12 @@ class MessageAttachment extends Model
                 return null;
             }
         }
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($attachment) {
+            MessageAttachmentService::delete($attachment);
+        });
     }
 }
