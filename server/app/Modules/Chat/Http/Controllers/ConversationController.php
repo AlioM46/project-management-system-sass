@@ -245,8 +245,8 @@ class ConversationController extends Controller
         ]);
 
 
-        // Load the sender model and quoted parent message details for the frontend
-        $message->load(['sender:id,name,avatar_url,username', 'parent', 'parent.sender:id,name']);
+        // Re-query the created message with fresh eager-loaded sender and quoted parent message details
+        $message = Message::with(['sender:id,name,avatar_url,username', 'parent.sender:id,name'])->find($message->id);
 
 
         // Chat Room Channel: Shared by all participants in this conversation.

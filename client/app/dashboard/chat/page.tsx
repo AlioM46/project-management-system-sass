@@ -165,13 +165,10 @@ export default function ChatPage() {
         authUser?.name
     );
 
-    async function handleSendMessage(body: string, conversationId: number, replyId?: number, parentMessage?: Message) {
+    async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
         try {
             setIsSending(true);
             const res = await sendMessage(conversationId, body, replyId);
-            if (parentMessage && !res.parent) {
-                res.parent = parentMessage;
-            }
             handleIncomingMessage(res);
             setInputText("");
         } catch (error) {
