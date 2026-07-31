@@ -12,7 +12,7 @@ interface ChatMessageAreaProps {
     inputText: string;
     isSending: boolean;
     onInputTextChange: (text: string) => void;
-    handleSendMessage: (body: string, conversationId: number, messageId?: number, parentMessage?: Message) => Promise<void>;
+    handleSendMessage: (body: string, conversationId: number, messageId?: number) => Promise<void>;
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
     onTyping?: (isTyping: boolean) => void;
@@ -41,6 +41,15 @@ export function ChatMessageArea({
         partnerId && typingUsers?.some((user) => Number(user.id) === Number(partnerId))
     );
 
+    // useEffect(() => {
+
+    //     if (partnerId) {
+    //         setIsOnline(isUserOnline(partnerId));
+    //     }
+    // }, [conversation]);
+
+
+
     const handleTextChange = (text: string) => {
         onInputTextChange(text);
 
@@ -65,10 +74,9 @@ export function ChatMessageArea({
             onTyping(false);
         }
 
-        const targetReply = replyingTo;
-        setReplyingTo(null);
+        await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id);
 
-        await handleSendMessage(inputText.trim(), conversation.id, targetReply?.id, targetReply || undefined);
+        setReplyingTo(null);
     };
 
 
