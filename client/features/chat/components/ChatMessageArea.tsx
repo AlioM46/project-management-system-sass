@@ -379,10 +379,10 @@ export function ChatMessageArea({
                                         {msg.attachments && msg.attachments.length > 0 && (
                                             <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
                                                 {msg.attachments.map((attachment: any) => {
+                                                    const isPDF = attachment.file_type?.includes("pdf") || attachment.file_name?.toLowerCase().endsWith(".pdf");
                                                     const showRawPreview =
                                                         attachment.file_type?.startsWith("image/") ||
-                                                        attachment.file_type?.startsWith("video/") ||
-                                                        attachment.file_type?.includes("pdf");
+                                                        attachment.file_type?.startsWith("video/");
 
                                                     if (showRawPreview) {
                                                         return (
@@ -408,9 +408,15 @@ export function ChatMessageArea({
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
-                                                                    <Paperclip className="h-4 w-4" />
-                                                                </div>
+                                                                {isPDF ? (
+                                                                    <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500 shrink-0">
+                                                                        <FileText className="h-4 w-4" />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+                                                                        <Paperclip className="h-4 w-4" />
+                                                                    </div>
+                                                                )}
                                                                 <div className="min-w-0">
                                                                     <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
                                                                     <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
