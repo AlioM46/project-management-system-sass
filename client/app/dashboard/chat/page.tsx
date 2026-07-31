@@ -82,7 +82,7 @@ export default function ChatPage() {
         );
         // Clear global notifications counter for this conversation
         markConversationAsReadLocally(activeConversationId);
-    }, [activeConversationId, markConversationAsReadLocally]);
+    }, [activeConversationId]);
 
 
     useEffect(() => {
@@ -134,6 +134,7 @@ export default function ChatPage() {
 
     const handleIncomingMessage = useCallback(
         (newMessage: Message) => {
+
             setMessages((prev) => {
                 const exists = prev?.some((m) => m.id === newMessage.id);
                 return exists ? prev : [...prev, newMessage];
