@@ -77,6 +77,10 @@ export function ChatMessageArea({
         }
 
         await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id);
+
+
+        console.log("NEw MEssages: ", messages)
+
         setReplyingTo(null);
     };
 
@@ -247,9 +251,17 @@ export function ChatMessageArea({
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1" ref={messagesEndRef}>
                 {messages.map((msg: Message | any, index) => {
                     const isMe = msg.sender?.id === currentUserId;
+                    // !isMe — It's not my message (I don't need to see my own avatar).
+                    // AND either:
+                    // index === 0 — It's the very first message in the list.
+                    // messages[index - 1]?.user_id !== msg.user_id — The previous message was from a different person.
 
                     const showAvatar =
                         !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
+
+                    // It is true when:
+                    // index === messages.length - 1 — It's the very last message overall.
+                    // OR messages[index + 1]?.user_id !== msg.user_id — The next message is from a different person.
 
                     const isLastInGroup =
                         index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
@@ -275,6 +287,7 @@ export function ChatMessageArea({
                             )}
 
                             {/* Message Bubble Container */}
+                            {/* Sender name (only for first message in a group, and only for others) */}
                             <div className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}>
                                 {/* Sender name */}
                                 {showAvatar && !isMe && (
@@ -300,15 +313,15 @@ export function ChatMessageArea({
                                                 }}
                                                 title="Click to jump to original message"
                                                 className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                    ? "bg-blue-700/70 border-white text-blue-50 hover:bg-blue-700/90"
+                                                    ? "bg-black/20 border-white text-white hover:bg-black/30"
                                                     : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
                                                     }`}
                                             >
-                                                <div className="flex items-center justify-between gap-2 font-bold text-[11px] text-blue-400 dark:text-blue-300">
+                                                <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
                                                     <span>{msg.parent.sender?.name || "User"}</span>
-                                                    <Reply className="h-3 w-3 opacity-70" />
+                                                    <Reply className="h-3 w-3 opacity-80" />
                                                 </div>
-                                                <p className="line-clamp-2 mt-0.5 font-normal text-zinc-600 dark:text-zinc-300">
+                                                <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
                                                     {msg.parent.body}
                                                 </p>
                                             </div>
