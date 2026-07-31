@@ -13,7 +13,8 @@ export default function useChatChannel(
     conversationId: number | null,
     onMessageReceived: (message: any) => void,
     currentUserId?: number | null,
-    currentUserName?: string | null
+    currentUserName?: string | null,
+    onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: any[] }) => void
 ) {
     const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
     const channelRef = useRef<any>(null);
@@ -28,6 +29,12 @@ export default function useChatChannel(
 
         channel.listen(".messages.sent", (event: Message) => {
             onMessageReceived(event);
+        });
+
+        channel.listen(".messages.reaction.updated", (event: { conversation_id: number; message_id: number; reactions: Reaction[] }) => {
+            if (onReactionUpdated) {
+                onReactionUpdated(event);
+            }
         });
 
         channel.listenForWhisper("typing", (event: { userId: number; userName: string; isTyping: boolean }) => {
@@ -46,12 +53,13 @@ export default function useChatChannel(
 
         return () => {
             channel.stopListening(".messages.sent");
+            channel.stopListening(".messages.reaction.updated");
             channel.stopListeningForWhisper("typing");
             echo.leave(channelName);
             channelRef.current = null;
             setTypingUsers([]);
         };
-    }, [conversationId, accessToken, workspaceId, onMessageReceived, currentUserId]);
+    }, [conversationId, accessToken, workspaceId, onMessageReceived, currentUserId, onReactionUpdated]);
 
     const sendTyping = useCallback(
         (isTyping: boolean) => {

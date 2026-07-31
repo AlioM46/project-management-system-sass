@@ -42,3 +42,13 @@ export async function sendMessage(
         message_id: messageId,
     });
 }
+
+export async function toggleMessageReaction(
+    conversationId: number,
+    messageId: number,
+    emoji: string
+): Promise<any> {
+    return await apiClient.post(`/conversations/${conversationId}/messages/${messageId}/reactions`, {
+        emoji,
+    });
+}

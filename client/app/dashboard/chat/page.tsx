@@ -4,7 +4,7 @@ import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
 import { ChatMessageArea } from "@/features/chat/components/ChatMessageArea";
 import { NewConversationModal } from "@/features/chat/components/NewConversationModal";
 import { useCallback, useEffect, useState } from "react";
-import { getConversations, getMessages, sendMessage } from "@/features/chat/api/chat.api";
+import { getConversations, getMessages, sendMessage, toggleMessageReaction } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
 import { Conversation, Message } from "@/features/chat/types";
 import { toast } from "sonner";
@@ -158,13 +158,78 @@ export default function ChatPage() {
         [activeConversationId]
     );
 
+    const handleReactionUpdated = useCallback(
+        (data: { conversation_id: number; message_id: number; reactions: any[] }) => {
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg.id === data.message_id ? { ...msg, reactions: data.reactions } : msg
+                )
+            );
+        },
+        []
+    );
+
+    const handleToggleReaction = async (messageId: number, emoji: string) => {
+        if (!activeConversationId) return;
+
+        // Optimistic UI Update locally
+        setMessages((prev) =>
+            prev.map((msg) => {
+                if (msg.id !== messageId) return msg;
+
+                const currentReactions = msg.reactions || [];
+                const existingIndex = currentReactions.findIndex((r) => r.user_id === currentUserId);
+
+                let updatedReactions = [...currentReactions];
+                if (existingIndex > -1) {
+                    if (currentReactions[existingIndex].emoji === emoji) {
+                        // Toggle off
+                        updatedReactions.splice(existingIndex, 1);
+                    } else {
+                        // Switch emoji
+                        updatedReactions[existingIndex] = {
+                            ...updatedReactions[existingIndex],
+                            emoji,
+                        };
+                    }
+                } else {
+                    // Add new reaction
+                    updatedReactions.push({
+                        id: Date.now(),
+                        message_id: messageId,
+                        user_id: currentUserId || 0,
+                        emoji,
+                        user: { id: currentUserId || 0, name: authUser?.name || "User" },
+                    });
+                }
+
+                return { ...msg, reactions: updatedReactions };
+            })
+        );
+
+        try {
+            const res = await toggleMessageReaction(activeConversationId, messageId, emoji);
+            // Sync with backend confirmed reactions list
+            if (res?.data) {
+                handleReactionUpdated({
+                    conversation_id: activeConversationId,
+                    message_id: messageId,
+                    reactions: res.data,
+                });
+            }
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Update Reaction"));
+        }
+    };
+
     const { typingUsers, sendTyping } = useChatChannel(
         getCookie("access_token") || "",
         getCookie("workspace_id") || "",
         activeConversationId,
         handleIncomingMessage,
         currentUserId,
-        authUser?.name
+        authUser?.name,
+        handleReactionUpdated
     );
 
     async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
@@ -214,6 +279,7 @@ export default function ChatPage() {
                 isUserOnline={isUserOnline}
                 typingUsers={typingUsers}
                 onTyping={sendTyping}
+                onToggleReaction={handleToggleReaction}
             />
 
             {/* New Conversation Modal */}
