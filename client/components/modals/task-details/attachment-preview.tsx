@@ -81,23 +81,11 @@ export function DraftAttachmentPreview({ file }: { file: File }) {
             return;
         }
 
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            if (typeof reader.result === "string") {
-                setPreviewUrl(reader.result);
-            }
-        };
-
-        reader.onerror = () => {
-            setPreviewUrl(null);
-        };
-
-        reader.readAsDataURL(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
 
         return () => {
-            reader.onload = null;
-            reader.onerror = null;
+            URL.revokeObjectURL(url);
         };
     }, [file]);
 
