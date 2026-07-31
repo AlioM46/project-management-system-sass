@@ -10,4 +10,5 @@ Route::prefix('conversations')
         Route::post('/', [ConversationController::class, 'store']);
         Route::get('/{id}/messages', [ConversationController::class, 'getMessages'])->whereNumber('id');
         Route::post('/{id}/messages', [ConversationController::class, 'sendMessage'])->whereNumber('id');
+        Route::post('/{id}/messages/{messageId}/reactions', [ConversationController::class, 'toggleReaction'])->whereNumber('id')->whereNumber('messageId');
     });
