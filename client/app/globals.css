@@ -121,22 +121,48 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
 }
 
-.chat-pattern-bg {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1.5px, transparent 1.5px), radial-gradient(rgba(0, 0, 0, 0.05) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
-  background-position: 0 0, 14px 14px;
+/* WhatsApp Web Theme Colors & Pattern */
+.bg-wa-dark-bg {
+  background-color: #0b141a;
+}
+.bg-wa-dark-header {
+  background-color: #202c33;
+}
+.bg-wa-dark-sidebar {
+  background-color: #111b21;
+}
+.bg-wa-dark-sent {
+  background-color: #005c4b;
+}
+.bg-wa-dark-received {
+  background-color: #202c33;
+}
+.bg-wa-dark-input {
+  background-color: #2a3942;
+}
+.text-wa-green {
+  color: #00a884;
+}
+.text-wa-blue {
+  color: #53bdeb;
+}
+.text-wa-muted {
+  color: #8696a0;
 }
 
-.dark .chat-pattern-bg {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1.5px, transparent 1.5px), radial-gradient(rgba(255, 255, 255, 0.04) 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
-  background-position: 0 0, 14px 14px;
+.wa-doodle-bg {
+  background-color: #0b141a;
+  background-image: radial-gradient(rgba(134, 150, 160, 0.08) 1.2px, transparent 1.2px), radial-gradient(rgba(134, 150, 160, 0.08) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
 }
