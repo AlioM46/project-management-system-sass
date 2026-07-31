@@ -233,10 +233,10 @@ export default function ChatPage() {
         handleReactionUpdated
     );
 
-    async function handleSendMessage(body: string, conversationId: number, replyId?: number) {
+    async function handleSendMessage(body: string, conversationId: number, replyId?: number, attachments?: File[]) {
         try {
             setIsSending(true);
-            const res = await sendMessage(conversationId, body, replyId);
+            const res = await sendMessage(conversationId, body, replyId, attachments);
             handleIncomingMessage(res);
             setInputText("");
         } catch (error) {
