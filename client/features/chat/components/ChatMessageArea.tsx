@@ -12,7 +12,7 @@ interface ChatMessageAreaProps {
     inputText: string;
     isSending: boolean;
     onInputTextChange: (text: string) => void;
-    handleSendMessage: (body: string, conversationId: number, messageId?: number) => Promise<void>;
+    handleSendMessage: (body: string, conversationId: number, messageId?: number, attachments?: File[]) => Promise<void>;
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
     onTyping?: (isTyping: boolean) => void;
@@ -36,7 +36,9 @@ export function ChatMessageArea({
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
@@ -78,17 +80,30 @@ export function ChatMessageArea({
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const filesArray = Array.from(e.target.files);
+            setSelectedFiles((prev) => [...prev, ...filesArray]);
+        }
+    };
+
     const handleSend = async () => {
-        if (!inputText.trim() || isSending || !conversation) return;
+        const hasText = Boolean(inputText.trim());
+        const hasFiles = selectedFiles.length > 0;
+        if ((!hasText && !hasFiles) || isSending || !conversation) return;
 
         if (onTyping) {
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             onTyping(false);
         }
 
-        await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id);
+        await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id, selectedFiles);
 
         setReplyingTo(null);
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
 
@@ -326,7 +341,58 @@ export function ChatMessageArea({
                                         )}
 
                                         {/* Message Body */}
-                                        <div className="text-sm font-normal">{msg.body}</div>
+                                        {msg.body && <div className="text-sm font-normal">{msg.body}</div>}
+
+                                        {/* Message Attachments */}
+                                        {msg.attachments && msg.attachments.length > 0 && (
+                                            <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
+                                                {msg.attachments.map((attachment: any) => {
+                                                    const isImage = attachment.file_type?.startsWith("image/");
+                                                    if (isImage) {
+                                                        return (
+                                                            <div key={attachment.id} className="relative group/media max-h-60 rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
+                                                                <img
+                                                                    src={attachment.download_url}
+                                                                    alt={attachment.file_name}
+                                                                    className="max-w-full max-h-60 object-contain mx-auto"
+                                                                />
+                                                                <a
+                                                                    href={attachment.download_url}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
+                                                                    title="Open full size"
+                                                                >
+                                                                    <Paperclip className="h-3.5 w-3.5" />
+                                                                </a>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <a
+                                                            key={attachment.id}
+                                                            href={attachment.download_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all shadow-sm ${isMe
+                                                                ? "bg-black/20 border-white/20 text-white hover:bg-black/30"
+                                                                : "bg-zinc-100 dark:bg-white/10 border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+                                                                    <Paperclip className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
+                                                                    <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Floating Hover Actions (Reply + Quick Emoji Picker) & Timestamp */}
@@ -387,8 +453,8 @@ export function ChatMessageArea({
                                                 onClick={() => onToggleReaction && onToggleReaction(msg.id, reaction.emoji)}
                                                 title={`Reacted by: ${reaction.users.join(", ")}`}
                                                 className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border transition-all cursor-pointer ${reaction.hasReacted
-                                                        ? "bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold shadow-xs"
-                                                        : "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                    ? "bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold shadow-xs"
+                                                    : "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                                                     }`}
                                             >
                                                 <span>{reaction.emoji}</span>
@@ -438,9 +504,49 @@ export function ChatMessageArea({
                     </div>
                 )}
 
+                {/* Selected Files Preview Banner */}
+                {selectedFiles.length > 0 && (
+                    <div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                            <span>Selected Attachments ({selectedFiles.length})</span>
+                            <button
+                                onClick={() => setSelectedFiles([])}
+                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                            >
+                                Clear All
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {selectedFiles.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5 bg-white dark:bg-zinc-700/80 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-600 text-xs text-zinc-700 dark:text-zinc-200 shadow-sm">
+                                    <span className="truncate max-w-[150px] font-medium">{file.name}</span>
+                                    <button
+                                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                                        className="text-zinc-400 hover:text-red-500 transition-colors ml-1"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
+                    {/* Hidden File Input */}
+                    <input
+                        type="file"
+                        multiple
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+
                     {/* Attachment */}
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5 ${selectedFiles.length > 0 ? "text-blue-500 bg-blue-500/10" : ""}`}
+                    >
                         <Paperclip className="h-4 w-4 text-zinc-400" />
                     </button>
 
@@ -468,23 +574,23 @@ export function ChatMessageArea({
 
                     {/* Send */}
                     <button
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${inputText.trim() && !isSending
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${(inputText.trim() || selectedFiles.length > 0) && !isSending
                             ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
                             : isSending
                                 ? "bg-blue-600/70 cursor-not-allowed"
                                 : "bg-zinc-100 dark:bg-white/10 cursor-not-allowed"
                             }`}
                         onClick={handleSend}
-                        disabled={!inputText.trim() || isSending}
+                        disabled={(!inputText.trim() && selectedFiles.length === 0) || isSending}
                     >
                         {isSending ? (
                             <Loader2 className="h-4 w-4 animate-spin text-white" />
                         ) : (
-                            <Send className={`h-4 w-4 ${inputText.trim() ? "text-white" : "text-zinc-400"}`} />
+                            <Send className={`h-4 w-4 ${(inputText.trim() || selectedFiles.length > 0) ? "text-white" : "text-zinc-400"}`} />
                         )}
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -35,8 +35,21 @@ export async function getMessages(
 export async function sendMessage(
     conversationId: number,
     body: string,
-    messageId?: number
+    messageId?: number,
+    attachments?: File[]
 ): Promise<Message> {
+    if (attachments && attachments.length > 0) {
+        const formData = new FormData();
+        formData.append("body", body || "");
+        if (messageId) {
+            formData.append("message_id", String(messageId));
+        }
+        attachments.forEach((file) => {
+            formData.append("attachments[]", file);
+        });
+        return await apiClient.post<Message>(`/conversations/${conversationId}/messages`, formData);
+    }
+
     return await apiClient.post<Message>(`/conversations/${conversationId}/messages`, {
         body,
         message_id: messageId,

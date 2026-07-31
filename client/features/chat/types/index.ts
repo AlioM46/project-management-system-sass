@@ -1,3 +1,14 @@
+export interface MessageAttachments {
+    id: number;
+    message_id: number;
+    object_key: string;
+    original_name: string;
+    file_type: string;
+    file_size: number;
+    file_name: string;
+    download_url: string;
+}
+
 export interface User {
     id: number;
     name: string;
@@ -57,6 +68,7 @@ export interface Message {
     replies?: Message[]; // Threading support
     parent?: Message;
     reactions?: MessageReaction[];
+    attachments?: MessageAttachments[];
 }
 
 export interface PaginatedResponse<T> {
