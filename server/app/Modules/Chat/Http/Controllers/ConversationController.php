@@ -236,12 +236,17 @@ class ConversationController extends Controller
             //  remove from 1st array the elements exist in the other array
             $participantsIds = array_diff($participantsIds, [auth()->id()]);
         }
+        $requiredBody = true;
+        if ($request->has('attachments') && count($request->attachments) > 0) {
+            $requiredBody = false;
+        }
+
 
         $request->validate([
-            'body' => 'nullable|string',
+            'body' => $requiredBody ? 'required|string' : 'nullable|string',
             'message_id' => 'nullable|exists:messages,id', // Threading reply ID
             'attachments' => 'nullable|array',
-            'attachments.*' => 'file',
+            'attachments.*' => 'file', // check every attachment is "file"
         ]);
 
         // Create the Message (BelongsToWorkspace auto-injects active workspace_id)
