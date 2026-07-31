@@ -169,7 +169,7 @@ class ConversationController extends Controller
 
         // Fetch pre-sorted messages, paginated 30 at a time
         $messages = $conversation->messages()
-            ->with('sender:id,name,avatar_url')
+            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name'])
             ->orderBy('created_at', 'asc')
             ->paginate(500);
 
@@ -246,7 +246,7 @@ class ConversationController extends Controller
 
 
         // Load the sender model details for the frontend
-        $message->load('sender:id,name,avatar_url,username');
+        $message->load('sender:id,name,avatar_url,username', 'parent.sender:id,name');
 
 
         // Chat Room Channel: Shared by all participants in this conversation.

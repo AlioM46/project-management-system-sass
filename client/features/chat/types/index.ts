@@ -44,6 +44,8 @@ export interface Message {
     updated_at: string;
     sender: User;
     replies?: Message[]; // Threading support
+    parent?: Message;
+
 }
 
 export interface PaginatedResponse<T> {

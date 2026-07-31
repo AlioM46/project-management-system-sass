@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2 } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -30,11 +30,10 @@ export function ChatMessageArea({
     typingUsers = [],
     onTyping,
 }: ChatMessageAreaProps) {
-    const [replyId, setReplyId] = useState<number | null>(null);
-    const [replyingTo, setReplyingTo] = useState<any>(null);
     const { currentUser } = useCurrentUser();
     const [isOnline, setIsOnline] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
@@ -77,7 +76,8 @@ export function ChatMessageArea({
             onTyping(false);
         }
 
-        await handleSendMessage(inputText.trim(), conversation.id);
+        await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id);
+        setReplyingTo(null);
     };
 
 
@@ -235,18 +235,10 @@ export function ChatMessageArea({
             {/* ─── Messages List ───────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1" ref={messagesEndRef}>
                 {messages.map((msg: Message | any, index) => {
-                    const isMe = msg.sender.id === currentUserId;
-                    // !isMe — It's not my message (I don't need to see my own avatar).
-                    // AND either:
-                    // index === 0 — It's the very first message in the list.
-                    // messages[index - 1]?.user_id !== msg.user_id — The previous message was from a different person.
+                    const isMe = msg.sender?.id === currentUserId;
 
                     const showAvatar =
                         !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
-
-                    // It is true when:
-                    // index === messages.length - 1 — It's the very last message overall.
-                    // OR messages[index + 1]?.user_id !== msg.user_id — The next message is from a different person.
 
                     const isLastInGroup =
                         index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
@@ -263,36 +255,62 @@ export function ChatMessageArea({
                                     {showAvatar ? (
                                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                                             <span className="text-[10px] font-bold text-white">
-                                                {getInitials(msg.sender.name)}
+                                                {getInitials(msg.sender?.name || "U")}
                                             </span>
                                         </div>
                                     ) : null}
                                 </div>
                             )}
 
-                            {/* Message Bubble */}
+                            {/* Message Bubble Container */}
                             <div className={`max-w-[65%] group ${isMe ? "order-1" : ""}`}>
                                 {/* Sender name (only for first message in a group, and only for others) */}
                                 {showAvatar && !isMe && (
                                     <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
-                                        {msg.sender.name}
+                                        {msg.sender?.name}
                                     </p>
                                 )}
 
-                                <div className="flex items-end gap-2">
+                                <div className={`flex items-end gap-1.5 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                    {/* Bubble */}
                                     <div
                                         className={`px-3.5 py-2 text-sm leading-relaxed ${isMe
                                             ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
                                             : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
                                             }`}
                                     >
-                                        {msg.body}
+                                        {/* Quoted Parent Message */}
+                                        {msg.parent && (
+                                            <div
+                                                className={`mb-1.5 p-2 rounded-lg border-l-2 text-xs opacity-90 ${isMe
+                                                    ? "bg-blue-700/60 border-white/60 text-blue-100"
+                                                    : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-700 dark:text-zinc-300"
+                                                    }`}
+                                            >
+                                                <p className="font-semibold text-[10px] text-blue-400 dark:text-blue-300">
+                                                    {msg.parent.sender?.name || "User"}
+                                                </p>
+                                                <p className="truncate line-clamp-1">{msg.parent.body}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Message Body */}
+                                        <div>{msg.body}</div>
                                     </div>
 
-                                    {/* Timestamp (visible on hover) */}
-                                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pb-0.5">
-                                        {formatTime(msg.created_at)}
-                                    </span>
+                                    {/* Action Buttons & Timestamp on Hover */}
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pb-0.5">
+                                        <button
+                                            onClick={() => setReplyingTo(msg)}
+                                            title="Reply to message"
+                                            className="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-blue-500 transition-colors"
+                                        >
+                                            <Reply className="h-3.5 w-3.5" />
+                                        </button>
+                                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                                            {formatTime(msg.created_at)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -302,6 +320,24 @@ export function ChatMessageArea({
 
             {/* ─── Message Input ────────────────────────────────────────── */}
             <div className="px-5 pb-4 pt-2 shrink-0">
+                {/* Replying-To Quote Preview Banner */}
+                {replyingTo && (
+                    <div className="mb-2 px-3.5 py-2 bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500 rounded-r-xl flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-1">
+                        <div className="flex-1 min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-[11px]">
+                                <Reply className="h-3 w-3" />
+                                <span>Replying to {replyingTo.sender?.name || "User"}</span>
+                            </div>
+                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-0.5">{replyingTo.body}</p>
+                        </div>
+                        <button
+                            onClick={() => setReplyingTo(null)}
+                            className="h-6 w-6 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                )}
                 {/* Typing Indicator Banner */}
                 {typingUsers && typingUsers.length > 0 && (
                     <div className="px-3 py-1 mb-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
