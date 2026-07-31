@@ -245,8 +245,8 @@ class ConversationController extends Controller
         ]);
 
 
-        // Load the sender model details for the frontend
-        $message->load('sender:id,name,avatar_url,username', 'parent.sender:id,name');
+        // Load the sender model and quoted parent message details for the frontend
+        $message->load(['sender:id,name,avatar_url,username', 'parent', 'parent.sender:id,name']);
 
 
         // Chat Room Channel: Shared by all participants in this conversation.
