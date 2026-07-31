@@ -45,6 +45,9 @@ class MessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldR
         if (!$this->message->relationLoaded('sender')) {
             $this->message->load('sender');
         }
+        if (!$this->message->relationLoaded('attachments')) {
+            $this->message->load('attachments');
+        }
         return [
             'id' => $this->message->id,
             'workspace_id' => $this->message->workspace_id,
@@ -53,7 +56,7 @@ class MessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldR
             'message_id' => $this->message->message_id,
             'body' => $this->message->body,
             'created_at' => $this->message->created_at?->toISOString(),
-
+            'attachments' => $this->message->attachments,
             'sender' => [
                 'id' => $this->message->sender->id,
                 'name' => $this->message->sender->name,
