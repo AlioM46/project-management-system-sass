@@ -46,15 +46,15 @@ it('broadcasts notification created on the shared private workspace user channel
 
     $event = new NotificationCreated($notification);
 
-    expect($event->broadcastOn()->name)->toBe('private-workspaces.'.$workspace->id.'.users.'.$user->id)
+    expect($event->broadcastOn()->name)->toBe('private-workspaces.' . $workspace->id . '.users.' . $user->id)
         ->and($event->broadcastAs())->toBe('notification.created')
         ->and($event->broadcastWith())->toMatchArray([
-            'id' => $notification->id,
-            'type' => $notification->type,
-            'data' => $notification->data,
-            'workspace_id' => $workspace->id,
-            'user_id' => $user->id,
-        ])
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'data' => $notification->data,
+                'workspace_id' => $workspace->id,
+                'user_id' => $user->id,
+            ])
         ->and($event->broadcastWith()['read_at'])->toBe($notification->read_at?->toISOString())
         ->and($event->broadcastWith()['created_at'])->toBe($notification->created_at?->toISOString());
 });
@@ -66,15 +66,15 @@ it('broadcasts notification read on the shared private workspace user channel wi
 
     $event = new NotificationRead($notification);
 
-    expect($event->broadcastOn()->name)->toBe('private-workspaces.'.$workspace->id.'.users.'.$user->id)
+    expect($event->broadcastOn()->name)->toBe('private-workspaces.' . $workspace->id . '.users.' . $user->id)
         ->and($event->broadcastAs())->toBe('notification.read')
         ->and($event->broadcastWith())->toMatchArray([
-            'id' => $notification->id,
-            'type' => $notification->type,
-            'data' => $notification->data,
-            'workspace_id' => $workspace->id,
-            'user_id' => $user->id,
-        ]);
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'data' => $notification->data,
+                'workspace_id' => $workspace->id,
+                'user_id' => $user->id,
+            ]);
 });
 
 it('broadcasts notification read all on the shared private workspace user channel with the standardized payload', function () {
@@ -84,15 +84,15 @@ it('broadcasts notification read all on the shared private workspace user channe
 
     $event = new NotificationReadAll($user->id, $workspace->id, $readAt);
 
-    expect($event->broadcastOn()->name)->toBe('private-workspaces.'.$workspace->id.'.users.'.$user->id)
+    expect($event->broadcastOn()->name)->toBe('private-workspaces.' . $workspace->id . '.users.' . $user->id)
         ->and($event->broadcastAs())->toBe('notification.read.all')
         ->and($event->broadcastWith())->toBe([
-            'id' => null,
-            'type' => null,
-            'data' => [],
-            'workspace_id' => $workspace->id,
-            'user_id' => $user->id,
-            'read_at' => $readAt->toISOString(),
-            'created_at' => null,
-        ]);
+                'id' => null,
+                'type' => null,
+                'data' => [],
+                'workspace_id' => $workspace->id,
+                'user_id' => $user->id,
+                'read_at' => $readAt->toISOString(),
+                'created_at' => null,
+            ]);
 });
