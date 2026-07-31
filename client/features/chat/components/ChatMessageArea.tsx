@@ -4,6 +4,8 @@ import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader
 import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { toast } from "sonner";
+import { AttachmentPreview, DraftAttachmentPreview, isImageAttachment, isVideoAttachment, isPdfAttachment } from "@/components/modals/task-details/attachment-preview";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
@@ -83,13 +85,17 @@ export function ChatMessageArea({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const incomingFiles = Array.from(e.target.files);
+            const MAX_SIZE = 15 * 1024 * 1024; // 15MB
 
+            const validSizeFiles = incomingFiles.filter(file => {
+                if (file.size > MAX_SIZE) {
+                    toast.error(`File "${file.name}" exceeds the 15MB size limit.`);
+                    return false;
+                }
+                return true;
+            });
 
-            // incoming [1,2,3]
-            // existing [1,3,4]
-            // expect result [2,4] => This is what we want
-
-            const uniqueFiles = incomingFiles.filter((newFile) => {
+            const uniqueFiles = validSizeFiles.filter((newFile) => {
                 return !selectedFiles.some(
                     (existingFile) => existingFile.name === newFile.name
                         && existingFile.size === newFile.size
@@ -373,27 +379,23 @@ export function ChatMessageArea({
                                         {msg.attachments && msg.attachments.length > 0 && (
                                             <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
                                                 {msg.attachments.map((attachment: any) => {
-                                                    const isImage = attachment.file_type?.startsWith("image/");
-                                                    if (isImage) {
+                                                    const showRawPreview =
+                                                        attachment.file_type?.startsWith("image/") ||
+                                                        attachment.file_type?.startsWith("video/") ||
+                                                        attachment.file_type?.includes("pdf");
+
+                                                    if (showRawPreview) {
                                                         return (
-                                                            <div key={attachment.id} className="relative group/media max-h-60 rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
-                                                                <img
-                                                                    src={attachment.download_url}
-                                                                    alt={attachment.file_name}
-                                                                    className="max-w-full max-h-60 object-contain mx-auto"
+                                                            <div key={attachment.id} className="rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-1">
+                                                                <AttachmentPreview
+                                                                    url={attachment.download_url}
+                                                                    fileName={attachment.file_name}
+                                                                    fileType={attachment.file_type}
                                                                 />
-                                                                <a
-                                                                    href={attachment.download_url}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover/media:opacity-100 transition-opacity"
-                                                                    title="Open full size"
-                                                                >
-                                                                    <Paperclip className="h-3.5 w-3.5" />
-                                                                </a>
                                                             </div>
                                                         );
                                                     }
+
                                                     return (
                                                         <a
                                                             key={attachment.id}
