@@ -48,10 +48,12 @@ class MessageSent implements ShouldBroadcast, ShouldDispatchAfterCommit, ShouldR
         return [
             'id' => $this->message->id,
             'workspace_id' => $this->message->workspace_id,
+            'parent' => $this->message->parent,
             'conversation_id' => $this->message->conversation_id,
             'message_id' => $this->message->message_id,
             'body' => $this->message->body,
             'created_at' => $this->message->created_at?->toISOString(),
+
             'sender' => [
                 'id' => $this->message->sender->id,
                 'name' => $this->message->sender->name,
