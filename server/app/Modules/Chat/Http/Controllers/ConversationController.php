@@ -4,10 +4,12 @@ namespace App\Modules\Chat\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Chat\Events\MessageSent;
+use App\Modules\Chat\Events\MessageReactionUpdated;
 use App\Modules\Chat\Model\Conversation;
 use App\Modules\Chat\Model\ConversationReadState;
 use App\Modules\Chat\Model\ConversationParticipant;
 use App\Modules\Chat\Model\Message;
+use App\Modules\Chat\Model\MessageReaction;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Model\Notification;
 use App\Modules\Notifications\Services\NotificationService;
@@ -167,9 +169,9 @@ class ConversationController extends Controller
             }
         }
 
-        // Fetch pre-sorted messages, paginated 30 at a time
+        // Fetch pre-sorted messages, paginated 500 at a time
         $messages = $conversation->messages()
-            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name'])
+            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name'])
             ->orderBy('created_at', 'asc')
             ->paginate(500);
 
@@ -246,7 +248,7 @@ class ConversationController extends Controller
 
 
         // Re-query the created message with fresh eager-loaded sender and quoted parent message details
-        $message = Message::with(['sender:id,name,avatar_url,username', 'parent.sender:id,name'])->find($message->id);
+        $message = Message::with(['sender:id,name,avatar_url,username', 'parent.sender:id,name', 'reactions.user:id,name'])->find($message->id);
 
 
         // Chat Room Channel: Shared by all participants in this conversation.
@@ -285,5 +287,66 @@ class ConversationController extends Controller
 
 
         return ApiResponse::success('Message sent successfully. workspace id: ' . $workspaceId, $message->toArray(), [], 201);
+    }
+
+    /**
+     * Toggle an emoji reaction on a message.
+     * Each user can have ONLY 1 reaction per message (Unique on message_id, user_id).
+     */
+    public function toggleReaction(Request $request, int $id, int $messageId): JsonResponse
+    {
+        $request->validate([
+            'emoji' => 'required|string|max:32',
+        ]);
+
+        $conversation = Conversation::findOrFail($id);
+
+        // Security check
+        if ($conversation->type !== 'project') {
+            $isParticipant = ConversationParticipant::where('conversation_id', $conversation->id)
+                ->where('user_id', auth()->id())
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$isParticipant) {
+                return ApiResponse::error('Unauthorized.', 'UNAUTHORIZED_ACCESS', [], 403);
+            }
+        }
+
+        $message = Message::where('conversation_id', $conversation->id)->findOrFail($messageId);
+
+        $existing = MessageReaction::where('message_id', $message->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if ($existing) {
+            if ($existing->emoji === $request->emoji) {
+                // Same emoji clicked -> remove reaction (toggle off)
+                $existing->delete();
+            } else {
+                // Different emoji clicked -> switch to new emoji
+                $existing->update(['emoji' => $request->emoji]);
+            }
+        } else {
+            // No reaction yet -> create new reaction
+            MessageReaction::create([
+                'message_id' => $message->id,
+                'user_id' => auth()->id(),
+                'emoji' => $request->emoji,
+            ]);
+        }
+
+        // Fetch fresh eager-loaded reactions for this message
+        $reactions = MessageReaction::where('message_id', $message->id)
+            ->with('user:id,name')
+            ->get()
+            ->toArray();
+
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
+
+        // Broadcast real-time reaction update to other participants in this conversation
+        broadcast(new MessageReactionUpdated($workspaceId, $conversation->id, $message->id, $reactions))->toOthers();
+
+        return ApiResponse::success('Reaction updated successfully.', $reactions);
     }
 }
