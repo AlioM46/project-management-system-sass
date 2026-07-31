@@ -48,6 +48,14 @@ export function ChatMessageArea({
     //     }
     // }, [conversation]);
 
+    useEffect(() => {
+
+        messages.forEach((m, idx) => {
+            console.log("MESSAGE #", idx, " - ", m)
+        })
+
+    }, [messages])
+
 
 
     const handleTextChange = (text: string) => {
@@ -299,15 +307,15 @@ export function ChatMessageArea({
                                                 }}
                                                 title="Click to jump to original message"
                                                 className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                    ? "bg-blue-700/70 border-white text-blue-50 hover:bg-blue-700/90"
+                                                    ? "bg-black/20 border-white text-white hover:bg-black/30"
                                                     : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
                                                     }`}
                                             >
-                                                <div className="flex items-center justify-between gap-2 font-bold text-[11px] text-blue-400 dark:text-blue-300">
+                                                <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
                                                     <span>{msg.parent.sender?.name || "User"}</span>
-                                                    <Reply className="h-3 w-3 opacity-70" />
+                                                    <Reply className="h-3 w-3 opacity-80" />
                                                 </div>
-                                                <p className="line-clamp-2 mt-0.5 font-normal text-zinc-600 dark:text-zinc-300">
+                                                <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
                                                     {msg.parent.body}
                                                 </p>
                                             </div>
