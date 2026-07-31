@@ -36,9 +36,9 @@ export function ChatMessageArea({
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
@@ -82,8 +82,23 @@ export function ChatMessageArea({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const filesArray = Array.from(e.target.files);
-            setSelectedFiles((prev) => [...prev, ...filesArray]);
+            const incomingFiles = Array.from(e.target.files);
+
+
+            // incoming [1,2,3]
+            // existing [1,3,4]
+            // expect result [2,4] => This is what we want
+
+            const uniqueFiles = incomingFiles.filter((newFile) => {
+                return !selectedFiles.some(
+                    (existingFile) => existingFile.name === newFile.name
+                        && existingFile.size === newFile.size
+                        && existingFile.type === newFile.type
+                        && existingFile.lastModified === newFile.lastModified
+                );
+            });
+
+            setSelectedFiles((prev) => [...prev, ...uniqueFiles]);
         }
     };
 
@@ -146,6 +161,17 @@ export function ChatMessageArea({
     // Helper: Get initials from a name
     function getInitials(name: string): string {
         return name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+    }
+
+    // Helper: Get label/icon text for files
+    function getFileIcon(type: string): string {
+        if (type.includes("pdf")) return "PDF";
+        if (type.includes("word") || type.includes("officedocument.word")) return "DOC";
+        if (type.includes("excel") || type.includes("officedocument.sheet")) return "XLS";
+        if (type.includes("zip") || type.includes("rar") || type.includes("compressed")) return "ZIP";
+        if (type.startsWith("video/")) return "VID";
+        if (type.startsWith("audio/")) return "AUD";
+        return "FILE";
     }
 
     // Helper: Get display name for the conversation header
@@ -506,7 +532,8 @@ export function ChatMessageArea({
 
                 {/* Selected Files Preview Banner */}
                 {selectedFiles.length > 0 && (
-                    <div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
+
+                    < div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
                         <div className="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
                             <span>Selected Attachments ({selectedFiles.length})</span>
                             <button
@@ -519,6 +546,13 @@ export function ChatMessageArea({
                         <div className="flex flex-wrap gap-2">
                             {selectedFiles.map((file, idx) => (
                                 <div key={idx} className="flex items-center gap-1.5 bg-white dark:bg-zinc-700/80 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-600 text-xs text-zinc-700 dark:text-zinc-200 shadow-sm">
+                                    {file.type.startsWith('image/') ? (
+                                        <img className="h-6 w-6 rounded-md" src={URL.createObjectURL(file)} alt={file.name} />
+                                    ) : (
+                                        <div className="h-6 w-6 rounded-md bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center">
+                                            <span className="text-blue-600 dark:text-blue-400 font-bold">{getFileIcon(file.type)}</span>
+                                        </div>
+                                    )}
                                     <span className="truncate max-w-[150px] font-medium">{file.name}</span>
                                     <button
                                         onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
