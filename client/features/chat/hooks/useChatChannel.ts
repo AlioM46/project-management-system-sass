@@ -1,6 +1,6 @@
 import { getEchoClient } from "@/features/notifications/lib/echo";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Message } from "../types";
+import { Message, MessageReaction } from "../types";
 
 export interface TypingUser {
     id: number;
@@ -14,7 +14,7 @@ export default function useChatChannel(
     onMessageReceived: (message: any) => void,
     currentUserId?: number | null,
     currentUserName?: string | null,
-    onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: any[] }) => void
+    onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => void
 ) {
     const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
     const channelRef = useRef<any>(null);
@@ -28,10 +28,12 @@ export default function useChatChannel(
         channelRef.current = channel;
 
         channel.listen(".messages.sent", (event: Message) => {
+            console.log("Incoming Message from Realtime : # ", event)
             onMessageReceived(event);
+
         });
 
-        channel.listen(".messages.reaction.updated", (event: { conversation_id: number; message_id: number; reactions: Reaction[] }) => {
+        channel.listen(".messages.reaction.updated", (event: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => {
             if (onReactionUpdated) {
                 onReactionUpdated(event);
             }

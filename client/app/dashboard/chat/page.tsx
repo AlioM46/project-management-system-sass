@@ -6,7 +6,7 @@ import { NewConversationModal } from "@/features/chat/components/NewConversation
 import { useCallback, useEffect, useState } from "react";
 import { getConversations, getMessages, sendMessage, toggleMessageReaction } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
-import { Conversation, Message } from "@/features/chat/types";
+import { Conversation, Message, MessageReaction } from "@/features/chat/types";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/shared/api/ApiError";
 import useChatChannel from "@/features/chat/hooks/useChatChannel";
@@ -135,6 +135,7 @@ export default function ChatPage() {
     const handleIncomingMessage = useCallback(
         (newMessage: Message) => {
 
+
             setMessages((prev) => {
                 const exists = prev?.some((m) => m.id === newMessage.id);
                 return exists
@@ -159,7 +160,7 @@ export default function ChatPage() {
     );
 
     const handleReactionUpdated = useCallback(
-        (data: { conversation_id: number; message_id: number; reactions: any[] }) => {
+        (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => {
             setMessages((prev) =>
                 prev.map((msg) =>
                     msg.id === data.message_id ? { ...msg, reactions: data.reactions } : msg
