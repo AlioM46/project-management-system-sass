@@ -546,9 +546,9 @@ export function ChatMessageArea({
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {selectedFiles.map((file, idx) => {
-                                const isImage = file.type.startsWith('image/');
-                                const isVideo = file.type.startsWith('video/');
-                                const isPDF = file.type.includes('pdf');
+                                const isImage = file.type?.startsWith('image/') || file.name?.toLowerCase().match(/\.(png|jpe?g|gif|webp|bmp|svg)$/i);
+                                const isVideo = file.type?.startsWith('video/') || file.name?.toLowerCase().match(/\.(mp4|webm|mov|avi|m4v)$/i);
+                                const isPDF = file.type?.includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
                                 return (
                                     <div key={idx} className="relative group h-16 w-16 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-200 dark:border-zinc-600 shadow-sm flex items-center justify-center overflow-hidden">
                                         {isImage ? (
