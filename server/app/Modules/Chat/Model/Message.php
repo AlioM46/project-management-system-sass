@@ -48,4 +48,9 @@ class Message extends Model
     {
         return $this->hasMany(MessageReaction::class, 'message_id');
     }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MessageAttachment::class, 'message_id');
+    }
 }

@@ -14,6 +14,7 @@ use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Model\Notification;
 use App\Modules\Notifications\Services\NotificationService;
 use App\Modules\Workspace\Services\WorkspaceContextService;
+use App\Modules\Chat\Services\MessageAttachmentService;
 use App\Shared\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,12 +24,15 @@ class ConversationController extends Controller
 
     private WorkspaceContextService $workspaceContextService;
     private NotificationService $notificationService;
+    private MessageAttachmentService $messageAttachmentService;
     public function __construct(
         WorkspaceContextService $contextService,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        MessageAttachmentService $messageAttachmentService
     ) {
         $this->workspaceContextService = $contextService;
         $this->notificationService = $notificationService;
+        $this->messageAttachmentService = $messageAttachmentService;
     }
 
     /**
@@ -171,7 +175,7 @@ class ConversationController extends Controller
 
         // Fetch pre-sorted messages, paginated 500 at a time
         $messages = $conversation->messages()
-            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name'])
+            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
             ->orderBy('created_at', 'asc')
             ->paginate(500);
 
@@ -234,8 +238,10 @@ class ConversationController extends Controller
         }
 
         $request->validate([
-            'body' => 'required|string',
+            'body' => 'nullable|string',
             'message_id' => 'nullable|exists:messages,id', // Threading reply ID
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file',
         ]);
 
         // Create the Message (BelongsToWorkspace auto-injects active workspace_id)
@@ -243,12 +249,15 @@ class ConversationController extends Controller
             'conversation_id' => $conversation->id,
             'message_id' => $request->message_id,
             'user_id' => auth()->id(),
-            'body' => $request->body,
+            'body' => $request->body ?? '',
         ]);
 
+        if ($request->hasFile('attachments')) {
+            $this->messageAttachmentService->upload($message, $request->file('attachments'));
+        }
 
-        // Re-query the created message with fresh eager-loaded sender and quoted parent message details
-        $message = Message::with(['sender:id,name,avatar_url,username', 'parent.sender:id,name', 'reactions.user:id,name'])->find($message->id);
+        // Re-query the created message with fresh eager-loaded sender, quoted parent message, and attachments details
+        $message = Message::with(['sender:id,name,avatar_url,username', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])->find($message->id);
 
 
         // Chat Room Channel: Shared by all participants in this conversation.
