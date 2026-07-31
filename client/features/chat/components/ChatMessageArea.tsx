@@ -31,23 +31,15 @@ export function ChatMessageArea({
     onTyping,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
-    const [isOnline, setIsOnline] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
+    const isOnline = Boolean(partnerId && isUserOnline(partnerId));
     const isPartnerTyping = Boolean(
         partnerId && typingUsers?.some((user) => Number(user.id) === Number(partnerId))
     );
-
-    useEffect(() => {
-
-        if (partnerId) {
-            setIsOnline(isUserOnline(partnerId));
-        }
-    }, [conversation]);
-
 
 
 
@@ -77,6 +69,7 @@ export function ChatMessageArea({
         }
 
         await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id);
+
         setReplyingTo(null);
     };
 
