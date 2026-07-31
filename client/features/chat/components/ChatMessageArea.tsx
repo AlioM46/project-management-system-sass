@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, CheckCheck, Plus } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -16,7 +16,10 @@ interface ChatMessageAreaProps {
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
     onTyping?: (isTyping: boolean) => void;
+    onToggleReaction?: (messageId: number, emoji: string) => void;
 }
+
+const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
 
 export function ChatMessageArea({
     conversation,
@@ -29,6 +32,7 @@ export function ChatMessageArea({
     isUserOnline,
     typingUsers = [],
     onTyping,
+    onToggleReaction,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -186,255 +190,299 @@ export function ChatMessageArea({
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-zinc-100/60 dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 overflow-hidden select-none">
-            {/* ─── Chat Header (Website Native Theme) ───────────────────── */}
-            <div className="h-16 flex items-center justify-between px-5 bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-md shrink-0 border-b border-zinc-200/80 dark:border-zinc-800/80 z-10">
-                <div className="flex items-center gap-3.5 cursor-pointer">
+        <div className="flex-1 flex flex-col bg-zinc-50/50 dark:bg-[#050505]">
+            {/* ─── Chat Header ─────────────────────────────────────────── */}
+            <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shrink-0">
+                <div className="flex items-center gap-3">
                     {/* Avatar/Icon */}
                     {conversation.type === "project" ? (
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
-                            <Hash className="h-5 w-5 text-white" />
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+                            <Hash className="h-4 w-4 text-white" />
                         </div>
                     ) : conversation.type === "group" ? (
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
-                            <Users className="h-5 w-5 text-white" />
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+                            <Users className="h-4 w-4 text-white" />
                         </div>
                     ) : (
                         <div className="relative">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
                                 <span className="text-xs font-bold text-white">{getInitials(getHeaderName())}</span>
                             </div>
 
                             {isOnline ? (
-                                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
-                            ) : null}
+                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
+                            ) : (
+                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-white dark:border-[#0a0a0a]" />
+                            )}
+
                         </div>
                     )}
 
-                    <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white truncate tracking-tight">
+                    <div>
+                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
                             {getHeaderName()}
                         </h3>
-                        <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                        <p className="text-[11px] font-medium">
                             {isPartnerTyping ? (
                                 <span className="text-blue-500 font-semibold animate-pulse">
                                     typing...
                                 </span>
                             ) : conversation?.type === "direct" ? (
                                 isOnline ? (
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Online</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400">Online</span>
                                 ) : (
-                                    <span>Offline</span>
+                                    <span className="text-zinc-400">Offline</span>
                                 )
                             ) : (
-                                <span>{getTypeLabel()}</span>
+                                <span className="text-zinc-500 dark:text-zinc-400">{getTypeLabel()}</span>
                             )}
                         </p>
                     </div>
                 </div>
 
                 {/* Header Actions */}
-                <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                    <button className="h-9 w-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 flex items-center justify-center transition-colors">
-                        <Phone className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
+                        <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                     </button>
-                    <button className="h-9 w-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 flex items-center justify-center transition-colors">
-                        <Video className="h-4 w-4" />
+                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
+                        <Video className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                     </button>
-                    <button className="h-9 w-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 flex items-center justify-center transition-colors">
-                        <MoreVertical className="h-4 w-4" />
+                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
+                        <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                     </button>
                 </div>
             </div>
 
-            {/* ─── Messages Scroll Area (With Chat Pattern Background) ───── */}
-            <div className="flex-1 overflow-y-auto chat-pattern-bg relative">
-                <div className="max-w-4xl mx-auto px-6 py-6 space-y-1.5" ref={messagesEndRef}>
-                    {messages.map((msg: Message | any, index) => {
-                        const isMe = msg.sender?.id === currentUserId;
+            {/* ─── Messages List ───────────────────────────────────────── */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1" ref={messagesEndRef}>
+                {messages.map((msg: Message | any, index) => {
+                    const isMe = msg.sender?.id === currentUserId;
 
-                        const showAvatar =
-                            !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
+                    const showAvatar =
+                        !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
 
-                        const isLastInGroup =
-                            index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
+                    const isLastInGroup =
+                        index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
 
-                        return (
-                            <div
-                                id={`message-${msg.id}`}
-                                key={msg.id}
-                                className={`flex items-end gap-2.5 transition-all duration-300 ${isMe ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-3" : "mb-0.5"
-                                    }`}
-                            >
-                                {/* Other user's avatar */}
-                                {!isMe && (
-                                    <div className="w-8 shrink-0 pb-0.5">
-                                        {showAvatar ? (
-                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                                <span className="text-[10px] font-bold text-white">
-                                                    {getInitials(msg.sender?.name || "U")}
-                                                </span>
-                                            </div>
-                                        ) : null}
-                                    </div>
+                    return (
+                        <div
+                            id={`message-${msg.id}`}
+                            key={msg.id}
+                            className={`flex items-end gap-2 transition-all duration-300 ${isMe ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-3" : "mb-0.5"
+                                }`}
+                        >
+                            {/* Other user's avatar */}
+                            {!isMe && (
+                                <div className="w-8 shrink-0">
+                                    {showAvatar ? (
+                                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                                            <span className="text-[10px] font-bold text-white">
+                                                {getInitials(msg.sender?.name || "U")}
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+
+                            {/* Message Bubble Container */}
+                            <div className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}>
+                                {/* Sender name */}
+                                {showAvatar && !isMe && (
+                                    <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
+                                        {msg.sender?.name}
+                                    </p>
                                 )}
 
-                                {/* Message Bubble Container */}
-                                <div className={`max-w-[82%] md:max-w-[75%] lg:max-w-[65%] group relative ${isMe ? "order-1" : ""}`}>
-                                    {/* Sender name for groups */}
-                                    {showAvatar && !isMe && (
-                                        <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
-                                            {msg.sender?.name}
-                                        </p>
-                                    )}
-
-                                    <div className={`flex items-end gap-1.5 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                        {/* Bubble */}
-                                        <div
-                                            className={`px-4 py-2.5 text-sm leading-relaxed transition-all shadow-xs ${isMe
-                                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-xs shadow-blue-500/10"
-                                                : "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-800 rounded-2xl rounded-tl-xs shadow-zinc-200/50 dark:shadow-none"
-                                                }`}
-                                        >
-                                            {/* Quoted Parent Message */}
-                                            {msg.parent && (
-                                                <div
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (msg.parent?.id) scrollToMessage(msg.parent.id);
-                                                    }}
-                                                    title="Click to jump to message"
-                                                    className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-xs ${isMe
-                                                        ? "bg-black/20 border-white text-white hover:bg-black/30"
-                                                        : "bg-blue-50/80 dark:bg-zinc-800/80 border-blue-500 dark:border-blue-400 text-zinc-800 dark:text-zinc-200 hover:bg-blue-100/70 dark:hover:bg-zinc-800"
-                                                        }`}
-                                                >
-                                                    <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
-                                                        <span>{msg.parent.sender?.name || "User"}</span>
-                                                        <Reply className="h-3 w-3 opacity-80" />
-                                                    </div>
-                                                    <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
-                                                        {msg.parent.body}
-                                                    </p>
+                                <div className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                    {/* Bubble */}
+                                    <div
+                                        className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all ${isMe
+                                            ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
+                                            : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
+                                            }`}
+                                    >
+                                        {/* Quoted Parent Message (WhatsApp Style Card) */}
+                                        {msg.parent && (
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (msg.parent?.id) scrollToMessage(msg.parent.id);
+                                                }}
+                                                title="Click to jump to original message"
+                                                className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
+                                                    ? "bg-black/20 border-white text-white hover:bg-black/30"
+                                                    : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
+                                                    }`}
+                                            >
+                                                <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
+                                                    <span>{msg.parent.sender?.name || "User"}</span>
+                                                    <Reply className="h-3 w-3 opacity-80" />
                                                 </div>
-                                            )}
-
-                                            {/* Message Body */}
-                                            <div className="text-sm font-normal tracking-wide whitespace-pre-wrap">{msg.body}</div>
-
-                                            {/* Timestamp & Double Checkmarks */}
-                                            <div className={`flex items-center justify-end gap-1 text-[10px] mt-1 ${isMe ? "text-blue-100/80" : "text-zinc-400 dark:text-zinc-500"}`}>
-                                                <span>{formatTime(msg.created_at)}</span>
-                                                {isMe && (
-                                                    <CheckCheck className="h-3.5 w-3.5 text-blue-200" />
-                                                )}
+                                                <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                                    {msg.parent.body}
+                                                </p>
                                             </div>
+                                        )}
+
+                                        {/* Message Body */}
+                                        <div className="text-sm font-normal">{msg.body}</div>
+                                    </div>
+
+                                    {/* Floating Hover Actions (Reply + Quick Emoji Picker) & Timestamp */}
+                                    <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                        {/* Quick Emoji Picker Floating Overlay */}
+                                        <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
+                                            {QUICK_EMOJIS.map((emoji) => {
+                                                const hasReacted = msg.reactions?.some(
+                                                    (r: any) => r.user_id === currentUserId && r.emoji === emoji
+                                                );
+                                                return (
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
+                                                        title={`React with ${emoji}`}
+                                                        className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                            }`}
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
 
-                                        {/* Floating Hover Reply Action Button */}
+                                        {/* Reply Button */}
                                         <button
                                             onClick={() => setReplyingTo(msg)}
-                                            title="Reply"
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all cursor-pointer shrink-0"
+                                            title="Reply to message"
+                                            className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
                                         >
                                             <Reply className="h-3.5 w-3.5" />
                                         </button>
+
+                                        <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                                            {formatTime(msg.created_at)}
+                                        </span>
                                     </div>
                                 </div>
+
+                                {/* Aggregated Reaction Badges under Bubble */}
+                                {msg.reactions && msg.reactions.length > 0 && (
+                                    <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                                        {Object.values(
+                                            msg.reactions.reduce((acc: any, r: any) => {
+                                                if (!acc[r.emoji]) {
+                                                    acc[r.emoji] = { emoji: r.emoji, count: 0, hasReacted: false, users: [] };
+                                                }
+                                                acc[r.emoji].count += 1;
+                                                acc[r.emoji].users.push(r.user?.name || "User");
+                                                if (r.user_id === currentUserId) {
+                                                    acc[r.emoji].hasReacted = true;
+                                                }
+                                                return acc;
+                                            }, {})
+                                        ).map((reaction: any) => (
+                                            <button
+                                                key={reaction.emoji}
+                                                onClick={() => onToggleReaction && onToggleReaction(msg.id, reaction.emoji)}
+                                                title={`Reacted by: ${reaction.users.join(", ")}`}
+                                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border transition-all cursor-pointer ${reaction.hasReacted
+                                                        ? "bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold shadow-xs"
+                                                        : "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                    }`}
+                                            >
+                                                <span>{reaction.emoji}</span>
+                                                <span className="text-[11px] font-bold">{reaction.count}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    );
+                })}
             </div>
 
-            {/* ─── Message Input Composer (Website Native Theme) ─────────── */}
-            <div className="p-4 shrink-0 bg-white/90 dark:bg-[#0a0a0a]/90 border-t border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-md">
-                <div className="max-w-4xl mx-auto w-full">
-                    {/* Replying-To Banner */}
-                    {replyingTo && (
-                        <div className="mb-3 p-3 bg-blue-50/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-600 dark:border-blue-500 rounded-r-2xl shadow-sm flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex-1 min-w-0 pr-3">
-                                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                                    <Reply className="h-3.5 w-3.5" />
-                                    <span>Replying to {replyingTo.sender?.name || "User"}</span>
-                                </div>
-                                <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{replyingTo.body}</p>
+            {/* ─── Message Input ────────────────────────────────────────── */}
+            <div className="px-5 pb-4 pt-2 shrink-0">
+                {/* WhatsApp Web Style Replying-To Quote Preview Banner */}
+                {replyingTo && (
+                    <div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex-1 min-w-0 pr-3">
+                            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                <Reply className="h-3.5 w-3.5" />
+                                <span>Replying to {replyingTo.sender?.name || "User"}</span>
                             </div>
-                            <button
-                                onClick={() => setReplyingTo(null)}
-                                className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
+                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{replyingTo.body}</p>
                         </div>
-                    )}
-
-                    {/* Typing Banner */}
-                    {typingUsers && typingUsers.length > 0 && (
-                        <div className="px-3 py-1 mb-2 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
-                            <span>
-                                {typingUsers.map((u) => u.name).join(", ")}{" "}
-                                {typingUsers.length === 1 ? "is typing..." : "are typing..."}
-                            </span>
-                            <div className="flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
-                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex items-end gap-2.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/90 dark:border-zinc-700/80 rounded-2xl px-4 py-2.5 shadow-sm focus-within:border-blue-500/60 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:shadow-md transition-all">
-                        {/* Plus Action */}
-                        <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors shrink-0 mb-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
-                            <Plus className="h-4.5 w-4.5" />
-                        </button>
-
-                        {/* Attachment */}
-                        <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors shrink-0 mb-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
-                            <Paperclip className="h-4 w-4" />
-                        </button>
-
-                        {/* Text Input */}
-                        <textarea
-                            ref={textAreaRef}
-                            value={inputText}
-                            onChange={(e) => handleTextChange(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSend();
-                                }
-                            }}
-                            placeholder="Type a message..."
-                            rows={1}
-                            className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto font-normal leading-relaxed"
-                            disabled={isSending}
-                        />
-
-                        {/* Emoji */}
-                        <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors shrink-0 mb-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
-                            <Smile className="h-4 w-4" />
-                        </button>
-
-                        {/* Send */}
                         <button
-                            className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0 mb-0.5 ${inputText.trim() && !isSending
-                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95 cursor-pointer"
-                                : isSending
-                                    ? "bg-blue-600/70 cursor-not-allowed"
-                                    : "bg-zinc-200/70 dark:bg-zinc-700/50 cursor-not-allowed"
-                                }`}
-                            onClick={handleSend}
-                            disabled={!inputText.trim() || isSending}
+                            onClick={() => setReplyingTo(null)}
+                            className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
                         >
-                            {isSending ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-white" />
-                            ) : (
-                                <Send className={`h-4 w-4 ${inputText.trim() ? "text-white" : "text-zinc-400 dark:text-zinc-500"}`} />
-                            )}
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
+                )}
+                {/* Typing Indicator Banner */}
+                {typingUsers && typingUsers.length > 0 && (
+                    <div className="px-3 py-1 mb-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
+                        <span>
+                            {typingUsers.map((u) => u.name).join(", ")}{" "}
+                            {typingUsers.length === 1 ? "is typing..." : "are typing..."}
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
+                    {/* Attachment */}
+                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
+                        <Paperclip className="h-4 w-4 text-zinc-400" />
+                    </button>
+
+                    {/* Text Input */}
+                    <textarea
+                        ref={textAreaRef}
+                        value={inputText}
+                        onChange={(e) => handleTextChange(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
+                        placeholder="Type a message..."
+                        rows={1}
+                        className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
+                        disabled={isSending}
+                    />
+
+                    {/* Emoji */}
+                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
+                        <Smile className="h-4 w-4 text-zinc-400" />
+                    </button>
+
+                    {/* Send */}
+                    <button
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${inputText.trim() && !isSending
+                            ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
+                            : isSending
+                                ? "bg-blue-600/70 cursor-not-allowed"
+                                : "bg-zinc-100 dark:bg-white/10 cursor-not-allowed"
+                            }`}
+                        onClick={handleSend}
+                        disabled={!inputText.trim() || isSending}
+                    >
+                        {isSending ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-white" />
+                        ) : (
+                            <Send className={`h-4 w-4 ${inputText.trim() ? "text-white" : "text-zinc-400"}`} />
+                        )}
+                    </button>
                 </div>
             </div>
         </div>

@@ -33,6 +33,17 @@ export interface Conversation {
     last_message?: Message | null;
 }
 
+export interface MessageReaction {
+    id: number;
+    message_id: number;
+    user_id: number;
+    emoji: string;
+    user?: {
+        id: number;
+        name: string;
+    };
+}
+
 export interface Message {
     id: number;
     workspace_id: number;
@@ -45,7 +56,7 @@ export interface Message {
     sender: User;
     replies?: Message[]; // Threading support
     parent?: Message;
-
+    reactions?: MessageReaction[];
 }
 
 export interface PaginatedResponse<T> {
