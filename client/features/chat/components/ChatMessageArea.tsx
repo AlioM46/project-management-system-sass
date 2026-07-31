@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { toast } from "sonner";
-import { AttachmentPreview, DraftAttachmentPreview, isImageAttachment, isVideoAttachment, isPdfAttachment } from "@/components/modals/task-details/attachment-preview";
+import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
@@ -379,10 +379,10 @@ export function ChatMessageArea({
                                         {msg.attachments && msg.attachments.length > 0 && (
                                             <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
                                                 {msg.attachments.map((attachment: any) => {
-                                                    const isPDF = attachment.file_type?.includes("pdf") || attachment.file_name?.toLowerCase().endsWith(".pdf");
                                                     const showRawPreview =
                                                         attachment.file_type?.startsWith("image/") ||
-                                                        attachment.file_type?.startsWith("video/");
+                                                        attachment.file_type?.startsWith("video/") ||
+                                                        attachment.file_type?.includes("pdf");
 
                                                     if (showRawPreview) {
                                                         return (
@@ -408,15 +408,9 @@ export function ChatMessageArea({
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                {isPDF ? (
-                                                                    <div className="p-1.5 rounded-lg bg-red-500/10 text-red-500 shrink-0">
-                                                                        <FileText className="h-4 w-4" />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
-                                                                        <Paperclip className="h-4 w-4" />
-                                                                    </div>
-                                                                )}
+                                                                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+                                                                    <Paperclip className="h-4 w-4" />
+                                                                </div>
                                                                 <div className="min-w-0">
                                                                     <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
                                                                     <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
@@ -555,6 +549,7 @@ export function ChatMessageArea({
                                 const isImage = file.type?.startsWith('image/') || file.name?.toLowerCase().match(/\.(png|jpe?g|gif|webp|bmp|svg)$/i);
                                 const isVideo = file.type?.startsWith('video/') || file.name?.toLowerCase().match(/\.(mp4|webm|mov|avi|m4v)$/i);
                                 const isPDF = file.type?.includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
+
                                 return (
                                     <div key={idx} className="relative group h-16 w-16 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-200 dark:border-zinc-600 shadow-sm flex items-center justify-center overflow-hidden">
                                         {isImage ? (
