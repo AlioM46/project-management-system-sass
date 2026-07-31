@@ -186,36 +186,35 @@ export function ChatMessageArea({
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-zinc-50/50 dark:bg-[#050505]">
+        <div className="flex-1 flex flex-col h-full bg-zinc-100/60 dark:bg-[#070707] overflow-hidden">
             {/* ─── Chat Header ─────────────────────────────────────────── */}
-            <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shrink-0">
-                <div className="flex items-center gap-3">
+            <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md shrink-0 shadow-xs z-10">
+                <div className="flex items-center gap-3.5">
                     {/* Avatar/Icon */}
                     {conversation.type === "project" ? (
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
-                            <Hash className="h-4 w-4 text-white" />
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+                            <Hash className="h-5 w-5 text-white" />
                         </div>
                     ) : conversation.type === "group" ? (
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
-                            <Users className="h-4 w-4 text-white" />
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+                            <Users className="h-5 w-5 text-white" />
                         </div>
                     ) : (
                         <div className="relative">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
                                 <span className="text-xs font-bold text-white">{getInitials(getHeaderName())}</span>
                             </div>
 
                             {isOnline ? (
-                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
+                                <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
                             ) : (
-                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-white dark:border-[#0a0a0a]" />
+                                <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-zinc-400 border-2 border-white dark:border-[#0a0a0a]" />
                             )}
-
                         </div>
                     )}
 
                     <div>
-                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                             {getHeaderName()}
                         </h3>
                         <p className="text-[11px] font-medium">
@@ -225,7 +224,7 @@ export function ChatMessageArea({
                                 </span>
                             ) : conversation?.type === "direct" ? (
                                 isOnline ? (
-                                    <span className="text-emerald-600 dark:text-emerald-400">Online</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Online</span>
                                 ) : (
                                     <span className="text-zinc-400">Offline</span>
                                 )
@@ -237,194 +236,199 @@ export function ChatMessageArea({
                 </div>
 
                 {/* Header Actions */}
-                <div className="flex items-center gap-1">
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                <div className="flex items-center gap-1.5">
+                    <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors text-zinc-500 dark:text-zinc-400">
+                        <Phone className="h-4 w-4" />
                     </button>
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <Video className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                    <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors text-zinc-500 dark:text-zinc-400">
+                        <Video className="h-4 w-4" />
                     </button>
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                    <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors text-zinc-500 dark:text-zinc-400">
+                        <MoreVertical className="h-4 w-4" />
                     </button>
                 </div>
             </div>
 
-            {/* ─── Messages List ───────────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1" ref={messagesEndRef}>
-                {messages.map((msg: Message | any, index) => {
-                    const isMe = msg.sender?.id === currentUserId;
+            {/* ─── Messages List Container (with Chat Wallpaper Pattern) ── */}
+            <div className="flex-1 overflow-y-auto chat-pattern-bg relative">
+                <div className="max-w-4xl mx-auto px-6 py-6 space-y-1.5" ref={messagesEndRef}>
+                    {messages.map((msg: Message | any, index) => {
+                        const isMe = msg.sender?.id === currentUserId;
 
-                    const showAvatar =
-                        !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
+                        const showAvatar =
+                            !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
 
-                    const isLastInGroup =
-                        index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
+                        const isLastInGroup =
+                            index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
 
-                    return (
-                        <div
-                            id={`message-${msg.id}`}
-                            key={msg.id}
-                            className={`flex items-end gap-2 transition-all duration-300 ${isMe ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-3" : "mb-0.5"
-                                }`}
-                        >
-                            {/* Other user's avatar */}
-                            {!isMe && (
-                                <div className="w-8 shrink-0">
-                                    {showAvatar ? (
-                                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                            <span className="text-[10px] font-bold text-white">
-                                                {getInitials(msg.sender?.name || "U")}
-                                            </span>
-                                        </div>
-                                    ) : null}
-                                </div>
-                            )}
-
-                            {/* Message Bubble Container */}
-                            <div className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}>
-                                {/* Sender name */}
-                                {showAvatar && !isMe && (
-                                    <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
-                                        {msg.sender?.name}
-                                    </p>
+                        return (
+                            <div
+                                id={`message-${msg.id}`}
+                                key={msg.id}
+                                className={`flex items-end gap-2.5 transition-all duration-300 ${isMe ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-4" : "mb-1"
+                                    }`}
+                            >
+                                {/* Other user's avatar */}
+                                {!isMe && (
+                                    <div className="w-8 shrink-0 pb-0.5">
+                                        {showAvatar ? (
+                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                                                <span className="text-[10px] font-bold text-white">
+                                                    {getInitials(msg.sender?.name || "U")}
+                                                </span>
+                                            </div>
+                                        ) : null}
+                                    </div>
                                 )}
 
-                                <div className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                    {/* Bubble */}
-                                    <div
-                                        className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all ${isMe
-                                            ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
-                                            : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
-                                            }`}
-                                    >
-                                        {/* Quoted Parent Message (WhatsApp Style Card) */}
-                                        {msg.parent && (
-                                            <div
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (msg.parent?.id) scrollToMessage(msg.parent.id);
-                                                }}
-                                                title="Click to jump to original message"
-                                                className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                    ? "bg-black/20 border-white text-white hover:bg-black/30"
-                                                    : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
-                                                    }`}
-                                            >
-                                                <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
-                                                    <span>{msg.parent.sender?.name || "User"}</span>
-                                                    <Reply className="h-3 w-3 opacity-80" />
-                                                </div>
-                                                <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
-                                                    {msg.parent.body}
-                                                </p>
-                                            </div>
-                                        )}
+                                {/* Message Bubble Container */}
+                                <div className={`max-w-[82%] md:max-w-[75%] lg:max-w-[68%] group ${isMe ? "order-1" : ""}`}>
+                                    {/* Sender name */}
+                                    {showAvatar && !isMe && (
+                                        <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
+                                            {msg.sender?.name}
+                                        </p>
+                                    )}
 
-                                        {/* Message Body */}
-                                        <div className="text-sm font-normal">{msg.body}</div>
-                                    </div>
-
-                                    {/* Floating Hover Action Button & Timestamp */}
-                                    <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                        <button
-                                            onClick={() => setReplyingTo(msg)}
-                                            title="Reply to message"
-                                            className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                    <div className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                        {/* Bubble */}
+                                        <div
+                                            className={`px-4 py-2.5 text-sm leading-relaxed transition-all shadow-xs ${isMe
+                                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-xs shadow-blue-500/10"
+                                                : "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-800 rounded-2xl rounded-tl-xs shadow-zinc-200/50 dark:shadow-none"
+                                                }`}
                                         >
-                                            <Reply className="h-3.5 w-3.5" />
-                                        </button>
-                                        <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
-                                            {formatTime(msg.created_at)}
-                                        </span>
+                                            {/* Quoted Parent Message (WhatsApp/Slack Style Card) */}
+                                            {msg.parent && (
+                                                <div
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (msg.parent?.id) scrollToMessage(msg.parent.id);
+                                                    }}
+                                                    title="Click to jump to original message"
+                                                    className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-xs ${isMe
+                                                        ? "bg-black/20 border-white text-white hover:bg-black/30"
+                                                        : "bg-blue-50/80 dark:bg-zinc-800/80 border-blue-500 dark:border-blue-400 text-zinc-800 dark:text-zinc-200 hover:bg-blue-100/70 dark:hover:bg-zinc-800"
+                                                        }`}
+                                                >
+                                                    <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
+                                                        <span>{msg.parent.sender?.name || "User"}</span>
+                                                        <Reply className="h-3 w-3 opacity-80" />
+                                                    </div>
+                                                    <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                                        {msg.parent.body}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Message Body */}
+                                            <div className="text-sm font-normal tracking-wide whitespace-pre-wrap">{msg.body}</div>
+                                        </div>
+
+                                        {/* Floating Hover Action Button & Timestamp */}
+                                        <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 pb-0.5 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                            <button
+                                                onClick={() => setReplyingTo(msg)}
+                                                title="Reply to message"
+                                                className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                <Reply className="h-3.5 w-3.5" />
+                                            </button>
+                                            <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                                                {formatTime(msg.created_at)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* ─── Message Input ────────────────────────────────────────── */}
-            <div className="px-5 pb-4 pt-2 shrink-0">
-                {/* WhatsApp Web Style Replying-To Quote Preview Banner */}
-                {replyingTo && (
-                    <div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex-1 min-w-0 pr-3">
-                            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                                <Reply className="h-3.5 w-3.5" />
-                                <span>Replying to {replyingTo.sender?.name || "User"}</span>
+            {/* ─── Message Input Composer ───────────────────────────────── */}
+            <div className="p-4 shrink-0 bg-white/80 dark:bg-zinc-900/80 border-t border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-md">
+                <div className="max-w-4xl mx-auto w-full">
+                    {/* WhatsApp Web Style Replying-To Quote Preview Banner */}
+                    {replyingTo && (
+                        <div className="mb-3 p-3 bg-blue-50/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-600 dark:border-blue-500 rounded-r-2xl shadow-sm flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex-1 min-w-0 pr-3">
+                                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                    <Reply className="h-3.5 w-3.5" />
+                                    <span>Replying to {replyingTo.sender?.name || "User"}</span>
+                                </div>
+                                <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{replyingTo.body}</p>
                             </div>
-                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{replyingTo.body}</p>
+                            <button
+                                onClick={() => setReplyingTo(null)}
+                                className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
+                    )}
+
+                    {/* Typing Indicator Banner */}
+                    {typingUsers && typingUsers.length > 0 && (
+                        <div className="px-3 py-1 mb-2 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
+                            <span>
+                                {typingUsers.map((u) => u.name).join(", ")}{" "}
+                                {typingUsers.length === 1 ? "is typing..." : "are typing..."}
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
+                                <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex items-end gap-2.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/90 dark:border-zinc-700/80 rounded-2xl px-4 py-2.5 shadow-sm focus-within:border-blue-500/60 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:shadow-md transition-all">
+                        {/* Attachment */}
+                        <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors shrink-0 mb-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
+                            <Paperclip className="h-4 w-4" />
+                        </button>
+
+                        {/* Text Input */}
+                        <textarea
+                            ref={textAreaRef}
+                            value={inputText}
+                            onChange={(e) => handleTextChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            placeholder="Type a message..."
+                            rows={1}
+                            className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto font-normal leading-relaxed"
+                            disabled={isSending}
+                        />
+
+                        {/* Emoji */}
+                        <button className="h-8.5 w-8.5 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors shrink-0 mb-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer">
+                            <Smile className="h-4 w-4" />
+                        </button>
+
+                        {/* Send */}
                         <button
-                            onClick={() => setReplyingTo(null)}
-                            className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
+                            className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0 mb-0.5 ${inputText.trim() && !isSending
+                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95 cursor-pointer"
+                                : isSending
+                                    ? "bg-blue-600/70 cursor-not-allowed"
+                                    : "bg-zinc-200/70 dark:bg-zinc-700/50 cursor-not-allowed"
+                                }`}
+                            onClick={handleSend}
+                            disabled={!inputText.trim() || isSending}
                         >
-                            <X className="h-4 w-4" />
+                            {isSending ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                            ) : (
+                                <Send className={`h-4 w-4 ${inputText.trim() ? "text-white" : "text-zinc-400 dark:text-zinc-500"}`} />
+                            )}
                         </button>
                     </div>
-                )}
-                {/* Typing Indicator Banner */}
-                {typingUsers && typingUsers.length > 0 && (
-                    <div className="px-3 py-1 mb-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
-                        <span>
-                            {typingUsers.map((u) => u.name).join(", ")}{" "}
-                            {typingUsers.length === 1 ? "is typing..." : "are typing..."}
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
-                    {/* Attachment */}
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
-                        <Paperclip className="h-4 w-4 text-zinc-400" />
-                    </button>
-
-                    {/* Text Input */}
-                    <textarea
-                        ref={textAreaRef}
-                        value={inputText}
-                        onChange={(e) => handleTextChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
-                        placeholder="Type a message..."
-                        rows={1}
-                        className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
-                        disabled={isSending}
-                    />
-
-                    {/* Emoji */}
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
-                        <Smile className="h-4 w-4 text-zinc-400" />
-                    </button>
-
-                    {/* Send */}
-                    <button
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${inputText.trim() && !isSending
-                            ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
-                            : isSending
-                                ? "bg-blue-600/70 cursor-not-allowed"
-                                : "bg-zinc-100 dark:bg-white/10 cursor-not-allowed"
-                            }`}
-                        onClick={handleSend}
-                        disabled={!inputText.trim() || isSending}
-                    >
-                        {isSending ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-white" />
-                        ) : (
-                            <Send className={`h-4 w-4 ${inputText.trim() ? "text-white" : "text-zinc-400"}`} />
-                        )}
-                    </button>
                 </div>
             </div>
         </div>
