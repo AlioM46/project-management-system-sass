@@ -137,7 +137,9 @@ export default function ChatPage() {
 
             setMessages((prev) => {
                 const exists = prev?.some((m) => m.id === newMessage.id);
-                return exists ? prev : [...prev, newMessage];
+                return exists
+                    ? prev.map((m) => (m.id === newMessage.id ? newMessage : m))
+                    : [...prev, newMessage];
             });
 
             setConversations((prev) =>
