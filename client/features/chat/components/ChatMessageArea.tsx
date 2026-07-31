@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -532,8 +532,7 @@ export function ChatMessageArea({
 
                 {/* Selected Files Preview Banner */}
                 {selectedFiles.length > 0 && (
-
-                    < div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="mb-2.5 p-3.5 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
                         <div className="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
                             <span>Selected Attachments ({selectedFiles.length})</span>
                             <button
@@ -543,25 +542,39 @@ export function ChatMessageArea({
                                 Clear All
                             </button>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {selectedFiles.map((file, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 bg-white dark:bg-zinc-700/80 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-600 text-xs text-zinc-700 dark:text-zinc-200 shadow-sm">
-                                    {file.type.startsWith('image/') ? (
-                                        <img className="h-6 w-6 rounded-md" src={URL.createObjectURL(file)} alt={file.name} />
-                                    ) : (
-                                        <div className="h-6 w-6 rounded-md bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center">
-                                            <span className="text-blue-600 dark:text-blue-400 font-bold">{getFileIcon(file.type)}</span>
-                                        </div>
-                                    )}
-                                    <span className="truncate max-w-[150px] font-medium">{file.name}</span>
-                                    <button
-                                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                                        className="text-zinc-400 hover:text-red-500 transition-colors ml-1"
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="flex flex-wrap gap-3">
+                            {selectedFiles.map((file, idx) => {
+                                const isImage = file.type.startsWith('image/');
+                                const isVideo = file.type.startsWith('video/');
+                                const isPDF = file.type.includes('pdf');
+                                return (
+                                    <div key={idx} className="relative group h-16 w-16 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-200 dark:border-zinc-600 shadow-sm flex items-center justify-center overflow-hidden">
+                                        {isImage ? (
+                                            <img className="h-full w-full object-cover" src={URL.createObjectURL(file)} alt={file.name} />
+                                        ) : isVideo ? (
+                                            <video className="h-full w-full object-cover bg-black" src={URL.createObjectURL(file)} />
+                                        ) : isPDF ? (
+                                            <div className="h-full w-full flex flex-col items-center justify-center bg-red-50 dark:bg-red-950/40 text-red-500 text-[10px] font-bold">
+                                                <FileText className="h-5 w-5 mb-0.5" />
+                                                <span>PDF</span>
+                                            </div>
+                                        ) : (
+                                            <div className="h-full w-full flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-950/40 text-blue-500 text-[10px] font-bold">
+                                                <FileText className="h-5 w-5 mb-0.5" />
+                                                <span>{getFileIcon(file.type)}</span>
+                                            </div>
+                                        )}
+                                        {/* Overlay remove button */}
+                                        <button
+                                            onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 hover:bg-red-500 text-white flex items-center justify-center transition-colors shadow-sm"
+                                            title="Remove attachment"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
