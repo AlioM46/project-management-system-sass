@@ -1,64 +1,100 @@
-1️⃣ تعديل وحذف الرسائل (Edit & Delete Messages)
-الباك إند (Laravel):
-إضافة مسارات لتعديل وحذف الرسائل: PUT /messages/{id} و DELETE /messages/{id}.
-التحقق من الصلاحية (فقط مرسل الرسالة هو من يستطيع التعديل أو الحذف).
-عند الحذف، يتم مسح سجلات المرفقات وحذف الملفات الفعلية من السيرفر/R2.
-إطلاق أحداث البث المباشر MessageUpdated و MessageDeleted.
-الفرونت إند (React):
-إضافة خيارات "تعديل" و "حذف" عند التفاعل مع الرسائل الخاصة بك.
-تشغيل وضع التعديل (Inline Edit) داخل صندوق النص.
-استقبال أحداث الحذف والتعديل عبر البث المباشر وتحديث الرسالة فورياً للطرف الآخر.
-2️⃣ البحث داخل المحادثة (Message Search)
-الباك إند (Laravel):
-إضافة تصفية للبحث بالكلمات في الـ Endpoint الخاص بجلب الرسائل.
-الفرونت إند (React):
-إضافة زر بحث في الترويسة (Header) يفتح شريط إدخال نصي للبحث.
-تصفية الرسائل والانتقال تلقائياً (Auto-Scroll) للرسالة المطابقة مع تمييز الكلمة بلون مختلف.
-3️⃣ الرسائل الصوتية (Voice Messages)
-الفرونت إند (React):
-إضافة زر مايكروفون لتسجيل الصوت بصيغة audio/webm أو audio/mp3 باستخدام MediaRecorder API.
-إظهار مؤشر مدة التسجيل مع خيارات الإلغاء أو التأكيد.
-إرسال الصوت كملف حقيقي في الـ FormData إلى السيرفر.
-عرض الرسالة الصوتية في الشات كـ Waveform أو كارت تشغيل متطور.
-الباك إند (Laravel):
-استقبال الملف الصوتي المرفوع وحفظه في السيرفر وتعيين نوعه كـ audio/....
-4️⃣ القائمة الجانبية لمعلومات المحادثة (Chat Info Sidebar)
-الفرونت إند (React):
-تصميم لوحة جانبية يمنى (Right Sidebar) تفتح عند النقر على اسم المحادثة.
-عرض صور الملفات والمستندات السابقة التي تم تبادلها مصنفة كـ (Media, Documents).
-عرض قائمة المشاركين بالمجموعة مع إعطاء خيارات لإدارة الأعضاء (إضافة/إزالة) للمشرفين.
-5️⃣ تثبيت الرسائل داخل المحادثة (Pin Messages)
-الباك إند (Laravel):
-إضافة عمود is_pinned في جدول الرسائل.
-إضافة Endpoint لتثبيت/إلغاء تثبيت الرسالة وبث حدث التثبيت للجميع.
-الفرونت إند (React):
-إضافة خيار "Pin" في قائمة الرسالة.
-عرض الرسالة المثبتة في شريط عائم مميز بأعلى منطقة المحادثة للوصول السريع إليها.
-6️⃣ الإشارات للزملاء (@Mentions)
-الفرونت إند (React):
-عند كتابة رمز @ داخل مربع النص، يظهر صندوق منبثق بأسماء الأعضاء للاختيار منهم.
-تمييز اسم العضو المشار إليه بلون مختلف وتنسيق فريد داخل فقاعة الرسالة.
-الباك إند (Laravel):
-عند إرسال رسالة تحتوي على إشارة لـ @username، يتم رصد الإشارة وإرسال تنبيه فوري ومميز للمستخدم المذكور.
-7️⃣ تنسيق النصوص البرمجية والمميزة (Markdown & Code Blocks)
-الفرونت إند (React):
-دعم وتفسير لغة Markdown البسيطة داخل الرسالة تلقائياً.
-عرض الأكواد البرمجية داخل كتل منسقة (```javascript console.log() ```).
-دعم النصوص العريضة (*bold*) والنصوص المائلة (_italic_).
-8️⃣ مؤشرات قراءة الرسائل (Read Receipts - الصح والصحان)
-الباك إند (Laravel):
-تتبع حالة تسليم الرسائل وقراءتها وتحديث الحالات عبر الـ WebSocket.
-الفرونت إند (React):
-عرض صح رمادي واحد عند إرسال الرسالة بنجاح.
-عرض صحين رماديين عند وصول الرسالة لمتصفح الطرف الآخر.
-عرض صحين أزرقين بمجرد قراءة الطرف الآخر للمحادثة.
-9️⃣ البحث عن الصور المتحركة (GIF Search)
-الفرونت إند (React):
-دمج محرك بحث بسيط لـ Giphy أو Tenor داخل تبويب الإيموجي.
-تمكين المستخدم من البحث عن الصور المتحركة واختيارها لإرسالها فوراً كرسالة وسائط.
-🔟 المحادثات المفضلة / تثبيت المحادثات (Favorite/Pin Chats)
-الباك إند (Laravel):
-إضافة عمود للتثبيت أو جدول وسيط لحفظ ترتيب المحادثات المفضلة لكل مستخدم.
-الفرونت إند (React):
-إمكانية النقر بالزر الأيمن أو الضغط على خيار لتثبيت محادثة معينة في القائمة اليسرى.
-إبقاء المحادثات المفضلة والمثبتة دائماً في الأعلى لسهولة الوصول إليها.
+# Chat Application Sprint Tasks
+
+## 1. Edit & Delete Messages
+### Backend (Laravel)
+- [ ] Create routes for editing and deleting messages: `PUT /messages/{id}` and `DELETE /messages/{id}`.
+- [ ] Implement authorization checks (only the message sender can edit or delete).
+- [ ] On delete, remove attachment database records and delete physical files from storage/R2.
+- [ ] Broadcast real-time `MessageUpdated` and `MessageDeleted` events.
+
+### Frontend (React)
+- [ ] Add "Edit" and "Delete" actions to user's own message context/hover menu.
+- [ ] Enable inline editing mode within the message composer/textarea.
+- [ ] Listen to real-time update/delete socket events and update active chat message state instantly.
+
+---
+
+## 2. Message Search
+### Backend (Laravel)
+- [ ] Add keyword filtering support to the message list endpoint.
+
+### Frontend (React)
+- [ ] Add a search button in the chat header to toggle a search input bar.
+- [ ] Filter messages dynamically and auto-scroll to the matched message with highlight effects.
+
+---
+
+## 3. Voice Messages
+### Frontend (React)
+- [ ] Add a microphone recorder button inside the chat composer bar.
+- [ ] Record voice notes locally in `audio/webm` or `audio/mp3` formats using the browser's `MediaRecorder API`.
+- [ ] Render a recording duration timer with cancel and confirm/send options.
+- [ ] Construct `FormData` and upload raw audio file to backend.
+- [ ] Render custom voice player card with wave representation and audio playback controls.
+
+### Backend (Laravel)
+- [ ] Handle uploaded audio files, store in S3 R2/local storage, and save with `audio/` mime types.
+
+---
+
+## 4. Chat Info Sidebar
+### Frontend (React)
+- [ ] Build a collapsible right sidebar panel toggled by clicking the conversation header name.
+- [ ] Render shared attachments categorized by Media (images/videos) and Documents.
+- [ ] List group members and expose administrator controls to add or remove participants.
+
+---
+
+## 5. Pin Messages
+### Backend (Laravel)
+- [ ] Add `is_pinned` boolean column to `messages` table.
+- [ ] Implement toggle endpoint to pin/unpin a message and broadcast the updated status globally.
+
+### Frontend (React)
+- [ ] Add "Pin" option to message context menus.
+- [ ] Display active pinned messages in a floating banner at the top of the chat area.
+
+---
+
+## 6. User Mentions (@Mentions)
+### Frontend (React)
+- [ ] Display auto-complete user list popover when typing `@` in the text area.
+- [ ] Format and highlight mentioned names with custom color styles inside bubbles.
+
+### Backend (Laravel)
+- [ ] Scan message body for `@username` patterns and dispatch prioritized push notifications.
+
+---
+
+## 7. Markdown & Code Formatting
+### Frontend (React)
+- [ ] Parse basic Markdown tags in message bubbles (bold `*text*`, italic `_text_`).
+- [ ] Support multiline code block highlight wrappers (using ` ``` ` syntax).
+
+---
+
+## 8. Read Receipts (Sent, Delivered, Read Ticks)
+### Backend (Laravel)
+- [ ] Track message status (sent, delivered, read) and broadcast receipt changes.
+
+### Frontend (React)
+- [ ] Render a single grey checkmark when message is successfully sent to server.
+- [ ] Render double grey checkmarks when message is delivered to the recipient's browser.
+- [ ] Render double blue checkmarks when the recipient active-reads the conversation.
+
+---
+
+## 9. GIF Search Integration
+### Frontend (React)
+- [ ] Embed a searchable GIF panel (via Giphy or Tenor API) inside emoji/attachments picker.
+- [ ] Send chosen GIFs as media attachment messages.
+
+---
+
+## 10. Favorite & Pinned Conversations (Sidebar)
+### Backend (Laravel)
+- [ ] Add a favorites database attribute or relation to track pinned sidebar chats.
+
+### Frontend (React)
+- [ ] Add context actions to pin/favorite conversations.
+- [ ] Position pinned chats persistently at the top of the sidebar list.
