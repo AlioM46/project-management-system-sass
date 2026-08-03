@@ -31,6 +31,8 @@ export default function ChatPage() {
 
     const [inputText, setInputText] = useState("");
     const [isSending, setIsSending] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMoreMessages, setHasMoreMessages] = useState(false);
 
     const activeConversation = conversations?.find((c) => c?.id === activeConversationId) || null;
 
@@ -121,7 +123,10 @@ export default function ChatPage() {
             setIsLoading(true);
             try {
                 const res = await getMessages(conversationId, 1);
-                setMessages(res.data);
+                const reversed = [...res.data].reverse();
+                setMessages(reversed);
+                setCurrentPage(1);
+                setHasMoreMessages(res.current_page < res.last_page);
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed To Load Messages"));
             } finally {
@@ -131,6 +136,21 @@ export default function ChatPage() {
 
         loadMessages();
     }, [activeConversationId]);
+
+    const handleLoadMoreMessages = async () => {
+        if (!activeConversationId || !hasMoreMessages || isLoading) return;
+
+        try {
+            const nextPage = currentPage + 1;
+            const res = await getMessages(activeConversationId, nextPage);
+            const reversedOlder = [...res.data].reverse();
+            setMessages((prev) => [...reversedOlder, ...prev]);
+            setCurrentPage(nextPage);
+            setHasMoreMessages(res.current_page < res.last_page);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Load Older Messages"));
+        }
+    };
 
 
     const handleDeletingMessage = (deletedMessage: Message) => {
@@ -347,6 +367,8 @@ export default function ChatPage() {
                 onDeleteForMe={handleDeleteForMeMessage}
                 onDeleteForAll={handleDeleteForAllMessage}
                 onEditMessage={handleUpdateMessage}
+                hasMore={hasMoreMessages}
+                onLoadMore={handleLoadMoreMessages}
             />
 
             {/* New Conversation Modal */}
