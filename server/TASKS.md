@@ -2,15 +2,15 @@
 
 ## 1. Edit & Delete Messages
 ### Backend (Laravel)
-- [ ] Create routes for editing and deleting messages: `PUT /messages/{id}` and `DELETE /messages/{id}`.
-- [ ] Implement authorization checks (only the message sender can edit or delete).
-- [ ] On delete, remove attachment database records and delete physical files from storage/R2.
-- [ ] Broadcast real-time `MessageUpdated` and `MessageDeleted` events.
+- [x] Create routes for editing and deleting messages: `PUT /messages/{id}` and `DELETE /messages/{id}`.
+- [x] Implement authorization checks (only the message sender can edit or delete).
+- [x] On delete, remove attachment database records and delete physical files from storage/R2.
+- [x] Broadcast real-time `MessageUpdated` and `MessageDeleted` events.
 
 ### Frontend (React)
-- [ ] Add "Edit" and "Delete" actions to user's own message context/hover menu.
-- [ ] Enable inline editing mode within the message composer/textarea.
-- [ ] Listen to real-time update/delete socket events and update active chat message state instantly.
+- [x] Add "Edit" and "Delete" actions to user's own message context/hover menu.
+- [x] Enable inline editing mode within the message composer/textarea.
+- [x] Listen to real-time update/delete socket events and update active chat message state instantly.
 
 ---
 
