@@ -22,6 +22,8 @@ interface ChatMessageAreaProps {
     onDeleteForMe?: (messageId: number) => Promise<void>;
     onDeleteForAll?: (messageId: number) => Promise<void>;
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
+    hasMore?: boolean;
+    onLoadMore?: () => Promise<void>;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
@@ -84,6 +86,8 @@ export function ChatMessageArea({
     onDeleteForMe,
     onDeleteForAll,
     onEditMessage,
+    hasMore = false,
+    onLoadMore,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -224,30 +228,98 @@ export function ChatMessageArea({
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    const [isPrevLoading, setIsPrevLoading] = useState(false);
+    const [showNewMessagesBtn, setShowNewMessagesBtn] = useState(false);
+    const [newMessagesCount, setNewMessagesCount] = useState(0);
 
+    const prevScrollHeightRef = useRef<number>(0);
+    const isFetchingRef = useRef<boolean>(false);
+    const prevMessagesLengthRef = useRef<number>(messages?.length || 0);
+
+    const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+        const container = e.currentTarget;
+        if (!container) return;
+
+        // 1. Detect if user is near top and has more
+        if (container.scrollTop <= 10 && hasMore && onLoadMore && !isFetchingRef.current) {
+            isFetchingRef.current = true;
+            setIsPrevLoading(true);
+
+            prevScrollHeightRef.current = container.scrollHeight;
+
+            try {
+                await onLoadMore();
+            } finally {
+                isFetchingRef.current = false;
+                setIsPrevLoading(false);
+            }
+        }
+
+        // 2. Detect if user is near bottom
+        const distanceToBottom = container.scrollHeight - container.clientHeight - container.scrollTop;
+        if (distanceToBottom < 150) {
+            setShowNewMessagesBtn(false);
+            setNewMessagesCount(0);
+        }
+    };
+
+    const scrollToBottomSmoothly = () => {
+        messagesEndRef.current?.scrollTo({
+            top: messagesEndRef.current.scrollHeight,
+            behavior: "smooth",
+        });
+        setShowNewMessagesBtn(false);
+        setNewMessagesCount(0);
+    };
+
+    useEffect(() => {
         if (!messages) return;
 
-        // Without requestAnimationFrame: The browser runs your scroll code before it calculates the height of the new message. So it scrolls to the bottom of the old messages.
-        //  With requestAnimationFrame: The browser waits until it has fully rendered the new message and recalculated the height, and then it scrolls. You are guaranteed to scroll to the true, new bottom.
+        const container = messagesEndRef.current;
+        if (!container) return;
+
+        if (prevScrollHeightRef.current > 0) {
+            // Restore reading position after prepending older messages
+            const heightDiff = container.scrollHeight - prevScrollHeightRef.current;
+            container.scrollTop = heightDiff;
+            prevScrollHeightRef.current = 0; // Reset
+        } else {
+            // Check if messages count increased by a new message
+            const hasNewIncomingMessage = messages.length > prevMessagesLengthRef.current;
+            if (hasNewIncomingMessage) {
+                const lastMessage = messages[messages.length - 1];
+                const isSentByMe = lastMessage?.user_id === currentUserId;
+
+                const distanceToBottom = container.scrollHeight - container.clientHeight - container.scrollTop;
+                const isNearBottom = distanceToBottom < 150;
+
+                if (isNearBottom || isSentByMe) {
+                    requestAnimationFrame(() => {
+                        container.scrollTop = container.scrollHeight;
+                    });
+                } else {
+                    setShowNewMessagesBtn(true);
+                    setNewMessagesCount((prev) => prev + 1);
+                }
+            } else {
+                //  With requestAnimationFrame: The browser waits until it has fully rendered the new message and recalculated the height, and then it scrolls. You are guaranteed to scroll to the true, new bottom.
 
 
-        // rAF means:
-        // Hey Browser, I will wait until you fully render your UI
-        // then I will catch your REAL "scrollHeight"
+                // rAF means:
+                // Hey Browser, I will wait until you fully render your UI
+                // then I will catch your REAL "scrollHeight"
 
-        // The trick: use requestAnimationFrame to wait for the NEXT frame.
-        // This ensures React has finished rendering the new message and updated the scrollHeight before we scroll.
+                // The trick: use requestAnimationFrame to wait for the NEXT frame.
+                // This ensures React has finished rendering the new message and updated the scrollHeight before we scroll.
+                // Initial load
+                requestAnimationFrame(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+            }
+        }
 
-        requestAnimationFrame(() => {
-            messagesEndRef.current?.scrollTo({
-                top: messagesEndRef.current.scrollHeight,
-                behavior: "smooth",
-            });
-        });
-
-
-    }, [messages])
+        prevMessagesLengthRef.current = messages.length;
+    }, [messages, currentUserId]);
 
     // Auto-focus textarea when sending finishes or conversation changes
     useEffect(() => {
@@ -395,7 +467,19 @@ export function ChatMessageArea({
             </div>
 
             {/* ─── Messages List ───────────────────────────────────────── */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-1" ref={messagesEndRef}>
+            <div className="flex-1 relative overflow-hidden flex flex-col">
+                {isPrevLoading && (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xs px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center gap-2 text-xs text-zinc-500">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+                        <span>Loading older messages...</span>
+                    </div>
+                )}
+
+                <div 
+                    className="flex-1 overflow-y-auto px-5 py-4 space-y-1" 
+                    ref={messagesEndRef}
+                    onScroll={handleScroll}
+                >
                 {messages.map((msg: Message | any, index) => {
                     const isMe = msg.sender?.id === currentUserId;
 
@@ -680,6 +764,22 @@ export function ChatMessageArea({
                         </div>
                     );
                 })}
+                </div>
+
+                {showNewMessagesBtn && (
+                    <button
+                        onClick={scrollToBottomSmoothly}
+                        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 animate-bounce"
+                    >
+                        <span>New Messages</span>
+                        {newMessagesCount > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] h-4 min-w-4 px-1 rounded-full flex items-center justify-center font-bold">
+                                {newMessagesCount}
+                            </span>
+                        )}
+                        <span>↓</span>
+                    </button>
+                )}
             </div>
 
             {/* ─── Message Input ────────────────────────────────────────── */}
