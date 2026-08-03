@@ -3,12 +3,14 @@
 namespace App\Modules\Chat\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Chat\Events\MessageSent;
 use App\Modules\Chat\Events\MessageReactionUpdated;
 use App\Modules\Chat\Model\Conversation;
 use App\Modules\Chat\Model\ConversationReadState;
 use App\Modules\Chat\Model\ConversationParticipant;
 use App\Modules\Chat\Model\Message;
+use App\Modules\Chat\Model\MessageDeletion;
 use App\Modules\Chat\Model\MessageReaction;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Model\Notification;
@@ -363,4 +365,106 @@ class ConversationController extends Controller
 
         return ApiResponse::success('Reaction updated successfully.', $reactions);
     }
+
+
+
+    public function deleteForMe(Request $request, int $conversationId, int $messageId)
+    {
+
+
+
+        $userId = auth()->id();
+        $message = Message::where('conversation_id', $conversationId)->findOrFail($messageId);
+
+        $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$userId || $message->user_id !== $userId || !$isParticipant) {
+            return ApiResponse::error('You are not authorized to delete this message.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
+
+        $deleteForMe = MessageDeletion::create([
+            'message_id' => $messageId,
+            'user_id' => $userId
+        ]);
+        return ApiResponse::success('Message deleted successfully.', $deleteForMe);
+
+    }
+    public function deleteForAll(Request $request, int $conversationId, int $messageId)
+    {
+        $userId = auth()->id();
+        $message = Message::where('conversation_id', $conversationId)->findOrFail($messageId);
+
+        $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$userId || !$isParticipant) {
+            return ApiResponse::error('You are not authorized to delete this message.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
+
+        $isSender = $message->user_id === $userId;
+        $isAdmin = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->whereIn('role', ['admin', 'Admin'])
+            ->exists();
+
+        if (!$isSender && !$isAdmin) {
+            return ApiResponse::error('You are not authorized to delete this message.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
+
+        if ($isSender && !$isAdmin) {
+            $maxTimeToDelete = env('MAX_TIME_FOR_DELETE_MESSAGE', 15);
+            if ($message->created_at->diffInMinutes(now()) > $maxTimeToDelete) {
+                return ApiResponse::error('You cannot delete messages after ' . $maxTimeToDelete . ' minutes.', 'MESSAGE_CANNOT_BE_DELETED', [], 403);
+            }
+        }
+
+        $message->update([
+            'isDeleted' => true,
+            'deletedById' => $userId,
+            'body' => ''
+        ]);
+
+        return ApiResponse::success('Message deleted successfully.', $message);
+    }
+    public function update(Request $request, int $conversationId, int $messageId)
+    {
+        $message = Message::where('conversation_id', $conversationId)->findOrFail($messageId);
+
+        if ($message->isDeleted || $message->deletedById) {
+            return ApiResponse::error('Message cannot be updated.', 'MESSAGE_CANNOT_BE_UPDATED', [], 403);
+        }
+
+        $maxTimeToDelete = env('MAX_TIME_FOR_UPDATE_MESSAGE');
+
+        if ($message->created_at->diffInMinutes(now()) > $maxTimeToDelete) {
+            return ApiResponse::error('Message cannot be updated.', 'MESSAGE_CANNOT_BE_UPDATED', [], 403);
+        }
+
+        $userId = auth()->id();
+        $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$userId || $message->user_id !== $userId || !$isParticipant) {
+            return ApiResponse::error('You are not authorized to update this message.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
+
+
+        $message->update([
+            'isEdited' => true,
+        ]);
+
+        return ApiResponse::success('Message updated successfully.', $message);
+    }
+
+
+
+
+
 }

@@ -20,6 +20,14 @@ class Message extends Model
         'message_id', // Threading / Parent Reply ID
         'user_id',    // Sender
         'body',
+        'isEdited',
+        'isDeleted',
+        'deletedById',
+    ];
+
+    protected $casts = [
+        'isEdited' => 'boolean',
+        'isDeleted' => 'boolean',
     ];
 
     public function conversation(): BelongsTo
@@ -52,5 +60,10 @@ class Message extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(MessageAttachment::class, 'message_id');
+    }
+
+    public function deletions(): HasMany
+    {
+        return $this->hasMany(MessageDeletion::class, 'message_id');
     }
 }
