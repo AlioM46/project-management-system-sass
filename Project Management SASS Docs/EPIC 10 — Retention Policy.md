@@ -1,0 +1,9 @@
+- # EPIC 10 — Retention Policy
+- ## Feature 10.1 — Scheduled Purge
+- ### Services / Actions Used
+    - **Service:** `RetentionService`
+    - **Command:** `PurgeSoftDeletedRecords`
+- ### Domain Rules
+    - Configurable retention_days.
+    - Safe cascade order.
+- 

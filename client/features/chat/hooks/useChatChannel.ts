@@ -14,7 +14,9 @@ export default function useChatChannel(
     onMessageReceived: (message: any) => void,
     currentUserId?: number | null,
     currentUserName?: string | null,
-    onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => void
+    onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => void,
+    onMessageDeleted?: (data: Message) => void,
+    onMessageUpdated?: (data: Message) => void
 ) {
     const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
     const channelRef = useRef<any>(null);
@@ -31,6 +33,21 @@ export default function useChatChannel(
             console.log("Incoming Message from Realtime : # ", event)
             onMessageReceived(event);
 
+        });
+
+
+        channel.listen(".messages.updated", (event: Message) => {
+            console.log("Updated Message from Realtime : # ", event)
+            if (onMessageUpdated) {
+                onMessageUpdated(event);
+            }
+        });
+
+        channel.listen(".messages.deleted", (event: Message) => {
+            console.log("Message deleted: # ", event)
+            if (onMessageDeleted) {
+                onMessageDeleted(event);
+            }
         });
 
         channel.listen(".messages.reaction.updated", (event: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => {

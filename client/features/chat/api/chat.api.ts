@@ -1,5 +1,5 @@
 import { apiClient } from "@/shared/api/apiClient";
-import { Conversation, Message, PaginatedResponse } from "../types";
+import { Conversation, Message, MessageDeletion, PaginatedResponse } from "../types";
 
 
 
@@ -65,3 +65,20 @@ export async function toggleMessageReaction(
         emoji,
     });
 }
+
+
+export async function updateMessage(conversationId: Number, MessageId: Number, body: string): Promise<Message> {
+    return await apiClient.put<Message>(`/conversations/${conversationId}/messages/${MessageId}/updateForMe`, {
+        body,
+    });
+}
+
+
+export async function deleteMessageForMe(conversationId: Number, MessageId: Number): Promise<MessageDeletion> {
+    return await apiClient.delete<MessageDeletion>(`/conversations/${conversationId}/messages/${MessageId}/deleteForMe`);
+}
+
+export async function deleteMessageForAll(conversationId: Number, MessageId: Number): Promise<Message> {
+    return await apiClient.delete<Message>(`/conversations/${conversationId}/messages/${MessageId}/delete`);
+}
+

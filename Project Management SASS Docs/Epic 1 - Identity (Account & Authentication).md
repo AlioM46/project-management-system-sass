@@ -1,0 +1,159 @@
+- # EPIC 1 — Identity (Account & Authentication)
+- ## Epic Scope
+- Global user account lifecycle and session authentication.
+- No workspace logic here. No tenant header.
+- 
+- ## Feature 1.1 — Account Registration
+- ### User Story
+- As a visitor, I want to create an account so that I can access the platform.
+- ### Services / Actions Used
+    - **Action:** `RegisterUser`
+    - **Service:** `AuthService` (shared auth operations: normalization, hashing policy)
+- ### Domain Rules
+    - Email must be globally unique.
+    - Password must be hashed.
+    - Email must be normalized (lowercase).
+    - Do not leak whether email already exists.
+- ### Tasks
+    - **DB**
+        - Ensure `users` table:
+            - id, name, email(unique), password, email_verified_at, timestamps
+    - **API**
+        - `POST /auth/register`
+    - **Validation**
+        - name required
+        - email required + valid + unique
+        - password required + confirmed + min length
+    - **Implementation**
+        - `RegisterUser` calls `AuthService::register(...)`
+    - **Security**
+        - consistent error responses
+        - rate limit registration (optional)
+    - **Tests**
+        - register success
+        - duplicate email fails
+        - password is hashed
+        - email normalized
+- 
+- ## Feature 1.2 — Login (Sanctum SPA Cookies)
+- ### User Story
+- As a user, I want to login so that I can access protected endpoints.
+- ### Services / Actions Used
+    - **Action:** `LoginUser`
+    - **Service:** `AuthService` (session auth + regenerate session)
+- ### Domain Rules
+    - Invalid credentials must not reveal which field failed.
+    - Session fixation must be prevented (session regeneration).
+    - Login attempts must be rate-limited.
+- ### Tasks
+    - **Setup**
+        - Sanctum installed
+        - CORS credentials enabled
+        - `SANCTUM_STATEFUL_DOMAINS` configured
+        - `/sanctum/csrf-cookie` works
+    - **API**
+        - `POST /auth/login`
+        - `GET /auth/me`
+    - **Validation**
+        - email required
+        - password required
+    - **Implementation**
+        - `LoginUser` calls `AuthService::login(...)`
+        - regenerate session after login
+    - **Security**
+        - throttle login attempts
+    - **Tests**
+        - login success
+        - login failure returns 401
+        - `/auth/me` returns 401 unauthenticated
+- 
+- ## Feature 1.3 — Logout
+- ### User Story
+- As an authenticated user, I want to logout so that my session is terminated.
+- ### Services / Actions Used
+    - **Action:** `LogoutUser`
+    - **Service:** `AuthService` (session invalidation)
+- ### Domain Rules
+    - Logout must invalidate the session.
+- ### Tasks
+    - **API**
+        - `POST /auth/logout`
+    - **Implementation**
+        - `LogoutUser` calls `AuthService::logout()`
+    - **Tests**
+        - after logout, protected endpoint returns 401
+- 
+- ## Feature 1.4 — Password Reset (Forgot + Reset)
+- ### User Story
+- As a user, I want to reset my password so that I can regain access.
+- ### Services / Actions Used
+    - **Action:** `SendPasswordResetLink`
+    - **Action:** `ResetPassword`
+    - **Service:** `PasswordResetService` (token lifecycle + broker wrapper)
+- ### Domain Rules
+    - Do not reveal whether the email exists.
+    - Token must expire.
+    - Token must be single-use.
+    - Reset should invalidate previous sessions (recommended).
+- ### Tasks
+    - **API**
+        - `POST /auth/password/forgot`
+        - `POST /auth/password/reset`
+    - **Validation**
+        - forgot: email required
+        - reset: token + email + password + confirmed
+    - **Implementation**
+        - `PasswordResetService::sendLink(email)`
+        - `PasswordResetService::reset(token, email, newPassword)`
+    - **Security**
+        - rate limit forgot requests
+        - generic success response for unknown emails
+    - **Tests**
+        - forgot does not leak user existence
+        - reset succeeds with valid token
+        - reset fails with expired/invalid token
+        - token cannot be reused
+- 
+- ## Feature 1.5 — Email Verification
+- ### User Story
+- As a user, I want to verify my email so that my account is trusted.
+- ### Services / Actions Used
+    - **Action:** `SendEmailVerification`
+    - **Action:** `VerifyEmail`
+    - **Service:** `EmailVerificationService` (signed URL + verification)
+- ### Domain Rules
+    - Verification link must be signed.
+    - Verification link must expire.
+    - Unverified users may be restricted (optional enforcement).
+- ### Tasks
+    - **API**
+        - `POST /auth/email/verification-notification`
+        - `GET /auth/email/verify/{id}/{hash}`
+    - **Implementation**
+        - Signed URL generation
+        - Set `email_verified_at`
+    - **Rules**
+        - optionally require `verified` middleware for sensitive actions
+    - **Tests**
+        - valid verification marks verified
+        - invalid signature fails
+        - expired link fails
+- 
+- ## Feature 1.6 — Change Password (Authenticated)
+- ### User Story
+- As an authenticated user, I want to change my password so that I can improve security.
+- ### Services / Actions Used
+    - **Action:** `ChangePassword`
+    - **Service:** `AuthService` (current password check + update)
+- ### Domain Rules
+    - current_password must be correct.
+    - new password must be confirmed.
+- ### Tasks
+    - **API**
+        - `PATCH /auth/password`
+    - **Validation**
+        - current_password required
+        - password required + confirmed
+    - **Tests**
+        - wrong current password fails
+        - change password succeeds

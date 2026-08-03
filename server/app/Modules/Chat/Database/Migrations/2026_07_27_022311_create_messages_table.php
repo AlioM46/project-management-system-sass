@@ -30,8 +30,10 @@ return new class extends Migration {
                 ->cascadeOnDelete(); // Sender of the message
 
             $table->text('body');
-            $table->timestamps();
 
+
+
+            $table->timestamps();
 
             $table->index(['conversation_id', 'created_at']);
             $table->index('workspace_id');

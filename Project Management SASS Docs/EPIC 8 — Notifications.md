@@ -1,0 +1,15 @@
+- # EPIC 8 — Notifications
+- ## Feature 8.1 — Notification Engine
+- ### Services / Actions Used
+    - **Service:** `NotificationService`
+- ### Domain Rules
+    - Notification belongs to workspace.
+    - Must support mark-as-read.
+    - Must support mark-all-as-read.
+- 
+- ## Feature 8.2 — Notification Preferences
+- ### Services / Actions Used
+    - **Service:** `NotificationPreferenceService`
+- ### Domain Rules
+    - Preferences unique per workspace + user.
+    - Mute option supported.

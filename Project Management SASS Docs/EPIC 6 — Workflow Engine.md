@@ -1,0 +1,40 @@
+- # EPIC 6 — Workflow Engine
+    - ## Epic Scope
+    - Centralized state transition control.
+    - 
+    - ## Feature 6.1 — Transition Validation
+    - ### User Story
+    - As the system, I want status transitions validated centrally so that workflow rules are enforced.
+    - ### Services / Actions Used
+        - **Service:** `WorkflowService`
+        - **Service:** `AuthorizationService`
+        - **Service:** `TaskHistoryService`
+        - **Service:** `AuditLogger`
+    - ### Domain Rules
+        - Transitions must follow predefined map.
+        - Invalid transition returns 422.
+        - All transitions must be atomic.
+        - No direct status updates outside WorkflowService.
+    - ### Tasks
+        - Define allowed transitions map.
+        - Implement `WorkflowService::transition(task, toStatus, actor)`
+        - Validate permission per transition.
+        - Record history.
+        - Record audit.
+    - 
+    - ## Feature 6.2 — Task History
+    - ### User Story
+    - As a user, I want to see task history so that I understand changes.
+    - ### Services / Actions Used
+        - **Service:** `TaskHistoryService`
+    - ### Tasks
+        - **DB**
+            - `task_history`:
+                - id
+                - task_id
+                - event_type
+                - old_value (JSON)
+                - new_value (JSON)
+                - actor_user_id
+                - timestamps
+        - GET /tasks/{id}/history
