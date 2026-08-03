@@ -92,8 +92,7 @@ export function ChatMessageArea({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [activeMenuMessageId, setActiveMenuMessageId] = useState<number | null>(null);
-    const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
-    const [editBodyText, setEditBodyText] = useState<string>("");
+    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
     useEffect(() => {
         const handleOutsideClick = () => {
@@ -205,12 +204,19 @@ export function ChatMessageArea({
             onTyping(false);
         }
 
-        await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id, selectedFiles);
-
-        setReplyingTo(null);
-        setSelectedFiles([]);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+        if (editingMessage) {
+            if (onEditMessage) {
+                await onEditMessage(editingMessage.id, inputText.trim());
+            }
+            setEditingMessage(null);
+            onInputTextChange("");
+        } else {
+            await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id, selectedFiles);
+            setReplyingTo(null);
+            setSelectedFiles([]);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
 
@@ -456,34 +462,6 @@ export function ChatMessageArea({
                                                     }
                                                 </span>
                                             </div>
-                                        ) : editingMessageId === msg.id ? (
-                                            <div className="flex flex-col gap-2 min-w-[220px]">
-                                                <textarea
-                                                    value={editBodyText}
-                                                    onChange={(e) => setEditBodyText(e.target.value)}
-                                                    className="w-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    rows={2}
-                                                />
-                                                <div className="flex justify-end gap-1.5">
-                                                    <button
-                                                        onClick={() => setEditingMessageId(null)}
-                                                        className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (onEditMessage && editBodyText.trim()) {
-                                                                await onEditMessage(msg.id, editBodyText);
-                                                                setEditingMessageId(null);
-                                                            }
-                                                        }}
-                                                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
-                                                    >
-                                                        Save
-                                                    </button>
-                                                </div>
-                                            </div>
                                         ) : (
                                             <>
                                                 {/* Quoted Parent Message (WhatsApp Style Card) */}
@@ -613,8 +591,9 @@ export function ChatMessageArea({
                                                             disabled={!isMessageEditable(msg)}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setEditingMessageId(msg.id);
-                                                                setEditBodyText(msg.body);
+                                                                setEditingMessage(msg);
+                                                                onInputTextChange(msg.body);
+                                                                setReplyingTo(null);
                                                                 setActiveMenuMessageId(null);
                                                             }}
                                                             className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageEditable(msg)
@@ -718,6 +697,27 @@ export function ChatMessageArea({
                         <button
                             onClick={() => setReplyingTo(null)}
                             className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* WhatsApp Web Style Editing-Message Quote Preview Banner */}
+                {editingMessage && (
+                    <div className="mb-2.5 p-3 bg-amber-50/90 dark:bg-amber-950/20 border-l-[5px] border-amber-500 rounded-r-2xl shadow-md flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex-1 min-w-0 pr-3">
+                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                                <span>Editing Message</span>
+                            </div>
+                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{editingMessage.body}</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setEditingMessage(null);
+                                onInputTextChange("");
+                            }}
+                            className="h-7 w-7 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/40 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
                         >
                             <X className="h-4 w-4" />
                         </button>
