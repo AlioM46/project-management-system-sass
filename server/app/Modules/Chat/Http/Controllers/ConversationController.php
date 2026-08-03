@@ -433,6 +433,11 @@ class ConversationController extends Controller
     }
     public function update(Request $request, int $conversationId, int $messageId)
     {
+        $request->validate([
+            'body' => 'required|string'
+        ]);
+
+
         $message = Message::where('conversation_id', $conversationId)->findOrFail($messageId);
 
         if ($message->isDeleted || $message->deletedById) {
@@ -458,6 +463,8 @@ class ConversationController extends Controller
 
         $message->update([
             'isEdited' => true,
+            'body' => $request->body,
+
         ]);
 
         return ApiResponse::success('Message updated successfully.', $message);
