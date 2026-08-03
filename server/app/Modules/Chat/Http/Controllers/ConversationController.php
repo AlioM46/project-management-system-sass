@@ -182,8 +182,8 @@ class ConversationController extends Controller
                 $query->where('user_id', auth()->id());
             })
             ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-            ->orderBy('created_at', 'asc')
-            ->paginate(500);
+            ->orderBy('created_at', 'desc')
+            ->paginate(30);
 
 
         ConversationReadState::updateOrCreate(
