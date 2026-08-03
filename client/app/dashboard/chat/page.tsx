@@ -4,7 +4,7 @@ import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
 import { ChatMessageArea } from "@/features/chat/components/ChatMessageArea";
 import { NewConversationModal } from "@/features/chat/components/NewConversationModal";
 import { useCallback, useEffect, useState } from "react";
-import { getConversations, getMessages, sendMessage, toggleMessageReaction } from "@/features/chat/api/chat.api";
+import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
 import { Conversation, Message, MessageReaction } from "@/features/chat/types";
 import { toast } from "sonner";
@@ -132,6 +132,26 @@ export default function ChatPage() {
         loadMessages();
     }, [activeConversationId]);
 
+
+    const handleDeletingMessage = (deletedMessage: Message) => {
+        setMessages((prev) => {
+            const exists = prev?.some((m) => m.id === deletedMessage.id);
+            return exists
+                ? prev.map((m) => (m.id === deletedMessage.id ? { ...m, isDeleted: true, deletedById: deletedMessage?.deletedById, body: deletedMessage?.body } : m))
+                : prev;
+        });
+    }
+
+    const handleUpdatingMessage = (updatedMessage: Message) => {
+        setMessages((prev) => {
+            const exists = prev?.some((m) => m.id === updatedMessage.id);
+            return exists
+                ? prev.map((m) => (m.id === updatedMessage.id ? { ...m, body: updatedMessage?.body, isEdited: true } : m))
+                : prev;
+        });
+    }
+
+
     const handleIncomingMessage = useCallback(
         (newMessage: Message) => {
 
@@ -230,7 +250,9 @@ export default function ChatPage() {
         handleIncomingMessage,
         currentUserId,
         authUser?.name,
-        handleReactionUpdated
+        handleReactionUpdated,
+        handleDeletingMessage,
+        handleUpdatingMessage
     );
 
     async function handleSendMessage(body: string, conversationId: number, replyId?: number, attachments?: File[]) {
@@ -255,6 +277,47 @@ export default function ChatPage() {
         });
         handleSelectConversation(newConv.id);
     };
+
+
+    const handleUpdateMessage = async (messageId: number, body: string) => {
+        try {
+            setIsSending(true);
+            const res = await updateMessage(activeConversationId || -1, messageId, body);
+            // handleUpdatingMessage(res);
+            setInputText("");
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Update Message"));
+        } finally {
+            setIsSending(false);
+        }
+    }
+
+
+    const handleDeleteForAllMessage = async (messageId: number) => {
+        try {
+            setIsSending(true);
+            const res = await deleteMessageForAll(activeConversationId || -1, messageId);
+            // handleUpdatingMessage(res);
+            setInputText("");
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Delete Message for all"));
+        } finally {
+            setIsSending(false);
+        }
+    }
+
+    const handleDeleteForMeMessage = async (messageId: number) => {
+        try {
+            setIsSending(true);
+            const res = await deleteMessageForMe(activeConversationId || -1, messageId);
+            // handleUpdatingMessage(res);
+            setInputText("");
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Delete Message for me"));
+        } finally {
+            setIsSending(false);
+        }
+    }
 
     return (
         <div className="flex h-[calc(100dvh-64px)] overflow-hidden">
@@ -281,6 +344,9 @@ export default function ChatPage() {
                 typingUsers={typingUsers}
                 onTyping={sendTyping}
                 onToggleReaction={handleToggleReaction}
+                onDeleteForMe={handleDeleteForMeMessage}
+                onDeleteForAll={handleDeleteForAllMessage}
+                onEditMessage={handleUpdateMessage}
             />
 
             {/* New Conversation Modal */}
