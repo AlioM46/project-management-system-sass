@@ -19,6 +19,9 @@ interface ChatMessageAreaProps {
     typingUsers?: { id: number; name: string }[];
     onTyping?: (isTyping: boolean) => void;
     onToggleReaction?: (messageId: number, emoji: string) => void;
+    onDeleteForMe?: (messageId: number) => Promise<void>;
+    onDeleteForAll?: (messageId: number) => Promise<void>;
+    onEditMessage?: (messageId: number, body: string) => Promise<void>;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
@@ -78,12 +81,49 @@ export function ChatMessageArea({
     typingUsers = [],
     onTyping,
     onToggleReaction,
+    onDeleteForMe,
+    onDeleteForAll,
+    onEditMessage,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [activeMenuMessageId, setActiveMenuMessageId] = useState<number | null>(null);
+    const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+    const [editBodyText, setEditBodyText] = useState<string>("");
+
+    useEffect(() => {
+        const handleOutsideClick = () => {
+            setActiveMenuMessageId(null);
+        };
+        window.addEventListener("click", handleOutsideClick);
+        return () => window.removeEventListener("click", handleOutsideClick);
+    }, []);
+
+    const isMessageEditable = (msg: Message) => {
+        if (msg.user_id !== currentUserId) return false;
+        const timeDiff = Date.now() - new Date(msg.created_at).getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+        return timeDiff < fifteenMinutes;
+    };
+
+    const isMessageDeletableForAll = (msg: Message) => {
+        // Owner or Admin of conversation can always delete for everyone
+        const currentUserParticipant = conversation?.participants?.find(
+            (p: any) => p.user_id === currentUserId
+        );
+        const isMsgAdmin = currentUserParticipant?.role === 'admin' || currentUserParticipant?.role === 'owner';
+        if (isMsgAdmin) return true;
+
+        if (msg.user_id !== currentUserId) return false;
+
+        const timeDiff = Date.now() - new Date(msg.created_at).getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+        return timeDiff < fifteenMinutes;
+    };
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
@@ -387,120 +427,229 @@ export function ChatMessageArea({
                                 <div className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
                                     {/* Bubble */}
                                     <div
-                                        className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all ${isMe
-                                            ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
-                                            : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
+                                        className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all relative ${msg.isDeleted
+                                            ? "bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl"
+                                            : isMe
+                                                ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
+                                                : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
                                             }`}
                                     >
-                                        {/* Quoted Parent Message (WhatsApp Style Card) */}
-                                        {msg.parent && (
-                                            <div
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (msg.parent?.id) scrollToMessage(msg.parent.id);
-                                                }}
-                                                title="Click to jump to original message"
-                                                className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                    ? "bg-black/20 border-white text-white hover:bg-black/30"
-                                                    : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
-                                                    }`}
-                                            >
-                                                <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
-                                                    <span>{msg.parent.sender?.name || "User"}</span>
-                                                    <Reply className="h-3 w-3 opacity-80" />
-                                                </div>
-                                                <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
-                                                    {msg.parent.body}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Message Body */}
-                                        {msg.body && <div className="text-sm font-normal">{msg.body}</div>}
-
-                                        {/* Message Attachments */}
-                                        {msg.attachments && msg.attachments.length > 0 && (
-                                            <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
-                                                {msg.attachments.map((attachment: any) => {
-                                                    const showRawPreview =
-                                                        attachment.file_type?.startsWith("image/") ||
-                                                        attachment.file_type?.startsWith("video/") ||
-                                                        attachment.file_type?.includes("pdf");
-
-                                                    if (showRawPreview) {
-                                                        return (
-                                                            <div key={attachment.id} className="rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-1">
-                                                                <AttachmentPreview
-                                                                    url={attachment.download_url}
-                                                                    fileName={attachment.file_name}
-                                                                    fileType={attachment.file_type}
-                                                                />
-                                                            </div>
-                                                        );
+                                        {msg.isDeleted ? (
+                                            <div className="text-sm italic text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 py-0.5">
+                                                <span>🚫</span>
+                                                <span>
+                                                    {msg.deletedById === msg.user_id
+                                                        ? isMe
+                                                            ? "You deleted this message"
+                                                            : `${msg.sender?.name || "User"} deleted this message`
+                                                        : "This message was deleted by Admin"
                                                     }
-
-                                                    return (
-                                                        <a
-                                                            key={attachment.id}
-                                                            href={attachment.download_url}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                                ? "bg-black/20 border-white/20 text-white hover:bg-black/30"
-                                                                : "bg-zinc-100 dark:bg-white/10 border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
-                                                                }`}
-                                                        >
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
-                                                                    <Paperclip className="h-4 w-4" />
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
-                                                                    <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    );
-                                                })}
+                                                </span>
                                             </div>
+                                        ) : editingMessageId === msg.id ? (
+                                            <div className="flex flex-col gap-2 min-w-[220px]">
+                                                <textarea
+                                                    value={editBodyText}
+                                                    onChange={(e) => setEditBodyText(e.target.value)}
+                                                    className="w-full bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    rows={2}
+                                                />
+                                                <div className="flex justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => setEditingMessageId(null)}
+                                                        className="px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (onEditMessage && editBodyText.trim()) {
+                                                                await onEditMessage(msg.id, editBodyText);
+                                                                setEditingMessageId(null);
+                                                            }
+                                                        }}
+                                                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Quoted Parent Message (WhatsApp Style Card) */}
+                                                {msg.parent && (
+                                                    <div
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (msg.parent?.id) scrollToMessage(msg.parent.id);
+                                                        }}
+                                                        title="Click to jump to original message"
+                                                        className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
+                                                            ? "bg-black/20 border-white text-white hover:bg-black/30"
+                                                            : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
+                                                            }`}
+                                                    >
+                                                        <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
+                                                            <span>{msg.parent.sender?.name || "User"}</span>
+                                                            <Reply className="h-3 w-3 opacity-80" />
+                                                        </div>
+                                                        <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                                            {msg.parent.body}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Message Body */}
+                                                {msg.body && <div className="text-sm font-normal">{msg.body}</div>}
+
+                                                {/* Message Attachments */}
+                                                {msg.attachments && msg.attachments.length > 0 && (
+                                                    <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
+                                                        {msg.attachments.map((attachment: any) => {
+                                                            const showRawPreview =
+                                                                attachment.file_type?.startsWith("image/") ||
+                                                                attachment.file_type?.startsWith("video/") ||
+                                                                attachment.file_type?.includes("pdf");
+
+                                                            if (showRawPreview) {
+                                                                return (
+                                                                    <div key={attachment.id} className="rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-1">
+                                                                        <AttachmentPreview
+                                                                            url={attachment.download_url}
+                                                                            fileName={attachment.file_name}
+                                                                            fileType={attachment.file_type}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return (
+                                                                <a
+                                                                    key={attachment.id}
+                                                                    href={attachment.download_url}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all shadow-sm ${isMe
+                                                                        ? "bg-black/20 border-white/20 text-white hover:bg-black/30"
+                                                                        : "bg-zinc-100 dark:bg-white/10 border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
+                                                                        }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+                                                                            <Paperclip className="h-4 w-4" />
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
+                                                                            <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
 
                                     {/* Floating Hover Actions (Reply + Quick Emoji Picker) & Timestamp */}
-                                    <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                        {/* Quick Emoji Picker Floating Overlay */}
-                                        <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
-                                            {QUICK_EMOJIS.map((emoji) => {
-                                                const hasReacted = msg.reactions?.some(
-                                                    (r: any) => r.user_id === currentUserId && r.emoji === emoji
-                                                );
-                                                return (
-                                                    <button
-                                                        key={emoji}
-                                                        onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
-                                                        title={`React with ${emoji}`}
-                                                        className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                            }`}
-                                                    >
-                                                        {emoji}
-                                                    </button>
-                                                );
-                                            })}
+                                    {!msg.isDeleted && (
+                                        <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 relative ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                            {/* Quick Emoji Picker Floating Overlay */}
+                                            <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
+                                                {QUICK_EMOJIS.map((emoji) => {
+                                                    const hasReacted = msg.reactions?.some(
+                                                        (r: any) => r.user_id === currentUserId && r.emoji === emoji
+                                                    );
+                                                    return (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
+                                                            title={`React with ${emoji}`}
+                                                            className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                                }`}
+                                                        >
+                                                            {emoji}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Reply Button */}
+                                            <button
+                                                onClick={() => setReplyingTo(msg)}
+                                                title="Reply to message"
+                                                className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                            >
+                                                <Reply className="h-3.5 w-3.5" />
+                                            </button>
+
+                                            {/* More Actions Dropdown Button */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuMessageId(activeMenuMessageId === msg.id ? null : msg.id);
+                                                    }}
+                                                    title="More actions"
+                                                    className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                                >
+                                                    <MoreVertical className="h-3.5 w-3.5" />
+                                                </button>
+
+                                                {activeMenuMessageId === msg.id && (
+                                                    <div className={`absolute bottom-8 z-50 w-36 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
+                                                        {isMessageEditable(msg) && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEditingMessageId(msg.id);
+                                                                    setEditBodyText(msg.body);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                                                            >
+                                                                Edit Message
+                                                            </button>
+                                                        )}
+                                                        {isMessageDeletableForAll(msg) && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (onDeleteForAll) onDeleteForAll(msg.id);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                                            >
+                                                                Delete for Everyone
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (onDeleteForMe) onDeleteForMe(msg.id);
+                                                                setActiveMenuMessageId(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                                                        >
+                                                            Delete for Me
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-1 select-none">
+                                                {msg.isEdited && (
+                                                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 italic mr-0.5">
+                                                        edited
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                                                    {formatTime(msg.created_at)}
+                                                </span>
+                                            </div>
                                         </div>
-
-                                        {/* Reply Button */}
-                                        <button
-                                            onClick={() => setReplyingTo(msg)}
-                                            title="Reply to message"
-                                            className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
-                                        >
-                                            <Reply className="h-3.5 w-3.5" />
-                                        </button>
-
-                                        <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
-                                            {formatTime(msg.created_at)}
-                                        </span>
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* Aggregated Reaction Badges under Bubble */}
