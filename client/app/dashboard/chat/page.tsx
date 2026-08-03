@@ -123,6 +123,12 @@ export default function ChatPage() {
             setIsLoading(true);
             try {
                 const res = await getMessages(conversationId, 1);
+                console.log("[PAGINATION] Loaded Page 1:", {
+                    current_page: res.current_page,
+                    last_page: res.last_page,
+                    messages_count: res.data.length,
+                    has_more: res.current_page < res.last_page
+                });
                 const reversed = [...res.data].reverse();
                 setMessages(reversed);
                 setCurrentPage(1);
@@ -138,11 +144,23 @@ export default function ChatPage() {
     }, [activeConversationId]);
 
     const handleLoadMoreMessages = async () => {
+        console.log("[PAGINATION] Triggered handleLoadMoreMessages:", {
+            currentPage,
+            hasMoreMessages,
+            isLoading
+        });
         if (!activeConversationId || !hasMoreMessages || isLoading) return;
 
         try {
             const nextPage = currentPage + 1;
             const res = await getMessages(activeConversationId, nextPage);
+            console.log("[PAGINATION] Loaded Older Page:", {
+                requested_page: nextPage,
+                current_page: res.current_page,
+                last_page: res.last_page,
+                messages_count: res.data.length,
+                has_more: res.current_page < res.last_page
+            });
             const reversedOlder = [...res.data].reverse();
             setMessages((prev) => [...reversedOlder, ...prev]);
             setCurrentPage(nextPage);
