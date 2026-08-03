@@ -2,7 +2,7 @@
 
 import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Message } from "../types";
+import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
@@ -110,10 +110,14 @@ export function ChatMessageArea({
         return timeDiff < fifteenMinutes;
     };
 
+    // 1 - if admin => YES
+    // 2 if not message owner -> NO
+    // 3 if message owenr  && createdAt <= 15 mins => YES
+    // 4 if message owenr  && createdAt > 15 mins => NO
     const isMessageDeletableForAll = (msg: Message) => {
         // Owner or Admin of conversation can always delete for everyone
         const currentUserParticipant = conversation?.participants?.find(
-            (p: any) => p.user_id === currentUserId
+            (p: Participant) => p.user_id === currentUserId
         );
         const isMsgAdmin = currentUserParticipant?.role === 'admin' || currentUserParticipant?.role === 'owner';
         if (isMsgAdmin) return true;
@@ -599,31 +603,35 @@ export function ChatMessageArea({
 
                                                 {activeMenuMessageId === msg.id && (
                                                     <div className={`absolute bottom-8 z-50 w-36 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
-                                                        {isMessageEditable(msg) && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setEditingMessageId(msg.id);
-                                                                    setEditBodyText(msg.body);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                                                            >
-                                                                Edit Message
-                                                            </button>
-                                                        )}
-                                                        {isMessageDeletableForAll(msg) && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (onDeleteForAll) onDeleteForAll(msg.id);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                                                            >
-                                                                Delete for Everyone
-                                                            </button>
-                                                        )}
+                                                        <button
+                                                            disabled={!isMessageEditable(msg)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingMessageId(msg.id);
+                                                                setEditBodyText(msg.body);
+                                                                setActiveMenuMessageId(null);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageEditable(msg)
+                                                                ? "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                                : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
+                                                                }`}
+                                                        >
+                                                            Edit Message
+                                                        </button>
+                                                        <button
+                                                            disabled={!isMessageDeletableForAll(msg)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (onDeleteForAll) onDeleteForAll(msg.id);
+                                                                setActiveMenuMessageId(null);
+                                                            }}
+                                                            className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageDeletableForAll(msg)
+                                                                ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                                : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
+                                                                }`}
+                                                        >
+                                                            Delete for Everyone
+                                                        </button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
