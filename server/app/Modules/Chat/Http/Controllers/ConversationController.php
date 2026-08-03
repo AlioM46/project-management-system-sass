@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Chat\Events\MessageSent;
 use App\Modules\Chat\Events\MessageReactionUpdated;
+use App\Modules\Chat\Events\MessageUpdated;
+use App\Modules\Chat\Events\MessageDeleted;
 use App\Modules\Chat\Model\Conversation;
 use App\Modules\Chat\Model\ConversationReadState;
 use App\Modules\Chat\Model\ConversationParticipant;
@@ -429,6 +431,8 @@ class ConversationController extends Controller
             'body' => ''
         ]);
 
+        broadcast(new MessageDeleted($message))->toOthers();
+
         return ApiResponse::success('Message deleted successfully.', $message);
     }
     public function update(Request $request, int $conversationId, int $messageId)
@@ -464,8 +468,9 @@ class ConversationController extends Controller
         $message->update([
             'isEdited' => true,
             'body' => $request->body,
-
         ]);
+
+        broadcast(new MessageUpdated($message))->toOthers();
 
         return ApiResponse::success('Message updated successfully.', $message);
     }
