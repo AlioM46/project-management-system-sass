@@ -14,6 +14,10 @@
 
 ---
 
+## 2.1 messages Scroll || Pagiantion
+
+---
+
 ## 2. Message Search
 ### Backend (Laravel)
 - [ ] Add keyword filtering support to the message list endpoint.
