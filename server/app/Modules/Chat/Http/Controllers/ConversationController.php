@@ -391,7 +391,7 @@ class ConversationController extends Controller
             'message_id' => $messageId,
             'user_id' => $userId
         ]);
-        return ApiResponse::success('Message deleted successfully.', $deleteForMe);
+        return ApiResponse::success('Message deleted successfully.', $deleteForMe->toArray());
 
     }
     public function deleteForAll(Request $request, int $conversationId, int $messageId)
@@ -433,7 +433,7 @@ class ConversationController extends Controller
 
         broadcast(new MessageDeleted($message))->toOthers();
 
-        return ApiResponse::success('Message deleted successfully.', $message);
+        return ApiResponse::success('Message deleted successfully.', $message->toArray());
     }
     public function update(Request $request, int $conversationId, int $messageId)
     {
@@ -472,7 +472,7 @@ class ConversationController extends Controller
 
         broadcast(new MessageUpdated($message))->toOthers();
 
-        return ApiResponse::success('Message updated successfully.', $message);
+        return ApiResponse::success('Message updated successfully.', $message->toArray());
     }
 
 
