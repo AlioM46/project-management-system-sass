@@ -69,6 +69,9 @@ export interface Message {
     parent?: Message;
     reactions?: MessageReaction[];
     attachments?: MessageAttachments[];
+    isEdited?: boolean;
+    isDeleted?: boolean;
+    deletedById?: number | null;
 }
 
 export interface PaginatedResponse<T> {
