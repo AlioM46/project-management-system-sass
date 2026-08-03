@@ -419,8 +419,14 @@ export function ChatMessageArea({
                                 </div>
                             )}
 
-                            {/* Message Bubble Container */}
-                            <div className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}>
+                            <div
+                                className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}
+                                onMouseLeave={() => {
+                                    if (activeMenuMessageId === msg.id) {
+                                        setActiveMenuMessageId(null);
+                                    }
+                                }}
+                            >
                                 {/* Sender name */}
                                 {showAvatar && !isMe && (
                                     <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
