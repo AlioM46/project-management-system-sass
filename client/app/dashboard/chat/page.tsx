@@ -146,7 +146,7 @@ export default function ChatPage() {
         setMessages((prev) => {
             const exists = prev?.some((m) => m.id === updatedMessage.id);
             return exists
-                ? prev.map((m) => (m.id === updatedMessage.id ? { ...m, body: updatedMessage?.body, isEdited: true } : m))
+                ? prev.map((m) => (m.id === updatedMessage.id ? { ...m, body: updatedMessage?.body, isEdited: updatedMessage?.isEdited } : m))
                 : prev;
         });
     }
@@ -283,7 +283,7 @@ export default function ChatPage() {
         try {
             setIsSending(true);
             const res = await updateMessage(activeConversationId || -1, messageId, body);
-            // handleUpdatingMessage(res);
+            handleUpdatingMessage(res);
             setInputText("");
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed To Update Message"));
@@ -297,7 +297,7 @@ export default function ChatPage() {
         try {
             setIsSending(true);
             const res = await deleteMessageForAll(activeConversationId || -1, messageId);
-            // handleUpdatingMessage(res);
+            handleDeletingMessage(res);
             setInputText("");
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed To Delete Message for all"));
@@ -310,7 +310,7 @@ export default function ChatPage() {
         try {
             setIsSending(true);
             const res = await deleteMessageForMe(activeConversationId || -1, messageId);
-            // handleUpdatingMessage(res);
+            setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
             setInputText("");
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed To Delete Message for me"));

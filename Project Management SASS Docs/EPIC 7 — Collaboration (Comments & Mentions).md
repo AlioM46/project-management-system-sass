@@ -1,0 +1,19 @@
+- # EPIC 7 — Collaboration (Comments & Mentions)
+- ## Feature 7.1 — Comments
+- ### Services / Actions Used
+    - **Action:** `CreateComment`
+    - **Action:** `DeleteComment`
+    - **Service:** `CommentService`
+    - **Service:** `AuthorizationService`
+- ### Domain Rules
+    - Comment belongs to task.
+    - Only author or permission `comment.delete_any` may delete.
+- 
+- ## Feature 7.2 — Mentions
+- ### Services / Actions Used
+    - **Service:** `MentionParser`
+    - **Service:** `MentionService`
+    - **Service:** `NotificationService`
+- ### Domain Rules
+    - Mentioned users must belong to workspace.
+    - Duplicate mentions prevented.

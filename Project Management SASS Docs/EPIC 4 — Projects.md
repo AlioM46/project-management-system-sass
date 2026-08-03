@@ -1,0 +1,44 @@
+- # EPIC 4 — Projects
+    - ## Epic Scope
+    - Workspace-scoped project lifecycle.
+    - 
+    - ## Feature 4.1 — Project Creation
+    - ### User Story
+    - As a member, I want to create projects so that I can organize tasks.
+    - ### Services / Actions Used
+        - **Action:** `CreateProject`
+        - **Service:** `ProjectService`
+        - **Service:** `AuthorizationService`
+    - ### Domain Rules
+        - Project belongs to a workspace.
+        - Name must not be empty.
+        - Only authorized users can create.
+    - ### Tasks
+        - **DB**
+            - `projects`:
+                - id
+                - workspace_id
+                - name
+                - description
+                - created_by_user_id
+                - timestamps
+                - soft deletes
+        - **API**
+            - POST /projects
+        - **Implementation**
+            - enforce workspace context
+            - enforce permission: `project.create`
+        - **Tests**
+            - project created
+            - cross-workspace access blocked
+    - 
+    - ## Feature 4.2 — Project Lifecycle (Update / Delete / Restore)
+    - ### Services / Actions Used
+        - **Action:** `UpdateProject`
+        - **Action:** `DeleteProject`
+        - **Action:** `RestoreProject`
+        - **Service:** `ProjectService`
+    - ### Domain Rules
+        - Soft deletes only.
+        - Deleted project cannot accept new tasks.
+        - Restore allowed only if authorized.
