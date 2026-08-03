@@ -177,8 +177,10 @@ class ConversationController extends Controller
             }
         }
 
-        // Fetch pre-sorted messages, paginated 500 at a time
         $messages = $conversation->messages()
+            ->whereDoesntHave('deletions', function ($query) {
+                $query->where('user_id', auth()->id());
+            })
             ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
             ->orderBy('created_at', 'asc')
             ->paginate(500);
@@ -383,7 +385,7 @@ class ConversationController extends Controller
             ->where('is_active', true)
             ->exists();
 
-        if (!$userId || $message->user_id !== $userId || !$isParticipant) {
+        if (!$userId || !$isParticipant) {
             return ApiResponse::error('You are not authorized to delete this message.', 'UNAUTHORIZED_ACCESS', [], 403);
         }
 
