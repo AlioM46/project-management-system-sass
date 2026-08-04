@@ -1,16 +1,16 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Play, Pause, Mic } from "lucide-react";
 
 // ──────────────────────────────────────────────────────────────
-// VoicePlayerCard — WhatsApp-style custom voice message player
+// VoicePlayerCard — Real Audio Webform Decoder & Animated Player
 //
 // Features:
-//   - Unique seeded PRNG waveform per voice note (every recording has its own shape)
-//   - Stable Audio element lifecycle (no re-renders on duration update)
-//   - Seek on click & drag
-//   - Play/Pause toggle with global single-play manager
+//   1. Decodes ACTUAL PCM audio buffer via Web Audio API (decodeAudioData)
+//      to extract 22 REAL volume peaks from the voice file.
+//   2. Live visual animation: active bars pulse/scale while playing + glowing progress dot.
+//   3. Interactive seek by clicking anywhere on the waveform.
 // ──────────────────────────────────────────────────────────────
 
 let currentlyPlayingAudio: HTMLAudioElement | null = null;
@@ -24,16 +24,6 @@ function formatDuration(seconds: number): string {
 
 const SPEED_OPTIONS = [1, 1.5, 2] as const;
 
-// Seeded PRNG (Mulberry32) for generating unique waveforms per file
-function mulberry32(a: number) {
-    return function () {
-        let t = (a += 0x6d2b79f5);
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
 interface VoicePlayerCardProps {
     url: string;
     isMe: boolean;
@@ -45,36 +35,68 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
     const [duration, setDuration] = useState(0);
     const [speedIndex, setSpeedIndex] = useState(0);
 
+    // 22 real PCM waveform heights (percent 20-100)
+    const [waveformBars, setWaveformBars] = useState<number[]>([]);
+    const [isDecoding, setIsDecoding] = useState(true);
+
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // ── Generate UNIQUE waveform bars per voice message ─────────
-    // Extracts unique filename or string hash to seed PRNG
-    const waveformBars = useMemo(() => {
-        const count = 22;
-        const bars: number[] = [];
 
-        // Extract filename or unique part from URL to seed
-        const filename = url.split("/").pop() || url;
-        let seed = 0;
-        for (let i = 0; i < filename.length; i++) {
-            seed = (seed << 5) - seed + filename.charCodeAt(i);
-            seed |= 0;
+    // ── 1. Decode REAL Audio PCM Buffer via Web Audio API ─────
+    useEffect(() => {
+        let isCancelled = false;
+
+        async function decodeRealWaveform() {
+            try {
+                setIsDecoding(true);
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+
+                const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+                const audioCtx = new AudioCtx();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+                if (isCancelled) return;
+
+                // Extract PCM channel data (float values -1.0 to 1.0)
+                const rawData = audioBuffer.getChannelData(0);
+                const samplesCount = 22; // 22 clean vertical bars
+                const blockSize = Math.floor(rawData.length / samplesCount);
+                const extractedPeaks: number[] = [];
+
+                for (let i = 0; i < samplesCount; i++) {
+                    const start = i * blockSize;
+                    let sum = 0;
+                    for (let j = 0; j < blockSize; j += 10) { // step by 10 for performance
+                        sum += Math.abs(rawData[start + j] || 0);
+                    }
+                    const average = sum / (blockSize / 10);
+                    // Map to 20% - 100% height
+                    const heightPercent = Math.max(20, Math.min(100, Math.round(average * 350)));
+                    extractedPeaks.push(heightPercent);
+                }
+
+                audioCtx.close();
+                setWaveformBars(extractedPeaks);
+            } catch (err) {
+                // Fallback to 22 fallback bars if fetch/CORS fails
+                console.warn("Waveform audio decoding fallback:", err);
+                const fallback = Array.from({ length: 22 }, (_, i) => 25 + ((i * 17) % 65));
+                setWaveformBars(fallback);
+            } finally {
+                if (!isCancelled) setIsDecoding(false);
+            }
         }
 
-        const prng = mulberry32(Math.abs(seed) + 12345);
+        decodeRealWaveform();
 
-        for (let i = 0; i < count; i++) {
-            const val = prng();
-            // Scale bar height between 20% and 100%
-            const heightPercent = Math.max(20, Math.min(100, Math.floor(val * 100)));
-            bars.push(heightPercent);
-        }
-        return bars;
+        return () => {
+            isCancelled = true;
+        };
     }, [url]);
 
 
-    // ── Single Audio Element Lifecycle ─────────────────────────
-    // CRITICAL: Depend ONLY on [url], NOT on duration or currentTime!
+    // ── 2. HTML5 Audio Element Setup & Controls ───────────────
     useEffect(() => {
         const audio = new Audio(url);
         audioRef.current = audio;
@@ -108,10 +130,10 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                 currentlyPlayingAudio = null;
             }
         };
-    }, [url]); // Depend ONLY on url!
+    }, [url]);
 
 
-    // Global pause listener when another voice note starts
+    // Global pause listener
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -164,12 +186,12 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
     };
 
 
-    // Calculate active played progress ratio
+    // Calculate active played progress ratio (0.0 to 1.0)
     const progressRatio = (duration > 0 && isFinite(duration))
         ? Math.min(1, Math.max(0, currentTime / duration))
         : 0;
 
-    const activeBarCount = Math.round(progressRatio * waveformBars.length);
+    const currentBarIndex = Math.floor(progressRatio * waveformBars.length);
 
 
     return (
@@ -187,7 +209,7 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                     }`}
             >
                 {isPlaying ? (
-                    <Pause className="h-4 w-4 fill-current" />
+                    <Pause className="h-4 w-4 fill-current animate-pulse" />
                 ) : (
                     <Play className="h-4 w-4 ml-0.5 fill-current" />
                 )}
@@ -196,9 +218,9 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
             {/* Center: Waveform Bars + Time */}
             <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
 
-                {/* 22 Spaced Vertical Waveform Bars */}
+                {/* WhatsApp Style Vertical Waveform Graph with Moving Progress Dot */}
                 <div
-                    className="flex items-center gap-[3px] h-7 cursor-pointer py-1"
+                    className="relative flex items-center gap-[3px] h-7 cursor-pointer py-1"
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const clickX = e.clientX - rect.left;
@@ -206,15 +228,18 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                         handleSeekToRatio(ratio);
                     }}
                 >
+                    {/* Render decoded REAL PCM waveform bars */}
                     {waveformBars.map((heightPercent, idx) => {
-                        const isPlayed = idx < activeBarCount;
+                        const isPlayed = idx <= currentBarIndex;
+                        const isCurrentActive = idx === currentBarIndex && isPlaying;
+
                         return (
                             <div
                                 key={idx}
-                                className={`flex-1 rounded-full transition-colors duration-150 ${isPlayed
+                                className={`flex-1 rounded-full transition-all duration-150 ${isPlayed
                                     ? isMe ? "bg-white" : "bg-blue-600 dark:bg-blue-400"
                                     : isMe ? "bg-white/35 hover:bg-white/50" : "bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-400"
-                                    }`}
+                                    } ${isCurrentActive ? "animate-pulse scale-y-110" : ""}`}
                                 style={{
                                     height: `${heightPercent}%`,
                                     minHeight: "20%",
@@ -222,6 +247,17 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                             />
                         );
                     })}
+
+                    {/* Glowing Moving Progress Handle/Dot over active bar position */}
+                    {isPlaying && (
+                        <div
+                            className={`absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full shadow-md transition-all duration-100 ${isMe ? "bg-white ring-2 ring-white/40" : "bg-blue-600 dark:bg-blue-400 ring-2 ring-blue-500/40"
+                                }`}
+                            style={{
+                                left: `calc(${progressRatio * 100}% - 6px)`,
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Time Display */}
@@ -229,8 +265,17 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                     }`}>
                     <span>{formatDuration(isPlaying ? currentTime : duration)}</span>
                     <div className="flex items-center gap-1">
-                        <Mic className="h-3 w-3 opacity-60" />
-                        <span>Voice Note</span>
+                        {isPlaying ? (
+                            <span className="flex items-center gap-0.5 text-emerald-400 font-bold">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                Playing
+                            </span>
+                        ) : (
+                            <>
+                                <Mic className="h-3 w-3 opacity-60" />
+                                <span>Voice Note</span>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
