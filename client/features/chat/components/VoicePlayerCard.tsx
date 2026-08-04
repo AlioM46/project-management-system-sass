@@ -6,17 +6,11 @@ import { Play, Pause, Mic } from "lucide-react";
 // ──────────────────────────────────────────────────────────────
 // VoicePlayerCard — WhatsApp-style custom voice message player
 //
-// Features:
-//   - Authentic WhatsApp style Up & Down vertical waveform bars
-//   - Interactive seek (clicking on waveform bars)
-//   - Play / Pause state with global single-play manager
-//   - Audio timestamp counter & 1x / 1.5x / 2x speed toggle
+// Clean 20 vertical waveform bars with smooth progress coloring
+// and interactive seek.
 // ──────────────────────────────────────────────────────────────
 
-
-// Global manager: pause any other playing voice note when a new one starts
 let currentlyPlayingAudio: HTMLAudioElement | null = null;
-
 
 function formatDuration(seconds: number): string {
     if (!seconds || !isFinite(seconds)) return "00:00";
@@ -27,12 +21,10 @@ function formatDuration(seconds: number): string {
 
 const SPEED_OPTIONS = [1, 1.5, 2] as const;
 
-
 interface VoicePlayerCardProps {
     url: string;
     isMe: boolean;
 }
-
 
 export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -42,10 +34,10 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // ── Generate realistic WhatsApp style waveform bars ────────
-    // We generate a deterministic set of 30 vertical bar heights based on string hash of the URL
+    // ── Generate 20 WhatsApp style vertical waveform bars ────────
+    // 20 bars look spacious, clean, and not dense
     const waveformBars = useMemo(() => {
-        const count = 32;
+        const count = 22;
         const bars: number[] = [];
         let hash = 0;
         for (let i = 0; i < url.length; i++) {
@@ -54,25 +46,31 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         }
 
         for (let i = 0; i < count; i++) {
-            const pseudoRandom = Math.abs(Math.sin(hash + i * 1.7));
-            // Bar heights scaled between 20% and 100%
-            const heightPercent = Math.max(20, Math.min(100, Math.floor(pseudoRandom * 100)));
+            const pseudoRandom = Math.abs(Math.sin(hash + (i + 1) * 2.3));
+            const heightPercent = Math.max(25, Math.min(100, Math.floor(pseudoRandom * 100)));
             bars.push(heightPercent);
         }
         return bars;
     }, [url]);
 
-
     useEffect(() => {
         const audio = new Audio(url);
         audioRef.current = audio;
 
-        audio.onloadedmetadata = () => {
-            setDuration(audio.duration);
+        const updateMetadata = () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
         };
+
+        audio.onloadedmetadata = updateMetadata;
+        audio.ondurationchange = updateMetadata;
 
         audio.ontimeupdate = () => {
             setCurrentTime(audio.currentTime);
+            if (!duration && audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
         };
 
         audio.onended = () => {
@@ -88,10 +86,9 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                 currentlyPlayingAudio = null;
             }
         };
-    }, [url]);
+    }, [url, duration]);
 
-
-    // Global pause listener when another player starts
+    // Global pause listener
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -105,7 +102,6 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         audio.addEventListener("pause", handlePause);
         return () => audio.removeEventListener("pause", handlePause);
     }, []);
-
 
     const togglePlay = useCallback(() => {
         const audio = audioRef.current;
@@ -125,7 +121,6 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         }
     }, [isPlaying]);
 
-
     const handleSeekToRatio = (ratio: number) => {
         if (audioRef.current && duration > 0) {
             const targetTime = ratio * duration;
@@ -133,7 +128,6 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
             setCurrentTime(targetTime);
         }
     };
-
 
     const cycleSpeed = () => {
         const nextIndex = (speedIndex + 1) % SPEED_OPTIONS.length;
@@ -143,18 +137,21 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         }
     };
 
+    // Calculate active played progress ratio
+    const progressRatio = (duration > 0 && isFinite(duration))
+        ? Math.min(1, Math.max(0, currentTime / duration))
+        : 0;
 
-    const progressRatio = duration > 0 ? currentTime / duration : 0;
-    const activeBarIndex = Math.floor(progressRatio * waveformBars.length);
-
+    // Number of bars that should be highlighted as played
+    const activeBarCount = Math.round(progressRatio * waveformBars.length);
 
     return (
-        <div className={`flex items-center gap-3 py-2.5 px-3.5 rounded-2xl min-w-[260px] max-w-[340px] shadow-xs transition-all ${isMe
-            ? "bg-blue-600/90 text-white border border-blue-500/30"
-            : "bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/80 text-zinc-800 dark:text-zinc-100"
+        <div className={`flex items-center gap-3 py-2.5 px-3.5 rounded-2xl w-64 max-w-[280px] shadow-xs transition-all ${isMe
+            ? "bg-blue-600 text-white border border-blue-500/30"
+            : "bg-white dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700/80 text-zinc-800 dark:text-zinc-100"
             }`}>
 
-            {/* Mic Badge / Play Icon */}
+            {/* Play / Pause Circle Button */}
             <button
                 onClick={togglePlay}
                 className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-all transform active:scale-95 shadow-xs ${isMe
@@ -169,12 +166,12 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                 )}
             </button>
 
-            {/* Center: Waveform Graphs + Time */}
+            {/* Center: Waveform Bars + Time */}
             <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
 
-                {/* WhatsApp Style Up & Down Vertical Waveform Bars */}
+                {/* 22 Spaced Vertical Waveform Bars */}
                 <div
-                    className="flex items-center gap-[2.5px] h-7 cursor-pointer py-1"
+                    className="flex items-center gap-[3px] h-7 cursor-pointer py-1"
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const clickX = e.clientX - rect.left;
@@ -183,24 +180,24 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                     }}
                 >
                     {waveformBars.map((heightPercent, idx) => {
-                        const isPlayed = idx <= activeBarIndex;
+                        const isPlayed = idx < activeBarCount;
                         return (
                             <div
                                 key={idx}
-                                className={`flex-1 rounded-full transition-all duration-150 ${isPlayed
+                                className={`flex-1 rounded-full transition-colors duration-150 ${isPlayed
                                     ? isMe ? "bg-white" : "bg-blue-600 dark:bg-blue-400"
                                     : isMe ? "bg-white/35 hover:bg-white/50" : "bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-400"
                                     }`}
                                 style={{
                                     height: `${heightPercent}%`,
-                                    minHeight: "15%",
+                                    minHeight: "20%",
                                 }}
                             />
                         );
                     })}
                 </div>
 
-                {/* Time Info */}
+                {/* Time Display */}
                 <div className={`flex items-center justify-between text-[11px] font-mono leading-none ${isMe ? "text-blue-100" : "text-zinc-400 dark:text-zinc-400"
                     }`}>
                     <span>{formatDuration(isPlaying ? currentTime : duration)}</span>
@@ -211,7 +208,7 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                 </div>
             </div>
 
-            {/* Playback Speed Pill */}
+            {/* Speed Toggle Pill */}
             <button
                 onClick={cycleSpeed}
                 className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 transition-all ${isMe
