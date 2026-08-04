@@ -20,13 +20,30 @@ export async function createConversation(
 }
 
 
+export interface GetMessagesParams {
+    around_message_id?: number;
+    before_message_id?: number;
+    after_message_id?: number;
+    page?: number;
+}
+
 export async function getMessages(
     conversationId: number,
-    page: number = 1
+    params?: number | GetMessagesParams
 ): Promise<PaginatedResponse<Message>> {
-    const response = await apiClient.getPaginated<PaginatedResponse<Message>>(
-        `/conversations/${conversationId}/messages?page=${page}`
-    );
+    const searchParams = new URLSearchParams();
+    if (typeof params === "number") {
+        searchParams.append("page", String(params));
+    } else if (params) {
+        if (params.around_message_id) searchParams.append("around_message_id", String(params.around_message_id));
+        if (params.before_message_id) searchParams.append("before_message_id", String(params.before_message_id));
+        if (params.after_message_id) searchParams.append("after_message_id", String(params.after_message_id));
+        if (params.page) searchParams.append("page", String(params.page));
+    }
+    const queryString = searchParams.toString();
+    const url = `/conversations/${conversationId}/messages` + (queryString ? `?${queryString}` : "");
+
+    const response = await apiClient.getPaginated<PaginatedResponse<Message>>(url);
     return response.data;
 }
 
@@ -80,5 +97,16 @@ export async function deleteMessageForMe(conversationId: Number, MessageId: Numb
 
 export async function deleteMessageForAll(conversationId: Number, MessageId: Number): Promise<Message> {
     return await apiClient.delete<Message>(`/conversations/${conversationId}/messages/${MessageId}/delete`);
+}
+
+export async function searchMessages(
+    conversationId: number,
+    query: string,
+    page: number = 1
+): Promise<PaginatedResponse<Message>> {
+    const response = await apiClient.getPaginated<PaginatedResponse<Message>>(
+        `/conversations/${conversationId}/messages/search?q=${encodeURIComponent(query)}&page=${page}`
+    );
+    return response.data;
 }
 
