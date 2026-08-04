@@ -24,6 +24,7 @@ export function ChatSearchSidebar({
     const [isLoading, setIsLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [hasSearched, setHasSearched] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -50,6 +51,8 @@ export function ChatSearchSidebar({
                 const res = await searchMessages(conversationId, searchQuery.trim(), 1);
                 setResults(res.data || []);
                 setHasSearched(true);
+                setHasMore((res.current_page ?? 1) < (res.last_page ?? 1));
+
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed to search messages"));
             } finally {
@@ -62,17 +65,23 @@ export function ChatSearchSidebar({
 
     // Fetch next page on scroll
     const fetchNextPage = async () => {
-        if (isLoading || !conversationId || !searchQuery.trim()) return;
+        if (isLoading || !conversationId || !searchQuery.trim() || !hasMore) return;
 
+        setIsLoading(true);
         const nextPage = page + 1;
         try {
             const res = await searchMessages(conversationId, searchQuery.trim(), nextPage);
             if (res.data && res.data.length > 0) {
                 setResults((prev) => [...prev, ...res.data]);
                 setPage(nextPage);
+                setHasMore((res.current_page ?? 1) < (res.last_page ?? 1));
+            } else {
+                setHasMore(false);
             }
         } catch (error) {
             console.error("Failed to load next page:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
