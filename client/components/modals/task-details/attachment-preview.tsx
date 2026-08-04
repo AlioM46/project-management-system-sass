@@ -19,7 +19,9 @@ export function isImageAttachment(fileType?: string, fileName?: string): boolean
 }
 
 export function isVideoAttachment(fileType?: string, fileName?: string): boolean {
-    return Boolean(fileType?.startsWith("video/") || fileName?.match(/\.(mp4|webm|mov|avi|m4v)$/i));
+    const isVoice = Boolean(fileType?.startsWith("audio/") || fileName?.toLowerCase().includes("voice_note"));
+    if (isVoice) return false;
+    return Boolean(fileType?.startsWith("video/") || fileName?.match(/\.(mp4|mov|avi|m4v)$/i));
 }
 
 export function isPdfAttachment(fileType?: string, fileName?: string): boolean {
