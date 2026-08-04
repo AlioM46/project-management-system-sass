@@ -2,7 +2,7 @@ import { getEchoClient } from "@/features/notifications/lib/echo";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Message, MessageReaction } from "../types";
 
-export interface TypingUser {
+export interface ChatUserActivity {
     id: number;
     name: string;
 }
@@ -18,7 +18,8 @@ export default function useChatChannel(
     onMessageDeleted?: (data: Message) => void,
     onMessageUpdated?: (data: Message) => void
 ) {
-    const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+    const [typingUsers, setTypingUsers] = useState<ChatUserActivity[]>([]);
+    const [recordingUsers, setRecordingUsers] = useState<ChatUserActivity[]>([]);
     const channelRef = useRef<any>(null);
 
     useEffect(() => {
@@ -30,21 +31,19 @@ export default function useChatChannel(
         channelRef.current = channel;
 
         channel.listen(".messages.sent", (event: Message) => {
-            console.log("Incoming Message from Realtime : # ", event)
+            console.log("Incoming Message from Realtime : # ", event);
             onMessageReceived(event);
-
         });
 
-
         channel.listen(".messages.updated", (event: Message) => {
-            console.log("Updated Message from Realtime : # ", event)
+            console.log("Updated Message from Realtime : # ", event);
             if (onMessageUpdated) {
                 onMessageUpdated(event);
             }
         });
 
         channel.listen(".messages.deleted", (event: Message) => {
-            console.log("Message deleted: # ", event)
+            console.log("Message deleted: # ", event);
             if (onMessageDeleted) {
                 onMessageDeleted(event);
             }
@@ -56,8 +55,8 @@ export default function useChatChannel(
             }
         });
 
+        // 1. Whisper for "typing" status
         channel.listenForWhisper("typing", (event: { userId: number; userName: string; isTyping: boolean }) => {
-            console.log("RECEIVED WHISPER EVENT:", event);
             if (currentUserId && Number(event.userId) === Number(currentUserId)) return;
 
             setTypingUsers((prev) => {
@@ -70,13 +69,29 @@ export default function useChatChannel(
             });
         });
 
+        // 2. Whisper for "recording voice note" status
+        channel.listenForWhisper("recording", (event: { userId: number; userName: string; isRecording: boolean }) => {
+            if (currentUserId && Number(event.userId) === Number(currentUserId)) return;
+
+            setRecordingUsers((prev) => {
+                if (event.isRecording) {
+                    const exists = prev.some((u) => Number(u.id) === Number(event.userId));
+                    return exists ? prev : [...prev, { id: Number(event.userId), name: event.userName }];
+                } else {
+                    return prev.filter((u) => Number(u.id) !== Number(event.userId));
+                }
+            });
+        });
+
         return () => {
             channel.stopListening(".messages.sent");
             channel.stopListening(".messages.reaction.updated");
             channel.stopListeningForWhisper("typing");
+            channel.stopListeningForWhisper("recording");
             echo.leave(channelName);
             channelRef.current = null;
             setTypingUsers([]);
+            setRecordingUsers([]);
         };
     }, [conversationId, accessToken, workspaceId, onMessageReceived, currentUserId, onReactionUpdated]);
 
@@ -93,5 +108,18 @@ export default function useChatChannel(
         [currentUserId, currentUserName]
     );
 
-    return { typingUsers, sendTyping };
+    const sendRecording = useCallback(
+        (isRecording: boolean) => {
+            if (channelRef.current && currentUserId) {
+                channelRef.current.whisper("recording", {
+                    userId: Number(currentUserId),
+                    userName: currentUserName || "Someone",
+                    isRecording,
+                });
+            }
+        },
+        [currentUserId, currentUserName]
+    );
+
+    return { typingUsers, sendTyping, recordingUsers, sendRecording };
 }
