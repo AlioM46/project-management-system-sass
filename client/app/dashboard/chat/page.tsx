@@ -288,7 +288,7 @@ export default function ChatPage() {
         }
     };
 
-    const { typingUsers, sendTyping } = useChatChannel(
+    const { typingUsers, sendTyping, recordingUsers, sendRecording } = useChatChannel(
         getCookie("access_token") || "",
         getCookie("workspace_id") || "",
         activeConversationId,
@@ -431,6 +431,8 @@ export default function ChatPage() {
                 isUserOnline={isUserOnline}
                 typingUsers={typingUsers}
                 onTyping={sendTyping}
+                recordingUsers={recordingUsers}
+                onRecording={sendRecording}
                 onToggleReaction={handleToggleReaction}
                 onDeleteForMe={handleDeleteForMeMessage}
                 onDeleteForAll={handleDeleteForAllMessage}

@@ -21,6 +21,8 @@ interface ChatMessageAreaProps {
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
     onTyping?: (isTyping: boolean) => void;
+    recordingUsers?: { id: number; name: string }[];
+    onRecording?: (isRecording: boolean) => void;
     onToggleReaction?: (messageId: number, emoji: string) => void;
     onDeleteForMe?: (messageId: number) => Promise<void>;
     onDeleteForAll?: (messageId: number) => Promise<void>;
@@ -89,6 +91,8 @@ export function ChatMessageArea({
     isUserOnline,
     typingUsers = [],
     onTyping,
+    recordingUsers = [],
+    onRecording,
     onToggleReaction,
     onDeleteForMe,
     onDeleteForAll,
@@ -112,13 +116,28 @@ export function ChatMessageArea({
         formattedTime,
         audioBlob,
         audioLevels,
-        startRecording,
+        startRecording: rawStartRecording,
         pauseRecording,
         resumeRecording,
-        stopRecording,
-        cancelRecording,
+        stopRecording: rawStopRecording,
+        cancelRecording: rawCancelRecording,
         resetRecording,
     } = useAudioRecorder();
+
+    const startRecording = () => {
+        rawStartRecording();
+        if (onRecording) onRecording(true);
+    };
+
+    const stopRecording = () => {
+        rawStopRecording();
+        if (onRecording) onRecording(false);
+    };
+
+    const cancelRecording = () => {
+        rawCancelRecording();
+        if (onRecording) onRecording(false);
+    };
 
     const [activeMenuMessageId, setActiveMenuMessageId] = useState<number | null>(null);
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
@@ -168,6 +187,9 @@ export function ChatMessageArea({
     const isOnline = Boolean(partnerId && isUserOnline(partnerId));
     const isPartnerTyping = Boolean(
         partnerId && typingUsers?.some((user) => Number(user.id) === Number(partnerId))
+    );
+    const isPartnerRecording = Boolean(
+        partnerId && recordingUsers?.some((user) => Number(user.id) === Number(partnerId))
     );
 
     // useEffect(() => {
@@ -410,6 +432,51 @@ export function ChatMessageArea({
         return "Direct Message";
     }
 
+    // Helper: Render status subtitle for Direct Messages & Group/Project channels
+    function renderStatusSubtitle() {
+        if (recordingUsers.length > 0) {
+            const text =
+                conversation?.type === "direct"
+                    ? "recording audio..."
+                    : recordingUsers.length === 1
+                        ? `${recordingUsers[0].name} is recording audio...`
+                        : `${recordingUsers[0].name} & ${recordingUsers.length - 1} other${recordingUsers.length > 2 ? "s" : ""} recording...`;
+
+            return (
+                <span className="text-red-500 font-semibold animate-pulse flex items-center gap-1">
+                    <Mic className="h-3 w-3 inline" /> {text}
+                </span>
+            );
+        }
+
+        if (typingUsers.length > 0) {
+            const text =
+                conversation?.type === "direct"
+                    ? "typing..."
+                    : typingUsers.length === 1
+                        ? `${typingUsers[0].name} is typing...`
+                        : `${typingUsers[0].name} & ${typingUsers.length - 1} other${typingUsers.length > 2 ? "s" : ""} typing...`;
+
+            return (
+                <span className="text-blue-500 font-semibold animate-pulse">
+                    {text}
+                </span>
+            );
+        }
+
+
+        // Later on, Check if each user in the group is online or not.
+        if (conversation?.type === "direct") {
+            return isOnline ? (
+                <span className="text-emerald-600 dark:text-emerald-400">Online</span>
+            ) : (
+                <span className="text-zinc-400">Offline</span>
+            );
+        }
+
+        return <span className="text-zinc-500 dark:text-zinc-400">{getTypeLabel()}</span>;
+    }
+
     // ─── Empty State ───────────────────────────────────────────────────
     if (!conversation) {
         return (
@@ -474,19 +541,7 @@ export function ChatMessageArea({
                             {getHeaderName()}
                         </h3>
                         <p className="text-[11px] font-medium">
-                            {isPartnerTyping ? (
-                                <span className="text-blue-500 font-semibold animate-pulse">
-                                    typing...
-                                </span>
-                            ) : conversation?.type === "direct" ? (
-                                isOnline ? (
-                                    <span className="text-emerald-600 dark:text-emerald-400">Online</span>
-                                ) : (
-                                    <span className="text-zinc-400">Offline</span>
-                                )
-                            ) : (
-                                <span className="text-zinc-500 dark:text-zinc-400">{getTypeLabel()}</span>
-                            )}
+                            {renderStatusSubtitle()}
                         </p>
                     </div>
                 </div>
