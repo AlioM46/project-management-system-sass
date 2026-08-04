@@ -27,10 +27,18 @@ export interface GetMessagesParams {
     page?: number;
 }
 
+export interface MessagesResponse {
+    data: Message[];
+    has_before?: boolean;
+    has_after?: boolean;
+    current_page?: number;
+    last_page?: number;
+}
+
 export async function getMessages(
     conversationId: number,
     params?: number | GetMessagesParams
-): Promise<PaginatedResponse<Message>> {
+): Promise<MessagesResponse> {
     const searchParams = new URLSearchParams();
     if (typeof params === "number") {
         searchParams.append("page", String(params));
@@ -43,7 +51,7 @@ export async function getMessages(
     const queryString = searchParams.toString();
     const url = `/conversations/${conversationId}/messages` + (queryString ? `?${queryString}` : "");
 
-    const response = await apiClient.getPaginated<PaginatedResponse<Message>>(url);
+    const response = await apiClient.getPaginated<MessagesResponse>(url);
     return response.data;
 }
 

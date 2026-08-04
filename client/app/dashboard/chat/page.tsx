@@ -129,7 +129,7 @@ export default function ChatPage() {
                 const reversed = [...res.data].reverse();
                 setMessages(reversed);
                 setCurrentPage(1);
-                setHasMoreMessages(res.current_page < res.last_page);
+                setHasMoreMessages((res.current_page ?? 1) < (res.last_page ?? 1));
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed To Load Messages"));
             } finally {
@@ -151,7 +151,7 @@ export default function ChatPage() {
             const reversedOlder = [...res.data].reverse();
             setMessages((prev) => [...reversedOlder, ...prev]);
             setCurrentPage(nextPage);
-            setHasMoreMessages(res.current_page < res.last_page);
+            setHasMoreMessages((res.current_page ?? 1) < (res.last_page ?? 1));
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed To Load Older Messages"));
         }
@@ -363,16 +363,22 @@ export default function ChatPage() {
                 setIsLoading(true);
                 const res = await getMessages(activeConversationId, { around_message_id: messageId });
                 setMessages(res.data || []);
-                setTimeout(() => {
-                    const element = document.getElementById(`message-${messageId}`);
-                    if (element) {
-                        element.scrollIntoView({ behavior: "smooth", block: "center" });
-                        element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
-                        setTimeout(() => {
-                            element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
-                        }, 2500);
-                    }
-                }, 300);
+
+                // frame 1 => Check React finish building the DOM after changing the state 
+                requestAnimationFrame(() => {
+                    // frame 2 => Check Broswer has Finish Paninting\Drawing
+                    requestAnimationFrame(() => {
+                        const element = document.getElementById(`message-${messageId}`);
+                        if (element) {
+                            element.scrollIntoView({ behavior: "smooth", block: "center" });
+                            element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                            setTimeout(() => {
+                                element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                            }, 2500);
+                        }
+
+                    })
+                })
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed to load message context"));
             } finally {

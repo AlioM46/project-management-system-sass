@@ -22,29 +22,37 @@ export function ChatSearchSidebar({
     const [searchQuery, setSearchQuery] = useState("");
     const [results, setResults] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Auto-focus input on open
     useEffect(() => {
         inputRef.current?.focus();
     }, []);
 
-    // Debounced search logic
+    // Initial search logic when searchQuery changes
     useEffect(() => {
         if (!conversationId || !searchQuery.trim()) {
             setResults([]);
             setHasSearched(false);
             setIsLoading(false);
+            setHasMore(false);
+            setPage(1);
             return;
         }
 
         const timer = setTimeout(async () => {
             setIsLoading(true);
             try {
-                const res = await searchMessages(conversationId, searchQuery.trim());
+                const res = await searchMessages(conversationId, searchQuery.trim(), 1);
                 setResults(res.data || []);
                 setHasSearched(true);
+                setHasMore(res.current_page < res.last_page);
+                setPage(2); // Next page to fetch will be page 2
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed to search messages"));
             } finally {
@@ -54,6 +62,33 @@ export function ChatSearchSidebar({
 
         return () => clearTimeout(timer);
     }, [searchQuery, conversationId]);
+
+    // Fetch next page when user scrolls to bottom
+    const handleLoadMore = async () => {
+        if (!conversationId || !searchQuery.trim() || !hasMore || isLoading || isFetchingMore) return;
+
+        setIsFetchingMore(true);
+        try {
+            const res = await searchMessages(conversationId, searchQuery.trim(), page);
+            setResults((prev) => [...prev, ...(res.data || [])]);
+            setHasMore(res.current_page < res.last_page);
+            setPage((prev) => prev + 1);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to load more search results"));
+        } finally {
+            setIsFetchingMore(false);
+        }
+    };
+
+    const handleScroll = () => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (distanceToBottom <= 100) {
+            handleLoadMore();
+        }
+    };
 
     return (
         <div className="w-80 h-full border-l border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 flex flex-col shrink-0 shadow-lg z-20 animate-in slide-in-from-right duration-200">
@@ -97,7 +132,7 @@ export function ChatSearchSidebar({
             </div>
 
             {/* Results List Area */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            <div ref={containerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-2 space-y-1">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-12 text-zinc-400 gap-2">
                         <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
@@ -148,6 +183,12 @@ export function ChatSearchSidebar({
                                 </div>
                             </button>
                         ))}
+                        {isFetchingMore && (
+                            <div className="flex items-center justify-center py-3 text-zinc-400 gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                <span className="text-xs">Loading more results...</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
