@@ -158,6 +158,25 @@ export default function ChatPage() {
         }
     };
 
+    const handleLoadNewerMessages = async () => {
+        if (!activeConversationId || !hasAfterMessages || isLoading) return;
+
+        const newestMessage = messages[messages.length - 1];
+        if (!newestMessage) return;
+
+        try {
+            const res = await getMessages(activeConversationId, {
+                after_message_id: newestMessage.id,
+            });
+
+            setMessages((prev) => [...prev, ...(res.data || [])]);
+            sethasBeforeMessages(res.has_before ?? false);
+            sethasAfterMessages(res.has_after ?? false);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Load Newer Messages"));
+        }
+    };
+
 
     const handleDeletingMessage = (deletedMessage: Message) => {
         setMessages((prev) => {
@@ -417,7 +436,9 @@ export default function ChatPage() {
                 onDeleteForAll={handleDeleteForAllMessage}
                 onEditMessage={handleUpdateMessage}
                 hasBefore={hasBeforeMessages}
+                hasAfter={hasAfterMessages}
                 onLoadMore={handleLoadMoreMessages}
+                onLoadNewer={handleLoadNewerMessages}
                 onToggleSearch={() => setIsSearchOpen((prev) => !prev)}
                 isSearchOpen={isSearchOpen}
             />
