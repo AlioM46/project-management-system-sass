@@ -280,7 +280,7 @@ class ConversationController extends Controller
                 })->exists() : false;
 
             $responseData = [
-                'messages' => $sortedMessages->toArray(),
+                'data' => $sortedMessages->toArray(),
                 'has_before' => $hasMoreMessagesBefore,
                 'has_after' => $hasMoreMessagesAfter,
             ];
@@ -309,7 +309,7 @@ class ConversationController extends Controller
                 })->exists() : false;
 
             $responseData = [
-                'messages' => $sortedMessages->toArray(),
+                'data' => $sortedMessages->toArray(),
                 'has_before' => $hasMoreMessagesBefore,
                 'has_after' => true,
             ];
@@ -338,7 +338,7 @@ class ConversationController extends Controller
                 })->exists() : false;
 
             $responseData = [
-                'messages' => $sortedMessages->toArray(),
+                'data' => $sortedMessages->toArray(),
                 'has_before' => true,
                 'has_after' => $hasMoreMessagesAfter,
             ];
@@ -356,7 +356,7 @@ class ConversationController extends Controller
             $sortedMessages = collect($messages->items())->sortBy('created_at')->values();
 
             $responseData = [
-                'messages' => $sortedMessages->toArray(),
+                'data' => $sortedMessages->toArray(),
                 'has_before' => $messages->hasMorePages(),
                 'has_after' => false,
             ];
