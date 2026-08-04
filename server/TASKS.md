@@ -31,24 +31,23 @@
 
 ## 2. Message Search
 ### Backend (Laravel)
-- [ ] Add keyword filtering support to the message list endpoint.
+- [x] Add keyword filtering support to the message list endpoint.
 
 ### Frontend (React)
-- [ ] Add a search button in the chat header to toggle a search input bar.
-- [ ] Filter messages dynamically and auto-scroll to the matched message with highlight effects.
-
+- [x] Add a search button in the chat header to toggle a search input bar.
+- [x] Filter messages dynamically and auto-scroll to the matched message with highlight effects.
 ---
 
 ## 3. Voice Messages
 ### Frontend (React)
-- [ ] Add a microphone recorder button inside the chat composer bar.
-- [ ] Record voice notes locally in `audio/webm` or `audio/mp3` formats using the browser's `MediaRecorder API`.
-- [ ] Render a recording duration timer with cancel and confirm/send options.
-- [ ] Construct `FormData` and upload raw audio file to backend.
-- [ ] Render custom voice player card with wave representation and audio playback controls.
+- [x] Add a microphone recorder button inside the chat composer bar.
+- [x] Record voice notes locally in `audio/webm` or `audio/mp3` formats using the browser's `MediaRecorder API`.
+- [x] Render a recording duration timer with cancel and confirm/send options.
+- [x] Construct `FormData` and upload raw audio file to backend.
+- [x] Render custom voice player card with wave representation and audio playback controls.
 
 ### Backend (Laravel)
-- [ ] Handle uploaded audio files, store in S3 R2/local storage, and save with `audio/` mime types.
+- [x] Handle uploaded audio files, store in S3 R2/local storage, and save with `audio/` mime types.
 
 ---
 
