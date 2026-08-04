@@ -240,43 +240,43 @@ class ConversationController extends Controller
                 return ApiResponse::error('Message not found.', 'MESSAGE_NOT_FOUND', [], 404);
             }
 
-            // Get 15 messages before and 15 messages after
+            // Get 15 messages before and 15 messages after by auto-incrementing ID
             $beforeMessages = Message::where("conversation_id", $id)
-                ->where("created_at", "<", $anchorMessage->created_at)
+                ->where("id", "<", $anchorMessage->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', "desc")
+                ->orderBy('id', "desc")
                 ->limit(15)
                 ->get();
 
             $afterMessages = Message::where("conversation_id", $id)
-                ->where("created_at", ">", $anchorMessage->created_at)
+                ->where("id", ">", $anchorMessage->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', "asc")
+                ->orderBy('id', "asc")
                 ->limit(15)
                 ->get();
 
             $anchorMessage->load(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments']);
 
             $merged = $beforeMessages->merge([$anchorMessage])->merge($afterMessages);
-            $sortedMessages = $merged->sortBy('created_at')->values();
+            $sortedMessages = $merged->sortBy('id')->values();
 
             $firstMsg = $sortedMessages->first();
             $lastMsg = $sortedMessages->last();
 
             $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
-                ->where("created_at", "<", $firstMsg->created_at)
+                ->where("id", "<", $firstMsg->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })->exists() : false;
 
             $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
-                ->where("created_at", ">", $lastMsg->created_at)
+                ->where("id", ">", $lastMsg->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })->exists() : false;
@@ -292,20 +292,20 @@ class ConversationController extends Controller
             $beforeMessage = Message::findOrFail($beforeMessageId);
 
             $beforeMessagesList = Message::where("conversation_id", $id)
-                ->where("created_at", "<", $beforeMessage->created_at)
+                ->where("id", "<", $beforeMessage->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', "desc")
+                ->orderBy('id', "desc")
                 ->limit(30)
                 ->get();
 
-            $sortedMessages = $beforeMessagesList->sortBy('created_at')->values();
+            $sortedMessages = $beforeMessagesList->sortBy('id')->values();
             $firstMsg = $sortedMessages->first();
 
             $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
-                ->where("created_at", "<", $firstMsg->created_at)
+                ->where("id", "<", $firstMsg->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })->exists() : false;
@@ -321,20 +321,20 @@ class ConversationController extends Controller
             $afterMessage = Message::findOrFail($afterMessageId);
 
             $afterMessagesList = Message::where("conversation_id", $id)
-                ->where("created_at", ">", $afterMessage->created_at)
+                ->where("id", ">", $afterMessage->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', "asc")
+                ->orderBy('id', "asc")
                 ->limit(30)
                 ->get();
 
-            $sortedMessages = $afterMessagesList->sortBy('created_at')->values();
+            $sortedMessages = $afterMessagesList->sortBy('id')->values();
             $lastMsg = $sortedMessages->last();
 
             $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
-                ->where("created_at", ">", $lastMsg->created_at)
+                ->where("id", ">", $lastMsg->id)
                 ->whereDoesntHave('deletions', function ($q) {
                     $q->where('user_id', auth()->id());
                 })->exists() : false;
@@ -352,10 +352,10 @@ class ConversationController extends Controller
                     $query->where('user_id', auth()->id());
                 })
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
                 ->paginate(30);
 
-            $sortedMessages = collect($messages->items())->sortBy('created_at')->values();
+            $sortedMessages = collect($messages->items())->sortBy('id')->values();
 
             $responseData = [
                 'data' => $sortedMessages->toArray(),

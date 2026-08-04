@@ -347,43 +347,29 @@ export default function ChatPage() {
     const handleSelectSearchMessage = async (messageId: number) => {
         if (!activeConversationId) return;
 
-        const existsInLocal = messages.some((m) => m.id === messageId);
+        try {
+            setIsLoading(true);
+            const res = await getMessages(activeConversationId, { around_message_id: messageId });
+            setMessages(res.data || []);
 
-        if (existsInLocal) {
-            const element = document.getElementById(`message-${messageId}`);
-            if (element) {
-                element.scrollIntoView({ behavior: "smooth", block: "center" });
-                element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
-                setTimeout(() => {
-                    element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
-                }, 2500);
-            }
-        } else {
-            try {
-                setIsLoading(true);
-                const res = await getMessages(activeConversationId, { around_message_id: messageId });
-                setMessages(res.data || []);
-
-                // frame 1 => Check React finish building the DOM after changing the state 
+            // frame 1 => Check React finish building the DOM after changing the state 
+            requestAnimationFrame(() => {
+                // frame 2 => Check Browser has finished painting/drawing
                 requestAnimationFrame(() => {
-                    // frame 2 => Check Broswer has Finish Paninting\Drawing
-                    requestAnimationFrame(() => {
-                        const element = document.getElementById(`message-${messageId}`);
-                        if (element) {
-                            element.scrollIntoView({ behavior: "smooth", block: "center" });
-                            element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
-                            setTimeout(() => {
-                                element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
-                            }, 2500);
-                        }
-
-                    })
-                })
-            } catch (error) {
-                toast.error(getErrorMessage(error, "Failed to load message context"));
-            } finally {
-                setIsLoading(false);
-            }
+                    const element = document.getElementById(`message-${messageId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: "smooth", block: "center" });
+                        element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                        setTimeout(() => {
+                            element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                        }, 2500);
+                    }
+                });
+            });
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to load message context"));
+        } finally {
+            setIsLoading(false);
         }
     };
 
