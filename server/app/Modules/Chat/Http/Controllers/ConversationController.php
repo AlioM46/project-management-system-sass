@@ -364,10 +364,12 @@ class ConversationController extends Controller
 
         // Global Post-retrieval Logic: Mark conversation read state and clear notifications
         ConversationReadState::updateOrCreate(
+            // 1. Search criteria (find existing record)
             [
                 'user_id' => auth()->id(),
                 'conversation_id' => $id,
             ],
+            // 2. Values to set/update on every request
             [
                 'read_at' => now(),
             ]
@@ -379,6 +381,13 @@ class ConversationController extends Controller
             ->where('data->conversationId', $id)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+        // auto pagination : https://medium.com/@webdevsimplified/implement-infinite-scrolling-in-laravel-with-livewire-5c10412f1e24
+
+
+        //   "next_page_url": "http://localhost:8000/api/conversations/2/messages?page=2",
+        //  "prev_page_url": null,
+        //  "per_page": 30,
+        //  "total": 150
 
         return ApiResponse::success('Messages retrieved successfully.', $responseData);
     }
