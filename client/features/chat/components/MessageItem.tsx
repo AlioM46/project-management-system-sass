@@ -54,7 +54,7 @@ export function MessageItem({
         index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
 
     const isMessageEditable = (msg: Message) => {
-        if (msg.user_id !== currentUserId) return false;
+        if (Number(msg.user_id) !== Number(currentUserId)) return false;
         const timeDiff = Date.now() - new Date(msg.created_at).getTime();
         const fifteenMinutes = 15 * 60 * 1000;
         return timeDiff < fifteenMinutes;
@@ -62,12 +62,12 @@ export function MessageItem({
 
     const isMessageDeletableForAll = (msg: Message) => {
         const currentUserParticipant = conversation?.participants?.find(
-            (p: Participant) => p.user_id === currentUserId
+            (p: Participant) => Number(p.user_id) === Number(currentUserId)
         );
         const isMsgAdmin = currentUserParticipant?.role === 'admin' || currentUserParticipant?.role === 'owner';
         if (isMsgAdmin) return true;
 
-        if (msg.user_id !== currentUserId) return false;
+        if (Number(msg.user_id) !== Number(currentUserId)) return false;
 
         const timeDiff = Date.now() - new Date(msg.created_at).getTime();
         const fifteenMinutes = 15 * 60 * 1000;

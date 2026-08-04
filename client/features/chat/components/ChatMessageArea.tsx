@@ -134,9 +134,11 @@ export function ChatMessageArea({
                     setNewMessagesCount((prev) => prev + 1);
                 }
             } else {
-                requestAnimationFrame(() => {
-                    container.scrollTop = container.scrollHeight;
-                });
+                if (prevMessagesLengthRef.current === 0) {
+                    requestAnimationFrame(() => {
+                        container.scrollTop = container.scrollHeight;
+                    });
+                }
             }
         }
 
