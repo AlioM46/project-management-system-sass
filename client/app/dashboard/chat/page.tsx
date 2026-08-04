@@ -34,7 +34,8 @@ export default function ChatPage() {
     const [inputText, setInputText] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [hasMoreMessages, setHasMoreMessages] = useState(false);
+    const [hasBeforeMessages, sethasBeforeMessages] = useState(false);
+    const [hasAfterMessages, sethasAfterMessages] = useState(false);
 
     const activeConversation = conversations?.find((c) => c?.id === activeConversationId) || null;
 
@@ -124,12 +125,10 @@ export default function ChatPage() {
         async function loadMessages() {
             setIsLoading(true);
             try {
-                const res = await getMessages(conversationId, 1);
-
-                const reversed = [...res.data].reverse();
-                setMessages(reversed);
-                setCurrentPage(1);
-                setHasMoreMessages((res.current_page ?? 1) < (res.last_page ?? 1));
+                const res = await getMessages(conversationId);
+                setMessages(res.data || []);
+                sethasBeforeMessages(res.has_before ?? false);
+                sethasAfterMessages(res.has_after ?? false);
             } catch (error) {
                 toast.error(getErrorMessage(error, "Failed To Load Messages"));
             } finally {
@@ -141,17 +140,19 @@ export default function ChatPage() {
     }, [activeConversationId]);
 
     const handleLoadMoreMessages = async () => {
+        if (!activeConversationId || !hasBeforeMessages || isLoading) return;
 
-        if (!activeConversationId || !hasMoreMessages || isLoading) return;
+        const oldestMessage = messages[0];
+        if (!oldestMessage) return;
 
         try {
-            const nextPage = currentPage + 1;
-            const res = await getMessages(activeConversationId, nextPage);
+            const res = await getMessages(activeConversationId, {
+                before_message_id: oldestMessage.id,
+            });
 
-            const reversedOlder = [...res.data].reverse();
-            setMessages((prev) => [...reversedOlder, ...prev]);
-            setCurrentPage(nextPage);
-            setHasMoreMessages((res.current_page ?? 1) < (res.last_page ?? 1));
+            setMessages((prev) => [...(res.data || []), ...prev]);
+            sethasBeforeMessages(res.has_before ?? false);
+            sethasAfterMessages(res.has_after ?? false);
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed To Load Older Messages"));
         }
@@ -347,29 +348,43 @@ export default function ChatPage() {
     const handleSelectSearchMessage = async (messageId: number) => {
         if (!activeConversationId) return;
 
-        try {
-            setIsLoading(true);
-            const res = await getMessages(activeConversationId, { around_message_id: messageId });
-            setMessages(res.data || []);
+        const existsInLocal = messages.some((m) => m.id === messageId);
 
-            // frame 1 => Check React finish building the DOM after changing the state 
-            requestAnimationFrame(() => {
-                // frame 2 => Check Browser has finished painting/drawing
+        if (existsInLocal) {
+            const element = document.getElementById(`message-${messageId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+                element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                setTimeout(() => {
+                    element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                }, 2500);
+            }
+        } else {
+            try {
+                setIsLoading(true);
+                const res = await getMessages(activeConversationId, { around_message_id: messageId });
+                setMessages(res.data || []);
+
+                // frame 1 => Check React finish building the DOM after changing the state 
                 requestAnimationFrame(() => {
-                    const element = document.getElementById(`message-${messageId}`);
-                    if (element) {
-                        element.scrollIntoView({ behavior: "smooth", block: "center" });
-                        element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
-                        setTimeout(() => {
-                            element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
-                        }, 2500);
-                    }
-                });
-            });
-        } catch (error) {
-            toast.error(getErrorMessage(error, "Failed to load message context"));
-        } finally {
-            setIsLoading(false);
+                    // frame 2 => Check Broswer has Finish Paninting\Drawing
+                    requestAnimationFrame(() => {
+                        const element = document.getElementById(`message-${messageId}`);
+                        if (element) {
+                            element.scrollIntoView({ behavior: "smooth", block: "center" });
+                            element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                            setTimeout(() => {
+                                element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                            }, 2500);
+                        }
+
+                    })
+                })
+            } catch (error) {
+                toast.error(getErrorMessage(error, "Failed to load message context"));
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -401,7 +416,7 @@ export default function ChatPage() {
                 onDeleteForMe={handleDeleteForMeMessage}
                 onDeleteForAll={handleDeleteForAllMessage}
                 onEditMessage={handleUpdateMessage}
-                hasMore={hasMoreMessages}
+                hasBefore={hasBeforeMessages}
                 onLoadMore={handleLoadMoreMessages}
                 onToggleSearch={() => setIsSearchOpen((prev) => !prev)}
                 isSearchOpen={isSearchOpen}
