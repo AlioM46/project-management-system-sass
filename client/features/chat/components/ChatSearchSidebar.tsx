@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, X, Loader2, Calendar, FileText } from "lucide-react";
+import { Search, X, Loader2, FileText } from "lucide-react";
 import { Message } from "../types";
 import { searchMessages } from "../api/chat.api";
 import { getErrorMessage } from "@/shared/api/ApiError";
@@ -22,9 +22,7 @@ export function ChatSearchSidebar({
     const [searchQuery, setSearchQuery] = useState("");
     const [results, setResults] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
@@ -35,68 +33,56 @@ export function ChatSearchSidebar({
         inputRef.current?.focus();
     }, []);
 
-    // Debounced search logic when searchQuery changes
+    // Debounced search logic for new queries (resets to page 1)
     useEffect(() => {
         if (!conversationId || !searchQuery.trim()) {
             setResults([]);
             setHasSearched(false);
             setIsLoading(false);
-            setHasMore(false);
             setPage(1);
             return;
         }
 
         const timer = setTimeout(async () => {
-            await fetchMessages(true); // true = Initial search (reset page to 1)
+            setPage(1);
+            setIsLoading(true);
+            try {
+                const res = await searchMessages(conversationId, searchQuery.trim(), 1);
+                setResults(res.data || []);
+                setHasSearched(true);
+            } catch (error) {
+                toast.error(getErrorMessage(error, "Failed to search messages"));
+            } finally {
+                setIsLoading(false);
+            }
         }, 300);
 
         return () => clearTimeout(timer);
     }, [searchQuery, conversationId]);
 
-    // Combined fetch logic: isInitialSearch = true (new query) vs false (scroll next page)
-    async function fetchMessages(isInitialSearch: boolean = false) {
-        if (!conversationId || !searchQuery.trim()) return;
+    // Fetch next page on scroll
+    const fetchNextPage = async () => {
+        if (isLoading || !conversationId || !searchQuery.trim()) return;
 
-        // Prevent duplicate scroll fetches while already loading or when no more pages exist
-        if (!isInitialSearch && (!hasMore || isLoading || isFetchingMore)) return;
-
-        const targetPage = isInitialSearch ? 1 : page;
-
-        if (isInitialSearch) {
-            setIsLoading(true);
-        } else {
-            setIsFetchingMore(true);
-        }
-
+        const nextPage = page + 1;
         try {
-            const res = await searchMessages(conversationId, searchQuery.trim(), targetPage);
-            const newItems = res.data || [];
-
-            if (isInitialSearch) {
-                setResults(newItems);
-                setPage(2);
-            } else {
-                setResults((prev) => [...prev, ...newItems]);
-                setPage((prev) => prev + 1);
+            const res = await searchMessages(conversationId, searchQuery.trim(), nextPage);
+            if (res.data && res.data.length > 0) {
+                setResults((prev) => [...prev, ...res.data]);
+                setPage(nextPage);
             }
-
-            setHasSearched(true);
-            setHasMore((res.current_page ?? 1) < (res.last_page ?? 1));
         } catch (error) {
-            toast.error(getErrorMessage(error, "Failed to search messages"));
-        } finally {
-            setIsLoading(false);
-            setIsFetchingMore(false);
+            console.error("Failed to load next page:", error);
         }
-    }
+    };
 
     const handleScroll = () => {
         const container = containerRef.current;
-        if (!container || isLoading || isFetchingMore || !hasMore) return;
+        if (!container) return;
 
         const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
         if (distanceToBottom <= 150) {
-            fetchMessages(false); // false = Load next page
+            fetchNextPage();
         }
     };
 
@@ -193,12 +179,6 @@ export function ChatSearchSidebar({
                                 </div>
                             </button>
                         ))}
-                        {isFetchingMore && (
-                            <div className="flex items-center justify-center py-3 text-zinc-400 gap-2">
-                                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                                <span className="text-xs">Loading more results...</span>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
