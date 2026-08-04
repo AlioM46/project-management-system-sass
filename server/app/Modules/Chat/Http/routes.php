@@ -17,4 +17,6 @@ Route::prefix('conversations')
         Route::put('/{id}/messages/{messageId}/updateForMe', [ConversationController::class, 'update'])->whereNumber('id')->whereNumber('messageId');
 
         Route::post('/{id}/messages/{messageId}/reactions', [ConversationController::class, 'toggleReaction'])->whereNumber('id')->whereNumber('messageId');
+
+        Route::get('/{id}/messages/search', [ConversationController::class, 'searchMessages'])->whereNumber('id');
     });
