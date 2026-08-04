@@ -1,12 +1,14 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
 import { getInitials, formatTime } from "../utils/chatHelpers";
+import { useAudioRecorder } from "../hooks/useAudioRecorder";
+import { VoicePlayerCard } from "./VoicePlayerCard";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
@@ -104,6 +106,16 @@ export function ChatMessageArea({
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const {
+        isRecording,
+        formattedTime,
+        audioBlob,
+        startRecording,
+        stopRecording,
+        cancelRecording,
+        resetRecording,
+    } = useAudioRecorder();
+
     const [activeMenuMessageId, setActiveMenuMessageId] = useState<number | null>(null);
     const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
@@ -114,6 +126,12 @@ export function ChatMessageArea({
         window.addEventListener("click", handleOutsideClick);
         return () => window.removeEventListener("click", handleOutsideClick);
     }, []);
+
+    useEffect(() => {
+        if (audioBlob) {
+            handleSendVoiceNote(audioBlob);
+        }
+    }, [audioBlob]);
 
     const isMessageEditable = (msg: Message) => {
         if (msg.user_id !== currentUserId) return false;
@@ -198,6 +216,16 @@ export function ChatMessageArea({
 
             setSelectedFiles((prev) => [...prev, ...uniqueFiles]);
         }
+    };
+
+    const handleSendVoiceNote = async (blob: Blob) => {
+        if (!conversation || isSending) return;
+        const voiceFile = new File([blob], `voice_note_${Date.now()}.webm`, {
+            type: blob.type || "audio/webm",
+        });
+        await handleSendMessage("", conversation.id, replyingTo?.id, [voiceFile]);
+        setReplyingTo(null);
+        resetRecording();
     };
 
     const handleSend = async () => {
@@ -592,10 +620,21 @@ export function ChatMessageArea({
                                                     {msg.attachments && msg.attachments.length > 0 && (
                                                         <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
                                                             {msg.attachments.map((attachment: any) => {
+                                                                const isAudio = attachment.file_type?.startsWith("audio/");
                                                                 const showRawPreview =
                                                                     attachment.file_type?.startsWith("image/") ||
                                                                     attachment.file_type?.startsWith("video/") ||
                                                                     attachment.file_type?.includes("pdf");
+
+                                                                if (isAudio) {
+                                                                    return (
+                                                                        <VoicePlayerCard
+                                                                            key={attachment.id}
+                                                                            url={attachment.download_url}
+                                                                            isMe={isMe}
+                                                                        />
+                                                                    );
+                                                                }
 
                                                                 if (showRawPreview) {
                                                                     return (
@@ -877,64 +916,107 @@ export function ChatMessageArea({
                     </div>
                 )}
 
-                <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
-                    {/* Hidden File Input */}
-                    <input
-                        type="file"
-                        multiple
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
+                {isRecording ? (
+                    /* Active Voice Recording Bar */
+                    <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-2.5 shadow-sm animate-pulse">
+                        {/* Red Pulsing Recording Indicator */}
+                        <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-red-500 animate-ping" />
+                            <span className="text-xs font-semibold text-red-600 dark:text-red-400">Recording...</span>
+                        </div>
 
-                    {/* Attachment */}
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5 ${selectedFiles.length > 0 ? "text-blue-500 bg-blue-500/10" : ""}`}
-                    >
-                        <Paperclip className="h-4 w-4 text-zinc-400" />
-                    </button>
+                        {/* Live Timer Counter */}
+                        <div className="flex-1 text-center font-mono text-sm font-bold text-red-600 dark:text-red-400">
+                            {formattedTime}
+                        </div>
 
-                    {/* Text Input */}
-                    <textarea
-                        ref={textAreaRef}
-                        value={inputText}
-                        onChange={(e) => handleTextChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
-                        placeholder="Type a message..."
-                        rows={1}
-                        className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
-                        disabled={isSending}
-                    />
+                        {/* Cancel Recording (Trash Icon) */}
+                        <button
+                            onClick={cancelRecording}
+                            className="h-8 w-8 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors shrink-0"
+                            title="Cancel recording"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
 
-                    {/* Emoji */}
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
-                        <Smile className="h-4 w-4 text-zinc-400" />
-                    </button>
+                        {/* Stop & Send Recording (Send Icon) */}
+                        <button
+                            onClick={stopRecording}
+                            className="h-8 w-8 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all shrink-0 shadow-sm"
+                            title="Stop & Send Voice Note"
+                        >
+                            <Send className="h-4 w-4 text-white" />
+                        </button>
+                    </div>
+                ) : (
+                    /* Standard Message Composer Bar */
+                    <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
+                        {/* Hidden File Input */}
+                        <input
+                            type="file"
+                            multiple
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
 
-                    {/* Send */}
-                    <button
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${(inputText.trim() || selectedFiles.length > 0) && !isSending
-                            ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
-                            : isSending
-                                ? "bg-blue-600/70 cursor-not-allowed"
-                                : "bg-zinc-100 dark:bg-white/10 cursor-not-allowed"
-                            }`}
-                        onClick={handleSend}
-                        disabled={(!inputText.trim() && selectedFiles.length === 0) || isSending}
-                    >
-                        {isSending ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-white" />
+                        {/* Attachment */}
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5 ${selectedFiles.length > 0 ? "text-blue-500 bg-blue-500/10" : ""}`}
+                        >
+                            <Paperclip className="h-4 w-4 text-zinc-400" />
+                        </button>
+
+                        {/* Text Input */}
+                        <textarea
+                            ref={textAreaRef}
+                            value={inputText}
+                            onChange={(e) => handleTextChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            placeholder="Type a message..."
+                            rows={1}
+                            className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
+                            disabled={isSending}
+                        />
+
+                        {/* Emoji */}
+                        <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
+                            <Smile className="h-4 w-4 text-zinc-400" />
+                        </button>
+
+                        {/* Send OR Mic Button */}
+                        {inputText.trim() || selectedFiles.length > 0 ? (
+                            <button
+                                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${!isSending
+                                    ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
+                                    : "bg-blue-600/70 cursor-not-allowed"
+                                    }`}
+                                onClick={handleSend}
+                                disabled={isSending}
+                            >
+                                {isSending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                ) : (
+                                    <Send className="h-4 w-4 text-white" />
+                                )}
+                            </button>
                         ) : (
-                            <Send className={`h-4 w-4 ${(inputText.trim() || selectedFiles.length > 0) ? "text-white" : "text-zinc-400"}`} />
+                            <button
+                                onClick={startRecording}
+                                className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shrink-0 mb-0.5 shadow-sm"
+                                title="Record Voice Message"
+                            >
+                                <Mic className="h-4 w-4 text-white" />
+                            </button>
                         )}
-                    </button>
-                </div>
+                    </div>
+                )}
             </div>
         </div >
     );
