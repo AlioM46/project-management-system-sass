@@ -5,6 +5,8 @@ import { Search, X, Loader2, Calendar, FileText } from "lucide-react";
 import { Message } from "../types";
 import { searchMessages } from "../api/chat.api";
 import { getErrorMessage } from "@/shared/api/ApiError";
+import { toast } from "sonner";
+import { getInitials, formatDate, highlightMatch } from "../utils/chatHelpers";
 
 interface ChatSearchSidebarProps {
     conversationId: number | null;
@@ -44,7 +46,7 @@ export function ChatSearchSidebar({
                 setResults(res.data || []);
                 setHasSearched(true);
             } catch (error) {
-                console.error("Search failed:", error);
+                toast.error(getErrorMessage(error, "Failed to search messages"));
             } finally {
                 setIsLoading(false);
             }
@@ -52,46 +54,6 @@ export function ChatSearchSidebar({
 
         return () => clearTimeout(timer);
     }, [searchQuery, conversationId]);
-
-    const getInitials = (name: string) => {
-        return name
-            ? name
-                .split(" ")
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase()
-            : "U";
-    };
-
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const isToday = date.toDateString() === now.toDateString();
-
-        if (isToday) {
-            return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        }
-        return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    };
-
-    const highlightMatch = (text: string, query: string) => {
-        if (!query.trim() || !text) return text;
-        const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-        return (
-            <span>
-                {parts.map((part, i) =>
-                    part.toLowerCase() === query.toLowerCase() ? (
-                        <mark key={i} className="bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 rounded-xs px-0.5 font-medium">
-                            {part}
-                        </mark>
-                    ) : (
-                        part
-                    )
-                )}
-            </span>
-        );
-    };
 
     return (
         <div className="w-80 h-full border-l border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 flex flex-col shrink-0 shadow-lg z-20 animate-in slide-in-from-right duration-200">
