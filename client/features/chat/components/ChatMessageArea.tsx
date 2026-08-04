@@ -6,6 +6,7 @@ import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
+import { getInitials, formatTime } from "../utils/chatHelpers";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
@@ -330,11 +331,6 @@ export function ChatMessageArea({
     }, [isSending, conversation?.id]);
 
 
-    // Helper: Get initials from a name
-    function getInitials(name: string): string {
-        return name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
-    }
-
     // Helper: Get label/icon text for files
     function getFileIcon(type: string): string {
         if (type.includes("pdf")) return "PDF";
@@ -362,14 +358,6 @@ export function ChatMessageArea({
         if (conversation.type === "project") return "Project Channel";
         if (conversation.type === "group") return `${conversation.participants?.length || 0} members`;
         return "Direct Message";
-    }
-
-    // Helper: Format time from ISO string
-    function formatTime(isoString: string): string {
-        // Need to handle the date, it only show hours
-        // if date == today ? Show hours : show date+ hours
-        const date = new Date(isoString);
-        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
 
     // ─── Empty State ───────────────────────────────────────────────────
