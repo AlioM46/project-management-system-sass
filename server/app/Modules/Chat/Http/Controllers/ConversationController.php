@@ -158,14 +158,60 @@ class ConversationController extends Controller
         return ApiResponse::success('Conversation created successfully.', $conversation->load('participants.user:id,name,avatar_url')->toArray(), [], 201);
     }
 
+
+    public function searchMessages($conversationId, Request $request): JsonResponse
+    {
+
+        $request->validate([
+            'q' => 'required|string|min:1|max:100',
+        ]);
+
+        $search = $request->query('q'); // URL: /messages/search/q=shoes
+
+
+        $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isParticipant) {
+            return ApiResponse::error('Unauthorized.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
+
+        $messages = Message::where('conversation_id', $conversationId)
+            ->where('body', 'LIKE', "%{$search}%")
+            ->whereDoesntHave('deletions', function ($query) {
+                $query->where('user_id', auth()->id());
+            })
+            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(30);
+
+        return ApiResponse::success('Messages retrieved successfully.', $messages->toArray());
+
+
+    }
     /**
      * Get paginated messages for a conversation.
      */
-    public function getMessages(int $id): JsonResponse
+    /**
+     * Get paginated messages for a conversation.
+     */
+    public function getMessages(int $id, Request $request): JsonResponse
     {
+        $request->validate([
+            'around_message_id' => 'nullable|integer|min:1',
+            'after_message_id' => 'nullable|integer|min:1',
+            'before_message_id' => 'nullable|integer|min:1',
+        ]);
+
+        $aroundMessageId = $request->query('around_message_id');
+        $afterMessageId = $request->query('after_message_id');
+        $beforeMessageId = $request->query('before_message_id');
+
         $conversation = Conversation::findOrFail($id);
 
-        // Security check: If it's a DM, make sure the user is a participant
+        // Security check: Make sure the user is a participant of the conversation
         if ($conversation->type !== 'project') {
             $isParticipant = ConversationParticipant::where('conversation_id', $conversation->id)
                 ->where('user_id', auth()->id())
@@ -177,41 +223,164 @@ class ConversationController extends Controller
             }
         }
 
-        $messages = $conversation->messages()
-            ->whereDoesntHave('deletions', function ($query) {
-                $query->where('user_id', auth()->id());
-            })
-            ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(30);
+        $responseData = [];
 
+        if ($aroundMessageId) {
+            // Case 1: Search Jump context slice (around a target message)
+            $anchorMessage = Message::where('conversation_id', $id)
+                ->where('id', $aroundMessageId)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->first();
 
+            if (!$anchorMessage) {
+                return ApiResponse::error('Message not found.', 'MESSAGE_NOT_FOUND', [], 404);
+            }
+
+            // Get 15 messages before and 15 messages after
+            $beforeMessages = Message::where("conversation_id", $id)
+                ->where("created_at", "<", $anchorMessage->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+                ->orderBy('created_at', "desc")
+                ->limit(15)
+                ->get();
+
+            $afterMessages = Message::where("conversation_id", $id)
+                ->where("created_at", ">", $anchorMessage->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+                ->orderBy('created_at', "asc")
+                ->limit(15)
+                ->get();
+
+            $anchorMessage->load(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments']);
+
+            $merged = $beforeMessages->merge([$anchorMessage])->merge($afterMessages);
+            $sortedMessages = $merged->sortBy('created_at')->values();
+
+            $firstMsg = $sortedMessages->first();
+            $lastMsg = $sortedMessages->last();
+
+            $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
+                ->where("created_at", "<", $firstMsg->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })->exists() : false;
+
+            $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
+                ->where("created_at", ">", $lastMsg->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })->exists() : false;
+
+            $responseData = [
+                'messages' => $sortedMessages->toArray(),
+                'has_before' => $hasMoreMessagesBefore,
+                'has_after' => $hasMoreMessagesAfter,
+            ];
+
+        } else if ($beforeMessageId) {
+            // Case 2: Load older messages relative to a scroll-up anchor
+            $beforeMessage = Message::findOrFail($beforeMessageId);
+
+            $beforeMessagesList = Message::where("conversation_id", $id)
+                ->where("created_at", "<", $beforeMessage->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+                ->orderBy('created_at', "desc")
+                ->limit(30)
+                ->get();
+
+            $sortedMessages = $beforeMessagesList->sortBy('created_at')->values();
+            $firstMsg = $sortedMessages->first();
+
+            $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
+                ->where("created_at", "<", $firstMsg->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })->exists() : false;
+
+            $responseData = [
+                'messages' => $sortedMessages->toArray(),
+                'has_before' => $hasMoreMessagesBefore,
+                'has_after' => true,
+            ];
+
+        } else if ($afterMessageId) {
+            // Case 3: Load newer messages relative to a scroll-down anchor
+            $afterMessage = Message::findOrFail($afterMessageId);
+
+            $afterMessagesList = Message::where("conversation_id", $id)
+                ->where("created_at", ">", $afterMessage->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+                ->orderBy('created_at', "asc")
+                ->limit(30)
+                ->get();
+
+            $sortedMessages = $afterMessagesList->sortBy('created_at')->values();
+            $lastMsg = $sortedMessages->last();
+
+            $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
+                ->where("created_at", ">", $lastMsg->created_at)
+                ->whereDoesntHave('deletions', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })->exists() : false;
+
+            $responseData = [
+                'messages' => $sortedMessages->toArray(),
+                'has_before' => true,
+                'has_after' => $hasMoreMessagesAfter,
+            ];
+
+        } else {
+            // Case 4: Default paginated load (latest messages first)
+            $messages = $conversation->messages()
+                ->whereDoesntHave('deletions', function ($query) {
+                    $query->where('user_id', auth()->id());
+                })
+                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(30);
+
+            $sortedMessages = collect($messages->items())->sortBy('created_at')->values();
+
+            $responseData = [
+                'messages' => $sortedMessages->toArray(),
+                'has_before' => $messages->hasMorePages(),
+                'has_after' => false,
+            ];
+        }
+
+        // Global Post-retrieval Logic: Mark conversation read state and clear notifications
         ConversationReadState::updateOrCreate(
-            // 1. Search criteria (find existing record)
             [
                 'user_id' => auth()->id(),
                 'conversation_id' => $id,
             ],
-            // 2. Values to set/update on every request
             [
                 'read_at' => now(),
             ]
         );
+
         Notification::query()
             ->where('user_id', auth()->id())
             ->where('type', NotificationType::CHAT_MESSAGE)
             ->where('data->conversationId', $id)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
-        // auto pagination : https://medium.com/@webdevsimplified/implement-infinite-scrolling-in-laravel-with-livewire-5c10412f1e24
 
-
-        //   "next_page_url": "http://localhost:8000/api/conversations/2/messages?page=2",
-        //  "prev_page_url": null,
-        //  "per_page": 30,
-        //  "total": 150
-
-        return ApiResponse::success('Messages retrieved successfully.', $messages->toArray());
+        return ApiResponse::success('Messages retrieved successfully.', $responseData);
     }
 
     /**
