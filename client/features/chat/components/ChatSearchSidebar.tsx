@@ -26,6 +26,7 @@ export function ChatSearchSidebar({
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +35,7 @@ export function ChatSearchSidebar({
         inputRef.current?.focus();
     }, []);
 
-    // Initial search logic when searchQuery changes
+    // Debounced search logic when searchQuery changes
     useEffect(() => {
         if (!conversationId || !searchQuery.trim()) {
             setResults([]);
@@ -46,47 +47,56 @@ export function ChatSearchSidebar({
         }
 
         const timer = setTimeout(async () => {
-            setIsLoading(true);
-            try {
-                const res = await searchMessages(conversationId, searchQuery.trim(), 1);
-                setResults(res.data || []);
-                setHasSearched(true);
-                setHasMore(res.current_page < res.last_page);
-                setPage(2); // Next page to fetch will be page 2
-            } catch (error) {
-                toast.error(getErrorMessage(error, "Failed to search messages"));
-            } finally {
-                setIsLoading(false);
-            }
+            await fetchMessages(true); // true = Initial search (reset page to 1)
         }, 300);
 
         return () => clearTimeout(timer);
     }, [searchQuery, conversationId]);
 
-    // Fetch next page when user scrolls to bottom
-    const handleLoadMore = async () => {
-        if (!conversationId || !searchQuery.trim() || !hasMore || isLoading || isFetchingMore) return;
+    // Combined fetch logic: isInitialSearch = true (new query) vs false (scroll next page)
+    async function fetchMessages(isInitialSearch: boolean = false) {
+        if (!conversationId || !searchQuery.trim()) return;
 
-        setIsFetchingMore(true);
+        // Prevent duplicate scroll fetches while already loading or when no more pages exist
+        if (!isInitialSearch && (!hasMore || isLoading || isFetchingMore)) return;
+
+        const targetPage = isInitialSearch ? 1 : page;
+
+        if (isInitialSearch) {
+            setIsLoading(true);
+        } else {
+            setIsFetchingMore(true);
+        }
+
         try {
-            const res = await searchMessages(conversationId, searchQuery.trim(), page);
-            setResults((prev) => [...prev, ...(res.data || [])]);
-            setHasMore(res.current_page < res.last_page);
-            setPage((prev) => prev + 1);
+            const res = await searchMessages(conversationId, searchQuery.trim(), targetPage);
+            const newItems = res.data || [];
+
+            if (isInitialSearch) {
+                setResults(newItems);
+                setPage(2);
+            } else {
+                setResults((prev) => [...prev, ...newItems]);
+                setPage((prev) => prev + 1);
+            }
+
+            setHasSearched(true);
+            setHasMore((res.current_page ?? 1) < (res.last_page ?? 1));
         } catch (error) {
-            toast.error(getErrorMessage(error, "Failed to load more search results"));
+            toast.error(getErrorMessage(error, "Failed to search messages"));
         } finally {
+            setIsLoading(false);
             setIsFetchingMore(false);
         }
-    };
+    }
 
     const handleScroll = () => {
         const container = containerRef.current;
-        if (!container) return;
+        if (!container || isLoading || isFetchingMore || !hasMore) return;
 
         const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (distanceToBottom <= 100) {
-            handleLoadMore();
+        if (distanceToBottom <= 150) {
+            fetchMessages(false); // false = Load next page
         }
     };
 
