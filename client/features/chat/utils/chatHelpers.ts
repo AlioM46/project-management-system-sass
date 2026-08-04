@@ -50,10 +50,15 @@ export function highlightMatch(text: string, query: string): React.ReactNode {
 
     // Escapes special regex characters in query to prevent invalid regex errors
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    
+
     // Using parenthesis around regex pattern turns it into a CAPTURE GROUP.
     // String.prototype.split with a capture group includes the matched query delimiters in the returned array!
-    const parts = text.split(new RegExp(`(${escapedQuery})`, "gi"));
+
+    const RegExpMagic = new RegExp(`(${escapedQuery})`, "gi");
+
+
+
+    const parts = text.split(RegExpMagic);
 
     return (
         React.createElement("span", null,

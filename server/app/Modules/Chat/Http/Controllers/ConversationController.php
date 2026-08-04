@@ -164,9 +164,11 @@ class ConversationController extends Controller
 
         $request->validate([
             'q' => 'required|string|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
         ]);
 
         $search = $request->query('q'); // URL: /messages/search/q=shoes
+        $page = $request->query('page', 1); // URL: /messages/search/q=shoes
 
 
         $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
