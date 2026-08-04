@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2 } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -108,9 +108,13 @@ export function ChatMessageArea({
 
     const {
         isRecording,
+        isPaused,
         formattedTime,
         audioBlob,
+        audioLevels,
         startRecording,
+        pauseRecording,
+        resumeRecording,
         stopRecording,
         cancelRecording,
         resetRecording,
@@ -620,11 +624,18 @@ export function ChatMessageArea({
                                                     {msg.attachments && msg.attachments.length > 0 && (
                                                         <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
                                                             {msg.attachments.map((attachment: any) => {
-                                                                const isAudio = attachment.file_type?.startsWith("audio/");
+                                                                const isAudio = Boolean(
+                                                                    attachment.file_type?.startsWith("audio/") ||
+                                                                    attachment.original_name?.toLowerCase().includes("voice_note") ||
+                                                                    attachment.file_name?.toLowerCase().includes("voice_note") ||
+                                                                    attachment.original_name?.toLowerCase().match(/\.(webm|opus|ogg|mp3|wav|m4a)$/i)
+                                                                );
                                                                 const showRawPreview =
-                                                                    attachment.file_type?.startsWith("image/") ||
-                                                                    attachment.file_type?.startsWith("video/") ||
-                                                                    attachment.file_type?.includes("pdf");
+                                                                    !isAudio && (
+                                                                        attachment.file_type?.startsWith("image/") ||
+                                                                        attachment.file_type?.startsWith("video/") ||
+                                                                        attachment.file_type?.includes("pdf")
+                                                                    );
 
                                                                 if (isAudio) {
                                                                     return (
@@ -917,32 +928,62 @@ export function ChatMessageArea({
                 )}
 
                 {isRecording ? (
-                    /* Active Voice Recording Bar */
-                    <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-2.5 shadow-sm animate-pulse">
-                        {/* Red Pulsing Recording Indicator */}
-                        <div className="flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-red-500 animate-ping" />
-                            <span className="text-xs font-semibold text-red-600 dark:text-red-400">Recording...</span>
-                        </div>
-
-                        {/* Live Timer Counter */}
-                        <div className="flex-1 text-center font-mono text-sm font-bold text-red-600 dark:text-red-400">
-                            {formattedTime}
-                        </div>
-
+                    /* Active Voice Recording Bar (WhatsApp Style) */
+                    <div className="flex items-center gap-3 bg-white dark:bg-zinc-800/90 border border-red-500/30 dark:border-red-500/40 rounded-2xl px-4 py-2.5 shadow-md transition-all">
                         {/* Cancel Recording (Trash Icon) */}
                         <button
                             onClick={cancelRecording}
-                            className="h-8 w-8 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 flex items-center justify-center transition-colors shrink-0"
-                            title="Cancel recording"
+                            className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors shrink-0"
+                            title="Delete / Cancel recording"
                         >
                             <Trash2 className="h-4 w-4" />
                         </button>
 
-                        {/* Stop & Send Recording (Send Icon) */}
+                        {/* Red Pulsing Recording Indicator + Live Timer */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className={`h-2.5 w-2.5 rounded-full bg-red-500 ${isPaused ? "" : "animate-ping"}`} />
+                            <span className="font-mono text-xs font-bold text-red-600 dark:text-red-400">
+                                {formattedTime}
+                            </span>
+                        </div>
+
+                        {/* Live Realtime Audio Amplitude Waveform Bar Graph */}
+                        <div className="flex-1 flex items-center gap-[2.5px] h-6 overflow-hidden px-2">
+                            {audioLevels.length > 0 ? (
+                                audioLevels.map((level, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`flex-1 rounded-full transition-all duration-100 ${isPaused ? "bg-zinc-300 dark:bg-zinc-600" : "bg-red-500"
+                                            }`}
+                                        style={{
+                                            height: `${level}%`,
+                                            minHeight: "15%",
+                                        }}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 italic">
+                                    {isPaused ? "Recording paused" : "Listening..."}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pause / Resume Recording Button */}
+                        <button
+                            onClick={isPaused ? resumeRecording : pauseRecording}
+                            className={`h-8 w-8 rounded-full flex items-center justify-center transition-all shrink-0 ${isPaused
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : "bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-700 dark:text-zinc-300"
+                                }`}
+                            title={isPaused ? "Resume Recording" : "Pause Recording"}
+                        >
+                            {isPaused ? <Play className="h-3.5 w-3.5 ml-0.5" /> : <Pause className="h-3.5 w-3.5" />}
+                        </button>
+
+                        {/* Stop & Send Recording Button */}
                         <button
                             onClick={stopRecording}
-                            className="h-8 w-8 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all shrink-0 shadow-sm"
+                            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shrink-0 shadow-sm"
                             title="Stop & Send Voice Note"
                         >
                             <Send className="h-4 w-4 text-white" />
