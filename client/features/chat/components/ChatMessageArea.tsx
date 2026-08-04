@@ -23,8 +23,10 @@ interface ChatMessageAreaProps {
     onDeleteForMe?: (messageId: number) => Promise<void>;
     onDeleteForAll?: (messageId: number) => Promise<void>;
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
-    hasMore?: boolean;
+    hasBefore?: boolean;
+    hasAfter?: boolean;
     onLoadMore?: () => Promise<void>;
+    onLoadNewer?: () => Promise<void>;
     onToggleSearch?: () => void;
     isSearchOpen?: boolean;
 }
@@ -89,8 +91,10 @@ export function ChatMessageArea({
     onDeleteForMe,
     onDeleteForAll,
     onEditMessage,
-    hasMore = false,
+    hasBefore = false,
+    hasAfter = false,
     onLoadMore,
+    onLoadNewer,
     onToggleSearch,
     isSearchOpen = false,
 }: ChatMessageAreaProps) {
@@ -238,8 +242,13 @@ export function ChatMessageArea({
         const container = e.currentTarget;
         if (!container) return;
 
+
+        console.log("scrollTop ", container.scrollTop)
+        console.log("hasBefore ", hasBefore)
+        console.log("onLoadMore ", onLoadMore)
+        console.log("isFetchingRef.current ", isFetchingRef.current)
         // 1. Detect if user is near top and has more
-        if (container.scrollTop <= 10 && hasMore && onLoadMore && !isFetchingRef.current) {
+        if (container.scrollTop <= 10 && hasBefore && onLoadMore && !isFetchingRef.current) {
             isFetchingRef.current = true;
             setIsPrevLoading(true);
 
@@ -258,6 +267,15 @@ export function ChatMessageArea({
         if (distanceToBottom < 150) {
             setShowNewMessagesBtn(false);
             setNewMessagesCount(0);
+
+            if (hasAfter && onLoadNewer && !isFetchingRef.current) {
+                isFetchingRef.current = true;
+                try {
+                    await onLoadNewer();
+                } finally {
+                    isFetchingRef.current = false;
+                }
+            }
         }
     };
 
