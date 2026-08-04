@@ -6,8 +6,11 @@ import { Play, Pause, Mic } from "lucide-react";
 // ──────────────────────────────────────────────────────────────
 // VoicePlayerCard — WhatsApp-style custom voice message player
 //
-// Clean 20 vertical waveform bars with smooth progress coloring
-// and interactive seek.
+// Features:
+//   - Unique seeded PRNG waveform per voice note (every recording has its own shape)
+//   - Stable Audio element lifecycle (no re-renders on duration update)
+//   - Seek on click & drag
+//   - Play/Pause toggle with global single-play manager
 // ──────────────────────────────────────────────────────────────
 
 let currentlyPlayingAudio: HTMLAudioElement | null = null;
@@ -20,6 +23,16 @@ function formatDuration(seconds: number): string {
 }
 
 const SPEED_OPTIONS = [1, 1.5, 2] as const;
+
+// Seeded PRNG (Mulberry32) for generating unique waveforms per file
+function mulberry32(a: number) {
+    return function () {
+        let t = (a += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
 
 interface VoicePlayerCardProps {
     url: string;
@@ -34,41 +47,50 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // ── Generate 20 WhatsApp style vertical waveform bars ────────
-    // 20 bars look spacious, clean, and not dense
+    // ── Generate UNIQUE waveform bars per voice message ─────────
+    // Extracts unique filename or string hash to seed PRNG
     const waveformBars = useMemo(() => {
         const count = 22;
         const bars: number[] = [];
-        let hash = 0;
-        for (let i = 0; i < url.length; i++) {
-            hash = (hash << 5) - hash + url.charCodeAt(i);
-            hash |= 0;
+
+        // Extract filename or unique part from URL to seed
+        const filename = url.split("/").pop() || url;
+        let seed = 0;
+        for (let i = 0; i < filename.length; i++) {
+            seed = (seed << 5) - seed + filename.charCodeAt(i);
+            seed |= 0;
         }
 
+        const prng = mulberry32(Math.abs(seed) + 12345);
+
         for (let i = 0; i < count; i++) {
-            const pseudoRandom = Math.abs(Math.sin(hash + (i + 1) * 2.3));
-            const heightPercent = Math.max(25, Math.min(100, Math.floor(pseudoRandom * 100)));
+            const val = prng();
+            // Scale bar height between 20% and 100%
+            const heightPercent = Math.max(20, Math.min(100, Math.floor(val * 100)));
             bars.push(heightPercent);
         }
         return bars;
     }, [url]);
 
+
+    // ── Single Audio Element Lifecycle ─────────────────────────
+    // CRITICAL: Depend ONLY on [url], NOT on duration or currentTime!
     useEffect(() => {
         const audio = new Audio(url);
         audioRef.current = audio;
 
-        const updateMetadata = () => {
+        const updateDuration = () => {
             if (audio.duration && isFinite(audio.duration)) {
                 setDuration(audio.duration);
             }
         };
 
-        audio.onloadedmetadata = updateMetadata;
-        audio.ondurationchange = updateMetadata;
+        audio.onloadedmetadata = updateDuration;
+        audio.ondurationchange = updateDuration;
 
         audio.ontimeupdate = () => {
             setCurrentTime(audio.currentTime);
-            if (!duration && audio.duration && isFinite(audio.duration)) {
+            if (audio.duration && isFinite(audio.duration)) {
                 setDuration(audio.duration);
             }
         };
@@ -86,9 +108,10 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
                 currentlyPlayingAudio = null;
             }
         };
-    }, [url, duration]);
+    }, [url]); // Depend ONLY on url!
 
-    // Global pause listener
+
+    // Global pause listener when another voice note starts
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -102,6 +125,7 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         audio.addEventListener("pause", handlePause);
         return () => audio.removeEventListener("pause", handlePause);
     }, []);
+
 
     const togglePlay = useCallback(() => {
         const audio = audioRef.current;
@@ -121,6 +145,7 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         }
     }, [isPlaying]);
 
+
     const handleSeekToRatio = (ratio: number) => {
         if (audioRef.current && duration > 0) {
             const targetTime = ratio * duration;
@@ -128,6 +153,7 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
             setCurrentTime(targetTime);
         }
     };
+
 
     const cycleSpeed = () => {
         const nextIndex = (speedIndex + 1) % SPEED_OPTIONS.length;
@@ -137,13 +163,14 @@ export function VoicePlayerCard({ url, isMe }: VoicePlayerCardProps) {
         }
     };
 
+
     // Calculate active played progress ratio
     const progressRatio = (duration > 0 && isFinite(duration))
         ? Math.min(1, Math.max(0, currentTime / duration))
         : 0;
 
-    // Number of bars that should be highlighted as played
     const activeBarCount = Math.round(progressRatio * waveformBars.length);
+
 
     return (
         <div className={`flex items-center gap-3 py-2.5 px-3.5 rounded-2xl w-64 max-w-[280px] shadow-xs transition-all ${isMe
