@@ -146,13 +146,6 @@ export function ChatMessageArea({
     //     }
     // }, [conversation]);
 
-    useEffect(() => {
-
-        messages.forEach((m, idx) => {
-            console.log("MESSAGE #", idx, " - ", m)
-        })
-
-    }, [messages])
 
 
 
@@ -278,10 +271,14 @@ export function ChatMessageArea({
         const container = messagesEndRef.current;
         if (!container) return;
 
+        // means there is previous messages loaded
         if (prevScrollHeightRef.current > 0) {
             // Restore reading position after prepending older messages
+            // 1500px - 1000px => 500px
             const heightDiff = container.scrollHeight - prevScrollHeightRef.current;
+            // keep the distnace from top 500px
             container.scrollTop = heightDiff;
+
             prevScrollHeightRef.current = 0; // Reset
         } else {
             // Check if messages count increased by a new message
