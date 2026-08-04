@@ -17,7 +17,7 @@ interface MessageInputComposerProps {
     onTyping?: (isTyping: boolean) => void;
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
     handleSendMessage: (body: string, conversationId: number, messageId?: number, attachments?: File[]) => Promise<void>;
-    textAreaRef: React.RefObject<HTMLTextAreaElement>;
+    textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function MessageInputComposer({
