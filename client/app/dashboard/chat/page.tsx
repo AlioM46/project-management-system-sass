@@ -3,6 +3,7 @@
 import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
 import { ChatMessageArea } from "@/features/chat/components/ChatMessageArea";
 import { NewConversationModal } from "@/features/chat/components/NewConversationModal";
+import { ChatSearchSidebar } from "@/features/chat/components/ChatSearchSidebar";
 import { useCallback, useEffect, useState } from "react";
 import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
@@ -26,6 +27,7 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const { markConversationAsReadLocally } = useNotifications();
     const { onlineUserIds, isUserOnline } = usePresence();
 
@@ -342,6 +344,43 @@ export default function ChatPage() {
         }
     }
 
+    const handleSelectSearchMessage = async (messageId: number) => {
+        if (!activeConversationId) return;
+
+        const existsInLocal = messages.some((m) => m.id === messageId);
+
+        if (existsInLocal) {
+            const element = document.getElementById(`message-${messageId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: "smooth", block: "center" });
+                element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                setTimeout(() => {
+                    element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                }, 2500);
+            }
+        } else {
+            try {
+                setIsLoading(true);
+                const res = await getMessages(activeConversationId, { around_message_id: messageId });
+                setMessages(res.data || []);
+                setTimeout(() => {
+                    const element = document.getElementById(`message-${messageId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: "smooth", block: "center" });
+                        element.classList.add("bg-amber-100/50", "dark:bg-amber-900/30", "transition-all");
+                        setTimeout(() => {
+                            element.classList.remove("bg-amber-100/50", "dark:bg-amber-900/30");
+                        }, 2500);
+                    }
+                }, 300);
+            } catch (error) {
+                toast.error(getErrorMessage(error, "Failed to load message context"));
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     return (
         <div className="flex h-[calc(100dvh-64px)] overflow-hidden">
             {/* Left: Conversation List */}
@@ -354,7 +393,7 @@ export default function ChatPage() {
                 typingUsers={typingUsers}
             />
 
-            {/* Right: Message Area */}
+            {/* Middle: Message Area */}
             <ChatMessageArea
                 conversation={activeConversation}
                 messages={messages}
@@ -372,7 +411,18 @@ export default function ChatPage() {
                 onEditMessage={handleUpdateMessage}
                 hasMore={hasMoreMessages}
                 onLoadMore={handleLoadMoreMessages}
+                onToggleSearch={() => setIsSearchOpen((prev) => !prev)}
+                isSearchOpen={isSearchOpen}
             />
+
+            {/* Right: WhatsApp Web Style Message Search Sidebar */}
+            {isSearchOpen && (
+                <ChatSearchSidebar
+                    conversationId={activeConversationId}
+                    onClose={() => setIsSearchOpen(false)}
+                    onSelectMessage={handleSelectSearchMessage}
+                />
+            )}
 
             {/* New Conversation Modal */}
             <NewConversationModal

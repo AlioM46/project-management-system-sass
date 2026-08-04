@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -24,6 +24,8 @@ interface ChatMessageAreaProps {
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
     hasMore?: boolean;
     onLoadMore?: () => Promise<void>;
+    onToggleSearch?: () => void;
+    isSearchOpen?: boolean;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
@@ -88,6 +90,8 @@ export function ChatMessageArea({
     onEditMessage,
     hasMore = false,
     onLoadMore,
+    onToggleSearch,
+    isSearchOpen = false,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -451,6 +455,13 @@ export function ChatMessageArea({
 
                 {/* Header Actions */}
                 <div className="flex items-center gap-1">
+                    <button
+                        onClick={onToggleSearch}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isSearchOpen ? "bg-blue-500/10 text-blue-500" : "hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400"}`}
+                        title="Search messages"
+                    >
+                        <Search className="h-4 w-4" />
+                    </button>
                     <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
                         <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                     </button>
