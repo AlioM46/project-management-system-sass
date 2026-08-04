@@ -14,7 +14,18 @@
 
 ---
 
-## 2.1 messages Scroll || Pagiantion
+## 2.1 Messages Scroll & Pagination
+### Backend (Laravel)
+- [x] Configure message query sorting by `created_at` descending and limit page size to `30`.
+- [x] Filter out deleted-for-me messages using `whereDoesntHave('deletions')` logic.
+- [x] Return standard Laravel pagination envelope with page metadata.
+
+### Frontend (React)
+- [x] Manage `currentPage` and `hasMoreMessages` state hooks in active conversation page container.
+- [x] Reverse descending database outputs to render chronologically (oldest-to-newest).
+- [x] Intercept top-scrolling scroll events (`scrollTop <= 10`) to fetch next pages of older messages.
+- [x] Implement scroll anchoring to measure scroll differences and prevent screen layout jumping.
+- [x] Build a floating indicator button `"New Messages ↓"` with a count badge for scrolled-up incoming message states.
 
 ---
 
