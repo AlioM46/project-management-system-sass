@@ -39,6 +39,7 @@ Route::prefix('auth')->group(function () {
 
         Route::prefix('profile')->group(function () {
             Route::patch('/', [ProfileController::class, 'updateProfile']);
+            Route::put('/status', [ProfileController::class, 'updateStatus']);
             Route::post('/avatar', [ProfileController::class, 'uploadAvatar']);
             Route::delete('/avatar', [ProfileController::class, 'removeAvatar']);
         });

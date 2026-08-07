@@ -29,6 +29,7 @@ class User extends Authenticatable implements JWTSubject
         'timezone',
         'password',
         'status',
+        'custom_status',
         'last_login_at',
         'last_login_ip',
         'refresh_token',
@@ -74,6 +75,7 @@ class User extends Authenticatable implements JWTSubject
                 'avatar_url' => $this->avatar_url,
                 'timezone' => $this->timezone,
                 'status' => $this->status,
+                'custom_status' => $this->custom_status,
             ],
         ];
     }
