@@ -4,6 +4,7 @@ namespace App\Modules\Notifications\Enums;
 
 class NotificationType
 {
+    const INFO = 'info';
     const MENTIONED = 'mentioned';
 
     const COMMENT_REPLIED = 'comment_replied';
