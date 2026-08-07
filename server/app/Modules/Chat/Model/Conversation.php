@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Conversation extends Model
 {
@@ -18,6 +19,7 @@ class Conversation extends Model
         'workspace_id',
         'project_id',
         'name',
+        'description',
         'type',
     ];
 
@@ -47,5 +49,17 @@ class Conversation extends Model
     public function readStates(): HasMany
     {
         return $this->hasMany(ConversationReadState::class);
+    }
+
+    public function attachments(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            MessageAttachment::class,
+            Message::class,
+            'conversation_id',
+            'message_id',
+            'id',
+            'id'
+        );
     }
 }
