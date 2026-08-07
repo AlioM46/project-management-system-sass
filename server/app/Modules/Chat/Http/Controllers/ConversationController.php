@@ -54,7 +54,7 @@ class ConversationController extends Controller
                         $q->where('user_id', $userId)->where('is_active', true);
                     });
             })
-            ->with(['project:id,name', 'participants.user:id,name,avatar_url'])
+            ->with(['project:id,name', 'participants.user:id,name,avatar_url,custom_status'])
             ->get();
 
         // 2. تحويل البيانات وإضافة الحقول الجديدة (unread_count و last_message)
@@ -555,8 +555,6 @@ class ConversationController extends Controller
     public function deleteForMe(Request $request, int $conversationId, int $messageId)
     {
 
-
-
         $userId = auth()->id();
         $message = Message::where('conversation_id', $conversationId)->findOrFail($messageId);
 
@@ -657,8 +655,164 @@ class ConversationController extends Controller
         return ApiResponse::success('Message updated successfully.', $message->toArray());
     }
 
+    /**
+     * Get sidebar info (categorized media/docs, participants, groups in common).
+     */
+    public function sidebarInfo(int $conversationId): JsonResponse
+    {
+        $userId = auth()->id();
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
 
+        $conversation = Conversation::where('workspace_id', $workspaceId)
+            ->with([
+                'project:id,name',
+                'participants.user:id,name,email,avatar_url,custom_status',
+            ])
+            ->findOrFail($conversationId);
 
+        $isParticipant = $conversation->participants()
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->exists();
 
+        if (!$isParticipant && $conversation->type !== 'project') {
+            return ApiResponse::error('You are not authorized to view this conversation info.', 'UNAUTHORIZED_ACCESS', [], 403);
+        }
 
+        // Fetch attachments via HasManyThrough
+        $allAttachments = $conversation->attachments()
+            ->select('message_attachments.*')
+            ->latest()
+            ->get()
+            ->map(function ($att) {
+                return [
+                    'id' => $att->id,
+                    'message_id' => $att->message_id,
+                    'original_name' => $att->original_name,
+                    'file_type' => $att->file_type,
+                    'file_size' => $att->file_size,
+                    'download_url' => $att->download_url,
+                    'created_at' => $att->created_at,
+                ];
+            });
+
+        $mediaAttachments = $allAttachments->filter(function ($att) {
+            $type = strtolower($att['file_type'] ?? '');
+            $name = strtolower($att['original_name'] ?? '');
+            return str_starts_with($type, 'image/') ||
+                str_starts_with($type, 'video/') ||
+                str_starts_with($type, 'audio/') ||
+                str_contains($name, 'voice_note');
+        })->values();
+
+        $docAttachments = $allAttachments->filter(function ($att) {
+            $type = strtolower($att['file_type'] ?? '');
+            $name = strtolower($att['original_name'] ?? '');
+            $isMedia = str_starts_with($type, 'image/') ||
+                str_starts_with($type, 'video/') ||
+                str_starts_with($type, 'audio/') ||
+                str_contains($name, 'voice_note');
+            return !$isMedia;
+        })->values();
+
+        // Groups in common for direct messages
+        $groupsInCommon = [];
+        if ($conversation->type === 'direct') {
+            // because its direct, the partner is the other user in the conversation
+            $partner = $conversation->participants->firstWhere('user_id', '!=', $userId);
+            if ($partner) {
+                // SELECT id, name, type, created_at 
+                // FROM conversation
+                // WHERE workspace_id = 12
+                // AND type = 'group'
+                // AND EXISTS ( -- هل ينتمي المستخدم (أنت) لهذه المجموعة؟
+                //     SELECT 1 FROM conversation_participants 
+                //     WHERE conversation_id = conversation.id AND user_id = 5 AND is_active = 1
+                //   )
+                // AND EXISTS ( -- وهل ينتمي المستخدم الثاني (صديقك) لنفس هذه المجموعة أيضاً؟
+                //     SELECT 1 FROM conversation_participants 
+                //     WHERE conversation_id = conversation.id AND user_id = 9 AND is_active = 1
+                //   );
+
+                $partnerUserId = $partner->user_id;
+                $groupsInCommon = Conversation::where('workspace_id', $workspaceId)
+                    ->where('type', 'group')
+                    // whereHas("relation", CallBack Function)
+                    ->whereHas('participants', function ($q) use ($userId) {
+                        $q->where('user_id', $userId)->where('is_active', true);
+                    })
+                    ->whereHas('participants', function ($q) use ($partnerUserId) {
+                        $q->where('user_id', $partnerUserId)->where('is_active', true);
+                    })
+                    ->select('id', 'name', 'type', 'created_at')
+                    ->get();
+            }
+        }
+
+        return ApiResponse::success('Sidebar info retrieved successfully.', [
+            'conversation' => [
+                'id' => $conversation->id,
+                'name' => $conversation->name,
+                'description' => $conversation->description,
+                'type' => $conversation->type,
+                'project' => $conversation->project,
+                'created_at' => $conversation->created_at,
+            ],
+            'participants' => $conversation->participants->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'user_id' => $p->user_id,
+                    'role' => $p->role,
+                    'user' => $p->user,
+                    'avatar_url' => $p->user->avatar_url,
+                    'joined_at' => $p->joined_at,
+                ];
+            }),
+            'media_attachments' => $mediaAttachments,
+            'document_attachments' => $docAttachments,
+            'groups_in_common' => $groupsInCommon,
+        ]);
+    }
+
+    /**
+     * Update group conversation details (name and description).
+     */
+    public function updateDetails(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'name' => 'nullable|string|max:150',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $user = auth()->user();
+        $conversation = Conversation::findOrFail($id);
+
+        if ($conversation->type === 'direct') {
+            return ApiResponse::error('Cannot update details of a direct message.', 'INVALID_TYPE', [], 400);
+        }
+
+        // Check if current user is an active participant with owner or admin role
+        $participant = ConversationParticipant::where('conversation_id', $conversation->id)
+            ->where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->first();
+
+        if (!$participant || !in_array($participant->role, ['owner', 'admin'])) {
+            return ApiResponse::error('Only group admins and owners can update group details.', 'FORBIDDEN', [], 403);
+        }
+
+        $updateData = [];
+        if ($request->has('name')) {
+            $updateData['name'] = $request->name;
+        }
+        if ($request->has('description')) {
+            $updateData['description'] = $request->description;
+        }
+
+        if (!empty($updateData)) {
+            $conversation->update($updateData);
+        }
+
+        return ApiResponse::success('Group details updated successfully.', $conversation->fresh()->toArray());
+    }
 }
