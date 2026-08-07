@@ -42,4 +42,20 @@ class ProfileController extends Controller
             data: ['user' => $user]
         );
     }
+
+    public function updateStatus(Request $request): JsonResponse
+    {
+        $request->validate([
+            'custom_status' => 'nullable|string|max:150',
+        ]);
+
+        $user = $request->user();
+        $user->custom_status = $request->custom_status;
+        $user->save();
+
+        return ApiResponse::success(
+            message: 'Status updated successfully.',
+            data: ['user' => $user->fresh()]
+        );
+    }
 }

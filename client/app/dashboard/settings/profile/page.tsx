@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Lock, Upload, Trash2, Save, Camera, Globe } from "lucide-react";
+import { User, Lock, Upload, Trash2, Save, Camera, Globe, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getMe } from "@/features/auth/api/auth.api";
@@ -32,6 +32,7 @@ export default function ProfileSettingsPage() {
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [timezone, setTimezone] = useState("UTC");
+    const [customStatus, setCustomStatus] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
 
     // Password form state
@@ -56,6 +57,7 @@ export default function ProfileSettingsPage() {
             setName(userData.name || "");
             setUsername(userData.username || "");
             setTimezone((userData as any).timezone || "UTC");
+            setCustomStatus((userData as any).custom_status || "");
         } catch (error) {
             console.error("Failed to load user profile", error);
             toast.error(getErrorMessage(error, "Failed to load user profile."));
@@ -78,6 +80,7 @@ export default function ProfileSettingsPage() {
                 name: name.trim(),
                 username: username.trim() || undefined,
                 timezone,
+                custom_status: customStatus.trim() || undefined,
             });
             setUser(updatedUser);
             window.dispatchEvent(new CustomEvent("user_profile_updated", { detail: updatedUser }));
@@ -292,6 +295,21 @@ export default function ProfileSettingsPage() {
                             value={user?.email || ""}
                             disabled
                             className="w-full px-3 py-2 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-zinc-900 dark:text-white flex items-center gap-1.5">
+                            <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />
+                            Custom Status / About Me
+                        </label>
+                        <input
+                            type="text"
+                            value={customStatus}
+                            onChange={(e) => setCustomStatus(e.target.value)}
+                            maxLength={150}
+                            placeholder="e.g. Working on project management, Available for chats..."
+                            className="w-full px-3 py-2 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white"
                         />
                     </div>
 

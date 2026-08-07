@@ -27,6 +27,7 @@ class UpdateProfileRequest extends FormRequest
                 Rule::unique('users', 'username')->ignore($userId),
             ],
             'timezone' => ['sometimes', 'nullable', 'string', 'max:64', 'timezone'],
+            'custom_status' => ['sometimes', 'nullable', 'string', 'max:150'],
         ];
     }
 }
