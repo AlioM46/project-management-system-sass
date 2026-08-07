@@ -14,7 +14,7 @@
 
 ---
 
-## 2.1 Messages Scroll & Pagination
+## 2. Messages Scroll & Pagination
 ### Backend (Laravel)
 - [x] Configure message query sorting by `created_at` descending and limit page size to `30`.
 - [x] Filter out deleted-for-me messages using `whereDoesntHave('deletions')` logic.
@@ -29,16 +29,17 @@
 
 ---
 
-## 2. Message Search
+## 3. Message Search
 ### Backend (Laravel)
 - [x] Add keyword filtering support to the message list endpoint.
 
 ### Frontend (React)
 - [x] Add a search button in the chat header to toggle a search input bar.
 - [x] Filter messages dynamically and auto-scroll to the matched message with highlight effects.
+
 ---
 
-## 3. Voice Messages
+## 4. Voice Messages
 ### Frontend (React)
 - [x] Add a microphone recorder button inside the chat composer bar.
 - [x] Record voice notes locally in `audio/webm` or `audio/mp3` formats using the browser's `MediaRecorder API`.
@@ -51,15 +52,48 @@
 
 ---
 
-## 4. Chat Info Sidebar
+## 5. Chat Info Sidebar
 ### Frontend (React)
-- [ ] Build a collapsible right sidebar panel toggled by clicking the conversation header name.
-- [ ] Render shared attachments categorized by Media (images/videos) and Documents.
-- [ ] List group members and expose administrator controls to add or remove participants.
+- [x] Build a collapsible right sidebar panel toggled by clicking the conversation header name or info button.
+- [x] Render shared attachments categorized by Media (images/videos/voice notes) and Documents.
+- [x] List group members with search, role badges (Owner/Admin/Member), and live online status indicators.
+- [x] Render "Groups in Common" section for Direct Messages.
+
+### Backend (Laravel)
+- [x] Add `attachments()` HasManyThrough relationship in Conversation model.
+- [x] Create `/api/v1/workspaces/{workspaceId}/chat/conversations/{id}/info` endpoint for sidebar data.
 
 ---
 
-## 5. Pin Messages
+## 6. Conversation & Group Management Controls
+### Backend (Laravel)
+- [X] **Add / Remove Group Members:** Add admin endpoints to invite workspace users (`POST /participants`) and remove members (`DELETE /participants/{userId}`).
+- [X] **Change User Role:** Add admin endpoints to change user role (`PUT /participants/{userId}/role`).
+- [X] **Change Group Name & Description:** Add `description` column to `conversations` table and update endpoint (`PUT /conversations/{id}`).
+- [X] **User Text Status:** Add `custom_status` column to `users` profile table with update endpoint (`PUT /auth/profile/status`).
+
+- [ ] **Clear Chat History:** Add endpoint (`POST /conversations/{id}/clear`) to soft-delete/hide message history for current user.
+- [ ] **Delete Conversation:** Add endpoint (`DELETE /conversations/{id}`) to remove conversation entry from user's active list.
+
+- [ ] **Starred Messages:** Add `starred_messages` pivot table with endpoints (`POST /messages/{id}/star` and `GET /conversations/{id}/starred`).
+- [ ] **Mute Conversation:** Add `muted_until` column or user mute pivot table (`POST /conversations/{id}/mute`).
+- [ ] **Block Contact:** Create `blocked_users` table with endpoints (`POST /users/block` and `DELETE /users/block/{userId}`).
+
+### Frontend (React)
+- [X] **Member Management UI:** Add "+ Add Member" modal, "Remove Member" action, and role toggles inside Members list.
+- [C] **Group Details Edit:** Add inline edit inputs for Group Name and Group Description in sidebar profile banner.
+- [X] **User Status Display:** Render user's custom text status below display name in profile banner.
+- [ ] **Clear Chat Confirmation:** Add modal to confirm clearing chat history with instant UI cleanup.
+- [ ] **Delete Conversation Action:** Add confirmation modal to remove conversation and redirect to empty state.
+
+- [ ] **Custom Chat Theme/Wallpaper:** Add wallpaper selection picker in sidebar to personalize chat background.
+- [ ] **Starred Messages View:** Add "Starred Messages" tab/panel inside sidebar to preview saved messages.
+- [ ] **Mute Toggle & Duration Modal:** Wire Mute button with duration selection (8 Hours, 1 Week, Always).
+- [ ] **Block Contact Banner:** Wire Block button for DMs with status banner ("You have blocked this contact").
+
+---
+
+## 7. Pin Messages
 ### Backend (Laravel)
 - [ ] Add `is_pinned` boolean column to `messages` table.
 - [ ] Implement toggle endpoint to pin/unpin a message and broadcast the updated status globally.
@@ -70,7 +104,7 @@
 
 ---
 
-## 6. User Mentions (@Mentions)
+## 8. User Mentions (@Mentions)
 ### Frontend (React)
 - [ ] Display auto-complete user list popover when typing `@` in the text area.
 - [ ] Format and highlight mentioned names with custom color styles inside bubbles.
@@ -80,14 +114,14 @@
 
 ---
 
-## 7. Markdown & Code Formatting
+## 9. Markdown & Code Formatting
 ### Frontend (React)
 - [ ] Parse basic Markdown tags in message bubbles (bold `*text*`, italic `_text_`).
 - [ ] Support multiline code block highlight wrappers (using ` ``` ` syntax).
 
 ---
 
-## 8. Read Receipts (Sent, Delivered, Read Ticks)
+## 10. Read Receipts (Sent, Delivered, Read Ticks)
 ### Backend (Laravel)
 - [ ] Track message status (sent, delivered, read) and broadcast receipt changes.
 
@@ -98,14 +132,14 @@
 
 ---
 
-## 9. GIF Search Integration
+## 11. GIF Search Integration
 ### Frontend (React)
 - [ ] Embed a searchable GIF panel (via Giphy or Tenor API) inside emoji/attachments picker.
 - [ ] Send chosen GIFs as media attachment messages.
 
 ---
 
-## 10. Favorite & Pinned Conversations (Sidebar)
+## 12. Favorite & Pinned Conversations (Sidebar)
 ### Backend (Laravel)
 - [ ] Add a favorites database attribute or relation to track pinned sidebar chats.
 

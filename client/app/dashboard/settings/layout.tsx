@@ -30,7 +30,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     const pathname = usePathname();
 
     return (
-        <div className="flex-1 space-y-6 p-6 sm:p-8 max-w-7xl mx-auto">
+        <div className="flex-1 space-y-6 p-6 sm:p-8 max-w-7xl mx-auto w-full pb-12">
             {/* Header */}
             <div>
                 <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">

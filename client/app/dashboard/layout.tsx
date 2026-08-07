@@ -19,8 +19,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="flex flex-col flex-1 w-full md:pl-64 transition-all duration-300">
                             <DashboardNavbar />
                             
-                            <main className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent">
-                                <div className="mx-auto max-w-7xl">
+                            <main className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent w-full">
+                                <div className="w-full h-full">
                                     {children}
                                 </div>
                             </main>
