@@ -4,6 +4,7 @@ import { ChatSidebar } from "@/features/chat/components/ChatSidebar";
 import { ChatMessageArea } from "@/features/chat/components/ChatMessageArea";
 import { NewConversationModal } from "@/features/chat/components/NewConversationModal";
 import { ChatSearchSidebar } from "@/features/chat/components/ChatSearchSidebar";
+import { ChatInfoSidebar } from "@/features/chat/components/ChatInfoSidebar";
 import { useCallback, useEffect, useState } from "react";
 import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
@@ -28,6 +29,7 @@ export default function ChatPage() {
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
     const { markConversationAsReadLocally } = useNotifications();
     const { onlineUserIds, isUserOnline } = usePresence();
 
@@ -408,7 +410,7 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="flex h-[calc(100dvh-64px)] overflow-hidden">
+        <div className="flex h-full w-full overflow-hidden">
             {/* Left: Conversation List */}
             <ChatSidebar
                 isUserOnline={isUserOnline}
@@ -443,14 +445,26 @@ export default function ChatPage() {
                 onLoadNewer={handleLoadNewerMessages}
                 onToggleSearch={() => setIsSearchOpen((prev) => !prev)}
                 isSearchOpen={isSearchOpen}
+                onToggleInfoSidebar={() => setIsInfoSidebarOpen((prev) => !prev)}
+                isInfoSidebarOpen={isInfoSidebarOpen}
             />
 
-            {/* Right: WhatsApp Web Style Message Search Sidebar */}
+            {/* Right: Message Search Sidebar */}
             {isSearchOpen && (
                 <ChatSearchSidebar
                     conversationId={activeConversationId}
                     onClose={() => setIsSearchOpen(false)}
                     onSelectMessage={handleSelectSearchMessage}
+                />
+            )}
+
+            {/* Right: Conversation Info Sidebar */}
+            {isInfoSidebarOpen && activeConversationId && (
+                <ChatInfoSidebar
+                    conversationId={activeConversationId}
+                    currentUserId={currentUserId ?? 0}
+                    isUserOnline={isUserOnline}
+                    onClose={() => setIsInfoSidebarOpen(false)}
                 />
             )}
 

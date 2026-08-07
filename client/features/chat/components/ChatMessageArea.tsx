@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -33,6 +33,8 @@ interface ChatMessageAreaProps {
     onLoadNewer?: () => Promise<void>;
     onToggleSearch?: () => void;
     isSearchOpen?: boolean;
+    onToggleInfoSidebar?: () => void;
+    isInfoSidebarOpen?: boolean;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
@@ -103,6 +105,8 @@ export function ChatMessageArea({
     onLoadNewer,
     onToggleSearch,
     isSearchOpen = false,
+    onToggleInfoSidebar,
+    isInfoSidebarOpen = false,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -467,10 +471,11 @@ export function ChatMessageArea({
 
         // Later on, Check if each user in the group is online or not.
         if (conversation?.type === "direct") {
+            const statusText = (partner as any)?.custom_status ? ` · "${(partner as any).custom_status}"` : "";
             return isOnline ? (
-                <span className="text-emerald-600 dark:text-emerald-400">Online</span>
+                <span className="text-emerald-600 dark:text-emerald-400">Online{statusText}</span>
             ) : (
-                <span className="text-zinc-400">Offline</span>
+                <span className="text-zinc-400">Offline{statusText}</span>
             );
         }
 
@@ -511,7 +516,11 @@ export function ChatMessageArea({
         <div className="flex-1 flex flex-col bg-zinc-50/50 dark:bg-[#050505]">
             {/* ─── Chat Header ─────────────────────────────────────────── */}
             <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shrink-0">
-                <div className="flex items-center gap-3">
+                <div
+                    onClick={onToggleInfoSidebar}
+                    className="flex items-center gap-3 cursor-pointer group py-1 rounded-lg transition-opacity hover:opacity-85"
+                    title="View conversation info"
+                >
                     {/* Avatar/Icon */}
                     {conversation.type === "project" ? (
                         <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
@@ -537,7 +546,7 @@ export function ChatMessageArea({
                     )}
 
                     <div>
-                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-blue-500 transition-colors">
                             {getHeaderName()}
                         </h3>
                         <p className="text-[11px] font-medium">
@@ -555,14 +564,12 @@ export function ChatMessageArea({
                     >
                         <Search className="h-4 w-4" />
                     </button>
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                    </button>
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <Video className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                    </button>
-                    <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors">
-                        <MoreVertical className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                    <button
+                        onClick={onToggleInfoSidebar}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isInfoSidebarOpen ? "bg-blue-500/10 text-blue-500" : "hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400"}`}
+                        title="Conversation info"
+                    >
+                        <Info className="h-4 w-4" />
                     </button>
                 </div>
             </div>

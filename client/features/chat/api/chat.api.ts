@@ -118,3 +118,83 @@ export async function searchMessages(
     return response.data;
 }
 
+export async function getConversationInfo(conversationId: number): Promise<{
+    conversation: {
+        id: number;
+        name: string | null;
+        type: "direct" | "group" | "project";
+        project?: { id: number; name: string } | null;
+        created_at: string;
+    };
+    participants: {
+        id: number;
+        user_id: number;
+        role: "owner" | "admin" | "member";
+        user: { id: number; name: string; email: string; avatar_url: string | null };
+    }[];
+    media_attachments: {
+        id: number;
+        message_id: number;
+        original_name: string;
+        file_type: string;
+        file_size: number;
+        download_url: string;
+        created_at: string;
+    }[];
+    document_attachments: {
+        id: number;
+        message_id: number;
+        original_name: string;
+        file_type: string;
+        file_size: number;
+        download_url: string;
+        created_at: string;
+    }[];
+    groups_in_common: {
+        id: number;
+        name: string;
+        type: string;
+        created_at: string;
+    }[];
+}> {
+    return await apiClient.get(`/conversations/${conversationId}/info`);
+}
+
+export async function addGroupParticipants(
+    conversationId: number,
+    userIds: number[]
+): Promise<any> {
+    return await apiClient.post(`/conversations/${conversationId}/participants`, {
+        user_ids: userIds,
+    });
+}
+
+export async function removeGroupParticipant(
+    conversationId: number,
+    userId: number
+): Promise<any> {
+    return await apiClient.delete(`/conversations/${conversationId}/participants/${userId}`);
+}
+
+export async function updateParticipantRole(
+    conversationId: number,
+    participantId: number,
+    role: "owner" | "admin" | "member"
+): Promise<any> {
+    return await apiClient.put(`/conversations/${conversationId}/participants/${participantId}/role`, {
+        role,
+    });
+}
+
+export async function updateGroupDetails(
+    conversationId: number,
+    data: { name?: string; description?: string }
+): Promise<any> {
+    return await apiClient.put(`/conversations/${conversationId}`, data);
+}
+
+export async function updateUserCustomStatus(custom_status: string): Promise<any> {
+    return await apiClient.put('/auth/profile/status', { custom_status });
+}
+
+
