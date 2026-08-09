@@ -8,6 +8,7 @@ import {
     Users,
     FileText,
     ExternalLink,
+    Bell,
     BellOff,
     Search,
     Trash2,
@@ -17,11 +18,20 @@ import {
     Video,
     Mic,
     UserPlus,
-    Pencil,
-    Check,
+    AlertTriangle,
+    Star,
 } from "lucide-react";
-import { getConversationInfo, removeGroupParticipant, updateParticipantRole, updateGroupDetails } from "../api/chat.api";
-import { getInitials } from "../utils/chatHelpers";
+import {
+    getConversationInfo,
+    removeGroupParticipant,
+    updateParticipantRole,
+    clearConversation,
+    deleteConversation,
+    muteConversation,
+    getStarredMessages,
+    toggleStarMessage,
+} from "../api/chat.api";
+import { getInitials, formatTime } from "../utils/chatHelpers";
 import { VoicePlayerCard } from "./VoicePlayerCard";
 import { AddMembersModal } from "./AddMembersModal";
 import { MemberActionMenu } from "./MemberActionMenu";
@@ -31,7 +41,7 @@ import { getErrorMessage } from "@/shared/api/ApiError";
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type MainTab = "info" | "media";
+type MainTab = "info" | "media" | "starred";
 type MediaTab = "images" | "videos" | "audio" | "docs";
 
 interface ChatInfoSidebarProps {
@@ -39,6 +49,10 @@ interface ChatInfoSidebarProps {
     currentUserId: number;
     isUserOnline: (userId: number) => boolean;
     onClose: () => void;
+    onClearChatSuccess?: () => void;
+    onDeleteConversationSuccess?: (deletedId: number) => void;
+    onMuteToggleSuccess?: (conversationId: number, isMuted: boolean) => void;
+    onSelectMessage?: (messageId: number) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -56,6 +70,10 @@ export function ChatInfoSidebar({
     currentUserId,
     isUserOnline,
     onClose,
+    onClearChatSuccess,
+    onDeleteConversationSuccess,
+    onMuteToggleSuccess,
+    onSelectMessage,
 }: ChatInfoSidebarProps) {
     const [infoData, setInfoData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +84,20 @@ export function ChatInfoSidebar({
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedMemberForMenu, setSelectedMemberForMenu] = useState<any>(null);
     const [isRemoving, setIsRemoving] = useState(false);
+    const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+
+    // Confirmation dialog states for Clear & Delete & Mute
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
+
+    const [isSubmittingClear, setIsSubmittingClear] = useState(false);
+    const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
+    const [isSubmittingMute, setIsSubmittingMute] = useState(false);
+
+    // Starred Messages State
+    const [starredMessages, setStarredMessages] = useState<any[]>([]);
+    const [isLoadingStarred, setIsLoadingStarred] = useState(false);
 
     // Fetch from API
     const fetchInfo = async () => {
@@ -80,9 +112,37 @@ export function ChatInfoSidebar({
         }
     };
 
+    const fetchStarred = async () => {
+        setIsLoadingStarred(true);
+        try {
+            const list = await getStarredMessages(conversationId);
+            setStarredMessages(list);
+        } catch (err) {
+            console.error("Failed to fetch starred messages:", err);
+        } finally {
+            setIsLoadingStarred(false);
+        }
+    };
+
     useEffect(() => {
         fetchInfo();
     }, [conversationId]);
+
+    useEffect(() => {
+        if (mainTab === "starred") {
+            fetchStarred();
+        }
+    }, [mainTab, conversationId]);
+
+    const handleUnstar = async (msgId: number) => {
+        try {
+            await toggleStarMessage(conversationId, msgId);
+            toast.success("Message unstarred");
+            setStarredMessages((prev) => prev.filter((m) => m.id !== msgId));
+        } catch (err) {
+            toast.error(getErrorMessage(err, "Failed to unstar message"));
+        }
+    };
 
     // Destructure API response
     const conversation = infoData?.conversation;
@@ -119,38 +179,6 @@ export function ChatInfoSidebar({
     const audios = mediaAttachments.filter(isAudio);
     const totalMedia = mediaAttachments.length + docAttachments.length;
 
-    const [isUpdatingRole, setIsUpdatingRole] = useState(false);
-    const [isEditingDetails, setIsEditingDetails] = useState(false);
-    const [editedName, setEditedName] = useState("");
-    const [editedDescription, setEditedDescription] = useState("");
-    const [isSavingDetails, setIsSavingDetails] = useState(false);
-
-    const canEditGroupDetails = (!isDirect) && (currentUserRole === "owner" || currentUserRole === "admin");
-
-    useEffect(() => {
-        if (conversation) {
-            setEditedName(conversation.name || "");
-            setEditedDescription(conversation.description || "");
-        }
-    }, [conversation]);
-
-    const handleSaveGroupDetails = async () => {
-        setIsSavingDetails(true);
-        try {
-            await updateGroupDetails(conversationId, {
-                name: editedName,
-                description: editedDescription,
-            });
-            toast.success("Group details updated successfully!");
-            setIsEditingDetails(false);
-            fetchInfo();
-        } catch (error) {
-            toast.error(getErrorMessage(error, "Failed to update group details"));
-        } finally {
-            setIsSavingDetails(false);
-        }
-    };
-
     // Remove member handler
     const handleRemoveMember = async (userId: number) => {
         setIsRemoving(true);
@@ -166,18 +194,73 @@ export function ChatInfoSidebar({
         }
     };
 
-    // Update member role handler (Admin/Owner promote/demote)
+    // Update role handler
     const handleUpdateRole = async (participantId: number, newRole: "owner" | "admin" | "member") => {
         setIsUpdatingRole(true);
         try {
             await updateParticipantRole(conversationId, participantId, newRole);
-            toast.success(`User role updated to ${newRole}!`);
+            toast.success("Role updated successfully!");
             setSelectedMemberForMenu(null);
             fetchInfo();
         } catch (error) {
-            toast.error(getErrorMessage(error, "Failed to update member role"));
+            toast.error(getErrorMessage(error, "Failed to update role"));
         } finally {
             setIsUpdatingRole(false);
+        }
+    };
+
+    // Clear Chat History handler
+    const handleConfirmClearChat = async () => {
+        setIsSubmittingClear(true);
+        try {
+            await clearConversation(conversationId);
+            toast.success("Chat history cleared!");
+            setIsClearConfirmOpen(false);
+            if (onClearChatSuccess) onClearChatSuccess();
+            fetchInfo();
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to clear chat history"));
+        } finally {
+            setIsSubmittingClear(false);
+        }
+    };
+
+    // Delete / Leave Conversation handler
+    const handleConfirmDeleteConversation = async () => {
+        setIsSubmittingDelete(true);
+        try {
+            await deleteConversation(conversationId);
+            toast.success(isDirect ? "Conversation deleted!" : "Left group successfully!");
+            setIsDeleteConfirmOpen(false);
+            if (onDeleteConversationSuccess) {
+                onDeleteConversationSuccess(conversationId);
+            }
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to delete conversation"));
+        } finally {
+            setIsSubmittingDelete(false);
+        }
+    };
+
+    // Mute notifications handler
+    const handleMute = async (durationMinutes: number | null) => {
+        setIsSubmittingMute(true);
+        try {
+            const res = await muteConversation(conversationId, durationMinutes);
+            toast.success(
+                durationMinutes === 0
+                    ? "Notifications unmuted!"
+                    : durationMinutes === null
+                        ? "Muted notifications indefinitely (Forever)"
+                        : `Muted notifications for ${durationMinutes >= 1440 ? `${durationMinutes / 1440} day(s)` : `${durationMinutes} minute(s)`}`
+            );
+            setIsMuteModalOpen(false);
+            fetchInfo();
+            if (onMuteToggleSuccess) onMuteToggleSuccess(conversationId, res.is_muted);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to update mute settings"));
+        } finally {
+            setIsSubmittingMute(false);
         }
     };
 
@@ -257,104 +340,55 @@ export function ChatInfoSidebar({
                                     )}
                                 </div>
 
-                                {/* Name + subtitle / Edit details mode */}
-                                {isEditingDetails ? (
-                                    <div className="w-full max-w-xs space-y-2 text-start">
-                                        <div>
-                                            <label className="text-[10px] font-semibold uppercase text-zinc-400">Group Name</label>
-                                            <input
-                                                type="text"
-                                                value={editedName}
-                                                onChange={(e) => setEditedName(e.target.value)}
-                                                placeholder="Group Name"
-                                                className="w-full mt-0.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/10 text-xs font-semibold bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-semibold uppercase text-zinc-400">Description</label>
-                                            <textarea
-                                                value={editedDescription}
-                                                onChange={(e) => setEditedDescription(e.target.value)}
-                                                placeholder="Add group description..."
-                                                rows={2}
-                                                className="w-full mt-0.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/10 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 resize-none"
-                                            />
-                                        </div>
-                                        <div className="flex items-center justify-end gap-2 pt-1">
-                                            <button
-                                                onClick={() => setIsEditingDetails(false)}
-                                                className="px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={handleSaveGroupDetails}
-                                                disabled={isSavingDetails}
-                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                                            >
-                                                {isSavingDetails ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                                <span>Save</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="w-full flex flex-col items-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <h4 className="font-bold text-lg text-zinc-900 dark:text-white">{displayName}</h4>
-                                            {canEditGroupDetails && (
-                                                <button
-                                                    onClick={() => setIsEditingDetails(true)}
-                                                    className="p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors"
-                                                    title="Edit Group Name & Description"
-                                                >
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>
+                                {/* Name + subtitle */}
+                                <div>
+                                    <h4 className="font-bold text-lg text-zinc-900 dark:text-white">{displayName}</h4>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>
+                                </div>
 
-                                        {/* Description preview */}
-                                        {(conversation?.description || canEditGroupDetails) && !isDirect && (
-                                            <div className="w-full px-4 py-2.5 mt-3 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-100 dark:border-white/5 text-start">
-                                                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">Description</p>
-                                                <p className="text-xs text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap">
-                                                    {conversation?.description || (
-                                                        <span className="italic text-zinc-400">No description added yet.</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        )}
+                                {/* Quick Action Buttons (WhatsApp Style: Mute | Starred | Clear) */}
+                                <div className="flex items-center justify-center gap-6 pt-2">
+                                    {/* Mute Button */}
+                                    <button
+                                        onClick={() => setIsMuteModalOpen(true)}
+                                        title={conversation?.is_muted ? "Unmute notifications" : "Mute notifications"}
+                                        className={`flex flex-col items-center gap-1.5 transition-all group ${conversation?.is_muted
+                                            ? "text-amber-600 dark:text-amber-400"
+                                            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                                            }`}
+                                    >
+                                        <div className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-all shadow-xs ${conversation?.is_muted
+                                            ? "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30"
+                                            : "bg-zinc-100 dark:bg-white/10 group-hover:bg-zinc-200 dark:group-hover:bg-white/15"
+                                            }`}>
+                                            {conversation?.is_muted ? <BellOff className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                                        </div>
+                                        <span className="text-[11px] font-semibold">{conversation?.is_muted ? "Muted" : "Mute"}</span>
+                                    </button>
 
-                                        {/* Direct message partner custom status display */}
-                                        {isDirect && partner?.custom_status && (
-                                            <div className="w-full px-4 py-2.5 mt-3 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-100 dark:border-white/5 text-start">
-                                                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">Status</p>
-                                                <p className="text-xs text-zinc-600 dark:text-zinc-300 italic">
-                                                    "{partner.custom_status}"
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    {/* Starred Messages Button (WhatsApp Style under profile) */}
+                                    <button
+                                        onClick={() => setMainTab("starred")}
+                                        title="View Starred Messages"
+                                        className="flex flex-col items-center gap-1.5 transition-all text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white group"
+                                    >
+                                        <div className="h-11 w-11 rounded-2xl flex items-center justify-center transition-all shadow-xs bg-zinc-100 dark:bg-white/10 group-hover:bg-amber-500/10 group-hover:text-amber-500">
+                                            <Star className="h-5 w-5 fill-amber-400/40 text-amber-500 stroke-[1.8]" />
+                                        </div>
+                                        <span className="text-[11px] font-semibold">Starred</span>
+                                    </button>
 
-                                {/* Quick Action Buttons */}
-                                <div className="flex items-center justify-center gap-4 pt-1">
-                                    {[
-                                        { icon: <BellOff className="h-4 w-4" />, label: "Mute", hint: "Mute notifications (coming soon)" },
-                                        { icon: <Search className="h-4 w-4" />, label: "Search", hint: "Search in chat (coming soon)" },
-                                        { icon: <Trash2 className="h-4 w-4" />, label: "Clear", hint: "Clear chat history (coming soon)" },
-                                    ].map(({ icon, label, hint }) => (
-                                        <button
-                                            key={label}
-                                            title={hint}
-                                            className="flex flex-col items-center gap-1 text-zinc-500 dark:text-zinc-400 opacity-60 cursor-not-allowed"
-                                        >
-                                            <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-white/10 flex items-center justify-center">
-                                                {icon}
-                                            </div>
-                                            <span className="text-[11px]">{label}</span>
-                                        </button>
-                                    ))}
+                                    {/* Clear Chat Button */}
+                                    <button
+                                        onClick={() => setIsClearConfirmOpen(true)}
+                                        title="Clear chat history"
+                                        className="flex flex-col items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors group"
+                                    >
+                                        <div className="h-11 w-11 rounded-2xl bg-zinc-100 dark:bg-white/10 group-hover:bg-red-500/10 flex items-center justify-center">
+                                            <Trash2 className="h-5 w-5" />
+                                        </div>
+                                        <span className="text-[11px] font-semibold">Clear</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -366,7 +400,6 @@ export function ChatInfoSidebar({
                                             {participants.length} Members
                                         </h5>
 
-                                        {/* + Add Member Button (All participants allowed to click per requirement) */}
                                         <button
                                             onClick={() => setIsAddModalOpen(true)}
                                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-xs"
@@ -450,17 +483,23 @@ export function ChatInfoSidebar({
                             <div className="p-5 space-y-1">
                                 <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">Actions</h5>
 
-                                {!isDirect && (
-                                    <button title="Leave group (coming soon)" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm opacity-60 cursor-not-allowed">
-                                        <LogOut className="h-4 w-4 shrink-0" />
-                                        <span>Leave group</span>
-                                    </button>
-                                )}
+                                {/* Clear Chat History */}
+                                <button
+                                    onClick={() => setIsClearConfirmOpen(true)}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors text-sm font-medium"
+                                >
+                                    <Trash2 className="h-4 w-4 text-zinc-500 shrink-0" />
+                                    <span>Clear chat history</span>
+                                </button>
 
-                                {isDirect && (
-                                    <button title="Block user (coming soon)" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm opacity-60 cursor-not-allowed">
-                                        <Ban className="h-4 w-4 shrink-0" />
-                                        <span>Block {partner?.name || "user"}</span>
+                                {/* Delete / Leave Conversation */}
+                                {!isProject && (
+                                    <button
+                                        onClick={() => setIsDeleteConfirmOpen(true)}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm font-medium"
+                                    >
+                                        <LogOut className="h-4 w-4 shrink-0" />
+                                        <span>{isDirect ? "Delete chat" : currentUserRole === "owner" ? "Delete group" : "Leave group"}</span>
                                     </button>
                                 )}
                             </div>
@@ -576,6 +615,63 @@ export function ChatInfoSidebar({
                             </div>
                         </div>
                     )}
+
+                    {/* ── Main Tab 3: Starred Messages ──────────── */}
+                    {mainTab === "starred" && (
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {isLoadingStarred ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-zinc-400 gap-2">
+                                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                    <p className="text-xs">Loading starred messages...</p>
+                                </div>
+                            ) : starredMessages.length === 0 ? (
+                                <EmptyState icon={<Star className="h-8 w-8 text-amber-400" />} label="No starred messages in this chat." />
+                            ) : (
+                                starredMessages.map((msg) => (
+                                    <div
+                                        key={msg.id}
+                                        onClick={() => onSelectMessage && onSelectMessage(msg.id)}
+                                        title="Click to jump to message in chat"
+                                        className="p-3.5 rounded-2xl border border-zinc-200/80 dark:border-white/10 bg-zinc-50 dark:bg-white/5 space-y-2.5 relative group hover:border-amber-500/40 hover:bg-amber-500/5 cursor-pointer transition-all shadow-xs"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+                                                    {getInitials(msg.sender?.name || "U")}
+                                                </div>
+                                                <span className="text-xs font-semibold text-zinc-900 dark:text-white">
+                                                    {msg.sender?.name || "User"}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-zinc-400">
+                                                    {formatTime(msg.created_at)}
+                                                </span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleUnstar(msg.id);
+                                                    }}
+                                                    title="Unstar message"
+                                                    className="p-1 rounded-md text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+                                                >
+                                                    <Star className="h-3.5 w-3.5 fill-amber-400/40 text-amber-500 stroke-[1.8]" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-normal">
+                                            {msg.body}
+                                        </p>
+
+                                        <div className="flex items-center justify-between pt-1 border-t border-zinc-200/40 dark:border-white/5 text-[10px] text-amber-600 dark:text-amber-400 font-semibold group-hover:underline">
+                                            <span>Go To Message</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </>
             )}
 
@@ -600,6 +696,149 @@ export function ChatInfoSidebar({
                 onUpdateRole={handleUpdateRole}
                 onClose={() => setSelectedMemberForMenu(null)}
             />
+
+            {/* ── Clear Chat Confirmation Dialog ────── */}
+            {isClearConfirmOpen && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#111b21] w-full max-w-sm rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
+                        <div className="flex items-center gap-3 text-amber-500">
+                            <div className="p-2.5 rounded-full bg-amber-500/10">
+                                <AlertTriangle className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-base text-zinc-900 dark:text-white">Clear Chat History?</h4>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">This will hide message history for you.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                            <button
+                                onClick={() => setIsClearConfirmOpen(false)}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmClearChat}
+                                disabled={isSubmittingClear}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 transition-colors disabled:opacity-50"
+                            >
+                                {isSubmittingClear && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                <span>Clear Chat</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Delete Conversation Confirmation Dialog ── */}
+            {isDeleteConfirmOpen && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#111b21] w-full max-w-sm rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
+                        <div className="flex items-center gap-3 text-red-500">
+                            <div className="p-2.5 rounded-full bg-red-500/10">
+                                <Trash2 className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-base text-zinc-900 dark:text-white">
+                                    {isDirect ? "Delete Conversation?" : currentUserRole === "owner" ? "Delete Group?" : "Leave Group?"}
+                                </h4>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                    {isDirect ? "This chat will be removed from your sidebar." : "You will no longer participate in this group."}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                            <button
+                                onClick={() => setIsDeleteConfirmOpen(false)}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDeleteConversation}
+                                disabled={isSubmittingDelete}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                                {isSubmittingDelete && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                <span>Confirm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Mute Notifications Modal Dialog ── */}
+            {isMuteModalOpen && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#111b21] w-full max-w-sm rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
+                        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-white/5 pb-3">
+                            <div className="flex items-center gap-2 text-zinc-900 dark:text-white font-bold text-base">
+                                <BellOff className="h-5 w-5 text-amber-500" />
+                                <span>Mute Notifications</span>
+                            </div>
+                            <button
+                                onClick={() => setIsMuteModalOpen(false)}
+                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                            Choose how long you want to mute notifications for <strong className="text-zinc-900 dark:text-white">{displayName}</strong>:
+                        </p>
+
+                        <div className="space-y-1.5 pt-1">
+                            {[
+                                { label: "15 Minutes", minutes: 15, icon: "⏱️" },
+                                { label: "1 Hour", minutes: 60, icon: "⏱️" },
+                                { label: "8 Hours", minutes: 480, icon: "⏱️" },
+                                { label: "24 Hours (1 Day)", minutes: 1440, icon: "📅" },
+                                { label: "1 Week (7 Days)", minutes: 10080, icon: "📅" },
+                                { label: "Forever (Indefinitely)", minutes: null, icon: "♾️" },
+                            ].map((opt, idx) => (
+                                <button
+                                    key={idx}
+                                    disabled={isSubmittingMute}
+                                    onClick={() => handleMute(opt.minutes)}
+                                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors group disabled:opacity-50"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <span>{opt.icon}</span>
+                                        <span>{opt.label}</span>
+                                    </span>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 font-bold">Select ➔</span>
+                                </button>
+                            ))}
+
+                            {conversation?.is_muted && (
+                                <button
+                                    disabled={isSubmittingMute}
+                                    onClick={() => handleMute(0)}
+                                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors mt-2 disabled:opacity-50"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Bell className="h-4 w-4" />
+                                        <span>Unmute Notifications</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold">Activate 🔊</span>
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end pt-2 border-t border-zinc-100 dark:border-white/5">
+                            <button
+                                onClick={() => setIsMuteModalOpen(false)}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 }
