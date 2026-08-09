@@ -62,8 +62,24 @@ class Message extends Model
         return $this->hasMany(MessageAttachment::class, 'message_id');
     }
 
+    public function starredByUsers(): HasMany
+    {
+        return $this->hasMany(StarredMessage::class, 'message_id');
+    }
+
     public function deletions(): HasMany
     {
         return $this->hasMany(MessageDeletion::class, 'message_id');
+    }
+
+
+    public function scopeVisibleToParticipant($query, ?ConversationParticipant $participant)
+    {
+        $userId = auth()->id();
+        return $query->when($participant && $participant->cleared_at, function ($q) use ($participant) {
+            $q->where('created_at', '>', $participant->cleared_at);
+        })->whereDoesntHave('deletions', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        });
     }
 }
