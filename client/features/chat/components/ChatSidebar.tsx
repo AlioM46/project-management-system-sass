@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
-import { Search, Plus, Hash, Users, MessageCircle } from "lucide-react";
+import { Search, Plus, Hash, Users, MessageCircle, BellOff, Star } from "lucide-react";
 import { Conversation, User } from "../types";
 
 interface ChatSidebarProps {
@@ -9,11 +9,12 @@ interface ChatSidebarProps {
     activeConversationId: number | null;
     onSelectConversation: (id: number) => void;
     onOpenNewConversationModal?: () => void;
+    onOpenStarredTab?: () => void;
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
 }
 
-export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, isUserOnline, typingUsers = [] }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, onOpenStarredTab, isUserOnline, typingUsers = [] }: ChatSidebarProps) {
     // Helper: Get display name for a conversation
     const { currentUser, isLoading } = useCurrentUser();
 
@@ -88,7 +89,7 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                     <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Messages</h2>
                 </div>
-                <button onClick={onOpenNewConversationModal} className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm">
+                <button onClick={onOpenNewConversationModal} title="New Chat" className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm">
                     <Plus className="h-4 w-4 text-white" />
                 </button>
             </div>
@@ -146,9 +147,12 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                                                 }`}>
                                                 {getConversationName(conv)}
                                             </span>
-                                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-                                                {formatTime(conv.last_message?.created_at)}
-                                            </span>
+                                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}
+                                                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                                                    {formatTime(conv.last_message?.created_at)}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
@@ -197,9 +201,12 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                                                 }`}>
                                                 {getConversationName(conv)}
                                             </span>
-                                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-                                                {formatTime(conv.last_message?.created_at)}
-                                            </span>
+                                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                                                {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}
+                                                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                                                    {formatTime(conv.last_message?.created_at)}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
