@@ -18,11 +18,18 @@ Route::prefix('conversations')
         Route::put('/{id}/messages/{messageId}/updateForMe', [ConversationController::class, 'update'])->whereNumber('id')->whereNumber('messageId');
 
         Route::post('/{id}/messages/{messageId}/reactions', [ConversationController::class, 'toggleReaction'])->whereNumber('id')->whereNumber('messageId');
+        Route::post('/{id}/messages/{messageId}/star', [ConversationController::class, 'toggleStarMessage'])->whereNumber('id')->whereNumber('messageId');
 
         Route::get('/{id}/messages/search', [ConversationController::class, 'searchMessages'])->whereNumber('id');
+        Route::get('/{id}/starred', [ConversationController::class, 'getStarredMessages'])->whereNumber('id');
 
         Route::get('/{id}/info', [ConversationController::class, 'sidebarInfo'])->whereNumber('id');
         Route::put('/{id}', [ConversationController::class, 'updateDetails'])->whereNumber('id');
+
+        // Conversation Actions Routes
+        Route::post('/{id}/clear', [ParticipantsController::class, 'ClearConversation'])->whereNumber('id');
+        Route::delete('/{id}', [ParticipantsController::class, 'DeleteConversation'])->whereNumber('id');
+        Route::post('/{id}/mute', [ParticipantsController::class, 'ToggleMute'])->whereNumber('id');
 
         // Participant Management Routes
         Route::post('/{id}/participants', [ParticipantsController::class, 'AddParticipants'])->whereNumber('id');
