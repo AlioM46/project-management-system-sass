@@ -197,4 +197,33 @@ export async function updateUserCustomStatus(custom_status: string): Promise<any
     return await apiClient.put('/auth/profile/status', { custom_status });
 }
 
+export async function clearConversation(conversationId: number): Promise<any> {
+    return await apiClient.post(`/conversations/${conversationId}/clear`);
+}
+
+export async function deleteConversation(conversationId: number): Promise<any> {
+    return await apiClient.delete(`/conversations/${conversationId}`);
+}
+
+export async function muteConversation(
+    conversationId: number,
+    durationMinutes: number | null
+): Promise<any> {
+    return await apiClient.post(`/conversations/${conversationId}/mute`, {
+        duration_minutes: durationMinutes,
+    });
+}
+
+export async function toggleStarMessage(
+    conversationId: number,
+    messageId: number
+): Promise<{ is_starred: boolean }> {
+    return await apiClient.post(`/conversations/${conversationId}/messages/${messageId}/star`);
+}
+
+export async function getStarredMessages(conversationId: number): Promise<any[]> {
+    return await apiClient.get(`/conversations/${conversationId}/starred`);
+}
+
+
 
