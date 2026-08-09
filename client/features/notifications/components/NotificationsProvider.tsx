@@ -69,8 +69,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     async function handleChatMessageNotification(event: RealtimeNotificationEvent) {
         if (pathnameRef.current === "/dashboard/chat") {
             await markNotificationAsRead(event.id);
-
+            if (typeof window !== "undefined") {
+                console.log("Event data: ", event.data);
+                window.dispatchEvent(new CustomEvent("chat:notification-received", { detail: event.data }));
+            }
             return; // or play soft sound
+        }
+
+        // Suppress Toast popup if conversation is muted for the current user
+        if ((event?.data as any)?.is_muted || (event?.data as any)?.conversation?.is_muted) {
+            setItems((currentItems) => upsertNotification(currentItems, event));
+
+            return;
         }
 
         let redirectionText = ""
