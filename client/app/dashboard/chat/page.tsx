@@ -6,7 +6,7 @@ import { NewConversationModal } from "@/features/chat/components/NewConversation
 import { ChatSearchSidebar } from "@/features/chat/components/ChatSearchSidebar";
 import { ChatInfoSidebar } from "@/features/chat/components/ChatInfoSidebar";
 import { useCallback, useEffect, useState } from "react";
-import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage } from "@/features/chat/api/chat.api";
+import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage, toggleStarMessage } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
 import { Conversation, Message, MessageReaction } from "@/features/chat/types";
 import { toast } from "sonner";
@@ -52,29 +52,7 @@ export default function ChatPage() {
         setActiveConversationId(conversationId && !isNaN(Number(conversationId)) ? Number(conversationId) : null);
     }, [searchParams])
 
-    useEffect(() => {
-        const handleGlobalMessage = (e: Event) => {
-            const newMessage = (e as CustomEvent).detail;
 
-            setConversations((prev) =>
-                prev.map((conv) => {
-                    if (conv.id === newMessage.conversation_id) {
-                        return {
-                            ...conv,
-                            last_message: newMessage,
-                            unread_count: activeConversationId === conv.id ? 0 : (conv.unread_count || 0) + 1,
-                        };
-                    }
-                    return conv;
-                })
-            );
-        };
-
-
-        window.addEventListener("new-chat-message", handleGlobalMessage);
-        return () => window.removeEventListener("new-chat-message", handleGlobalMessage);
-
-    }, [activeConversationId]);
 
 
 
@@ -91,6 +69,15 @@ export default function ChatPage() {
         markConversationAsReadLocally(activeConversationId);
     }, [activeConversationId]);
 
+
+    const fetchConversations = useCallback(async () => {
+        try {
+            const convos = await getConversations();
+            setConversations(convos);
+        } catch (error) {
+            console.error("Failed to refresh conversations:", error);
+        }
+    }, []);
 
     useEffect(() => {
         async function loadConversations() {
@@ -201,8 +188,6 @@ export default function ChatPage() {
 
     const handleIncomingMessage = useCallback(
         (newMessage: Message) => {
-
-
             setMessages((prev) => {
                 const exists = prev?.some((m) => m.id === newMessage.id);
                 return exists
@@ -210,8 +195,13 @@ export default function ChatPage() {
                     : [...prev, newMessage];
             });
 
-            setConversations((prev) =>
-                prev.map((conv) => {
+            setConversations((prev) => {
+                const exists = prev.some((c) => c.id === newMessage.conversation_id);
+                if (!exists) {
+                    fetchConversations();
+                    return prev;
+                }
+                return prev.map((conv) => {
                     if (conv.id === newMessage.conversation_id) {
                         return {
                             ...conv,
@@ -220,11 +210,24 @@ export default function ChatPage() {
                         };
                     }
                     return conv;
-                })
-            );
+                });
+            });
         },
-        [activeConversationId]
+        [activeConversationId, fetchConversations]
     );
+
+    // Listen for new chat messages dispatched from global window events
+    useEffect(() => {
+        const handleGlobalMessage = (e: Event) => {
+            const newMessage = (e as CustomEvent).detail;
+            if (newMessage) {
+                handleIncomingMessage(newMessage);
+            }
+        };
+
+        window.addEventListener("new-chat-message", handleGlobalMessage);
+        return () => window.removeEventListener("new-chat-message", handleGlobalMessage);
+    }, [handleIncomingMessage]);
 
     const handleReactionUpdated = useCallback(
         (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => {
@@ -302,6 +305,21 @@ export default function ChatPage() {
         handleUpdatingMessage
     );
 
+    // Listen for incoming notifications when a reactivated conversation receives a new message
+    useEffect(() => {
+        const handleNotificationReceived = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail?.message) {
+                handleIncomingMessage(detail.message);
+            }
+        };
+
+        window.addEventListener("chat:notification-received", handleNotificationReceived);
+        return () => {
+            window.removeEventListener("chat:notification-received", handleNotificationReceived);
+        };
+    }, [handleIncomingMessage]);
+
     async function handleSendMessage(body: string, conversationId: number, replyId?: number, attachments?: File[]) {
         try {
             setIsSending(true);
@@ -366,6 +384,19 @@ export default function ChatPage() {
         }
     }
 
+    const handleToggleStarMessage = async (messageId: number) => {
+        if (!activeConversationId) return;
+        try {
+            const res = await toggleStarMessage(activeConversationId, messageId);
+            setMessages((prev) =>
+                prev.map((msg) => (msg.id === messageId ? { ...msg, is_starred: res.is_starred } : msg))
+            );
+            toast.success(res.is_starred ? "Message starred ⭐" : "Message unstarred");
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to star message"));
+        }
+    };
+
     const handleSelectSearchMessage = async (messageId: number) => {
         if (!activeConversationId) return;
 
@@ -418,6 +449,13 @@ export default function ChatPage() {
                 activeConversationId={activeConversationId}
                 onSelectConversation={handleSelectConversation}
                 onOpenNewConversationModal={() => setIsModalOpen(true)}
+                onOpenStarredTab={() => {
+                    if (activeConversationId) {
+                        setIsInfoSidebarOpen(true);
+                    } else {
+                        toast.info("Select a conversation to view its starred messages");
+                    }
+                }}
                 typingUsers={typingUsers}
             />
 
@@ -436,6 +474,7 @@ export default function ChatPage() {
                 recordingUsers={recordingUsers}
                 onRecording={sendRecording}
                 onToggleReaction={handleToggleReaction}
+                onToggleStarMessage={handleToggleStarMessage}
                 onDeleteForMe={handleDeleteForMeMessage}
                 onDeleteForAll={handleDeleteForAllMessage}
                 onEditMessage={handleUpdateMessage}
@@ -465,6 +504,18 @@ export default function ChatPage() {
                     currentUserId={currentUserId ?? 0}
                     isUserOnline={isUserOnline}
                     onClose={() => setIsInfoSidebarOpen(false)}
+                    onClearChatSuccess={() => setMessages([])}
+                    onDeleteConversationSuccess={(deletedId) => {
+                        setConversations((prev) => prev.filter((c) => c.id !== deletedId));
+                        setActiveConversationId(null);
+                        setIsInfoSidebarOpen(false);
+                    }}
+                    onMuteToggleSuccess={(mutedId, isMuted) => {
+                        setConversations((prev) =>
+                            prev.map((c) => (c.id === mutedId ? { ...c, is_muted: isMuted } : c))
+                        );
+                    }}
+                    onSelectMessage={handleSelectSearchMessage}
                 />
             )}
 
