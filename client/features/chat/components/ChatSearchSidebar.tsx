@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, X, Loader2, FileText } from "lucide-react";
+import { Search, X, Loader2, FileText, Star } from "lucide-react";
 import { Message } from "../types";
 import { searchMessages } from "../api/chat.api";
 import { getErrorMessage } from "@/shared/api/ApiError";
@@ -178,9 +178,14 @@ export function ChatSearchSidebar({
                                         <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                                             {msg.sender?.name || "User"}
                                         </span>
-                                        <span className="text-[10px] text-zinc-400 shrink-0">
-                                            {formatDate(msg.created_at)}
-                                        </span>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            {msg.is_starred && (
+                                                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                            )}
+                                            <span className="text-[10px] text-zinc-400">
+                                                {formatDate(msg.created_at)}
+                                            </span>
+                                        </div>
                                     </div>
                                     <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                                         {highlightMatch(msg.body, searchQuery)}
