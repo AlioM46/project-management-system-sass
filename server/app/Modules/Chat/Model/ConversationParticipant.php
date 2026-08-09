@@ -20,11 +20,15 @@ class ConversationParticipant extends Model
         'role', // 'participant', 'admin', 'owner'
         'is_active',
         'joined_at',
+        'cleared_at',
+        'muted_until',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'joined_at' => 'datetime',
+        'cleared_at' => 'datetime',
+        'muted_until' => 'datetime',
     ];
 
     public function conversation(): BelongsTo
