@@ -72,19 +72,21 @@
 - [X] **Change Group Name & Description:** Add `description` column to `conversations` table and update endpoint (`PUT /conversations/{id}`).
 - [X] **User Text Status:** Add `custom_status` column to `users` profile table with update endpoint (`PUT /auth/profile/status`).
 
-- [ ] **Clear Chat History:** Add endpoint (`POST /conversations/{id}/clear`) to soft-delete/hide message history for current user.
-- [ ] **Delete Conversation:** Add endpoint (`DELETE /conversations/{id}`) to remove conversation entry from user's active list.
+- [x] **Clear Chat History:** Add endpoint (`POST /conversations/{id}/clear`) to soft-delete/hide message history for current user.
+- [x] **Delete Conversation:** Add endpoint (`DELETE /conversations/{id}`) to remove conversation entry from user's active list.
 
-- [ ] **Starred Messages:** Add `starred_messages` pivot table with endpoints (`POST /messages/{id}/star` and `GET /conversations/{id}/starred`).
-- [ ] **Mute Conversation:** Add `muted_until` column or user mute pivot table (`POST /conversations/{id}/mute`).
+- [x] **Mute Conversation:** Add `muted_until` column and endpoint (`POST /conversations/{id}/mute`).
+- [x] **Starred Messages:** Add `starred_messages` pivot table with endpoints (`POST /messages/{id}/star` and `GET /conversations/{id}/starred`).
 - [ ] **Block Contact:** Create `blocked_users` table with endpoints (`POST /users/block` and `DELETE /users/block/{userId}`).
 
 ### Frontend (React)
 - [X] **Member Management UI:** Add "+ Add Member" modal, "Remove Member" action, and role toggles inside Members list.
 - [C] **Group Details Edit:** Add inline edit inputs for Group Name and Group Description in sidebar profile banner.
 - [X] **User Status Display:** Render user's custom text status below display name in profile banner.
-- [ ] **Clear Chat Confirmation:** Add modal to confirm clearing chat history with instant UI cleanup.
-- [ ] **Delete Conversation Action:** Add confirmation modal to remove conversation and redirect to empty state.
+- [x] **Clear Chat Confirmation:** Add modal to confirm clearing chat history with instant UI cleanup.
+- [x] **Delete Conversation Action:** Add confirmation modal to remove conversation and redirect to empty state.
+- [x] **Mute Toggle & Duration Modal:** Wire Mute button with duration selection (15m, 1h, 8h, 24h, 1w, Forever).
+- [x] **Starred Messages UI & Tab:** Add Star/Unstar action to message popover menu and dedicated Starred Messages tab in sidebar.
 
 - [ ] **Custom Chat Theme/Wallpaper:** Add wallpaper selection picker in sidebar to personalize chat background.
 - [ ] **Starred Messages View:** Add "Starred Messages" tab/panel inside sidebar to preview saved messages.
