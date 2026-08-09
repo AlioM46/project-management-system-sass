@@ -333,4 +333,184 @@ class ParticipantsController extends Controller
         return false;
     }
 
+
+    public function ClearConversation(int $conversationId)
+    {
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
+        // find conversation
+        $conversation = Conversation::where('id', $conversationId)->first();
+
+        if (!$conversation) {
+            return ApiResponse::error('Conversation not found', 'NOT_FOUND', [], 404);
+        }
+
+        // check if user is in the chat
+        $user = auth()->user();
+        $participant = $conversation->participants->where('user_id', $user->id)->where("is_active", true)->first();
+
+        if (!$participant) {
+            return ApiResponse::error('You are not a participant in this conversation.', 'NOT_FOUND', [], 404);
+        }
+
+        // check conversation type:
+        $participant->update([
+            "cleared_at" => now(),
+        ]);
+
+        return ApiResponse::success('Conversation Cleared successfully.');
+    }
+
+    public function DeleteConversation(int $conversationId)
+    {
+
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
+        // find conversation
+        $conversation = Conversation::where('id', $conversationId)->first();
+
+        if (!$conversation) {
+            return ApiResponse::error('Conversation not found', 'NOT_FOUND', [], 404);
+        }
+
+        // check if user is in the chat
+        $user = auth()->user();
+        $participant = $conversation->participants->where('user_id', $user->id)->first();
+
+        if (!$participant) {
+            return ApiResponse::error('You are not a participant in this conversation.', 'NOT_FOUND', [], 404);
+        }
+
+        // check conversation type:
+        if (strtolower($conversation->type) == 'direct') {
+            $participant->update([
+                "cleared_at" => now(),
+                "is_active" => false,
+            ]);
+            $partner = $conversation->participants->firstWhere("user_id", "!=", $user->id);
+            if ($partner) {
+                $this->notificationService->send(
+                    $workspaceId,
+                    $partner->user_id,
+                    NotificationType::INFO,
+                    [
+                        'message' => $user->name . ' left this chat',
+                        'conversationId' => $conversationId,
+                        'senderId' => $user->id,
+                        'workspaceId' => $workspaceId
+                    ]
+                );
+            }
+            return ApiResponse::success('Conversation deleted successfully.');
+        }
+
+        // - group:
+        if (strtolower($conversation->type) == 'group') {
+            $userRole = $participant->role;
+            if (in_array($userRole, ['member', 'admin'])) {
+                $participant->update([
+                    "cleared_at" => now(),
+                    "is_active" => false,
+                ]);
+
+                $userIds = $conversation->participants->where('is_active', true)->pluck('user_id')->toArray();
+
+                foreach ($userIds as $userId) {
+                    if ($userId != $user->id) {
+                        $this->notificationService->send(
+                            $workspaceId,
+                            $userId,
+                            NotificationType::INFO,
+                            [
+                                'message' => $user->name . ' left this chat',
+                                'conversationId' => $conversationId,
+                                'senderId' => $user->id,
+                                'workspaceId' => $workspaceId
+                            ]
+                        );
+                    }
+                }
+                return ApiResponse::success('Conversation deleted successfully.');
+            }
+
+            if ($userRole == 'owner') {
+                $userIds = $conversation->participants->where('is_active', true)->pluck('user_id')->toArray();
+                Conversation::where('id', $conversationId)->delete();
+
+                foreach ($userIds as $userId) {
+                    if ($userId != $user->id) {
+                        $this->notificationService->send(
+                            $workspaceId,
+                            $userId,
+                            NotificationType::INFO,
+                            [
+                                'message' => $user->name . ' deleted this group',
+                                'conversationId' => $conversationId,
+                                'senderId' => $user->id,
+                                'workspaceId' => $workspaceId
+                            ]
+                        );
+                    }
+                }
+                return ApiResponse::success('Conversation deleted successfully.');
+            }
+        }
+
+
+        //   
+        //     - if member -> leave the group   
+
+        //     - if admin -> leave the group
+
+        //     - if owner -> set new owner || delete the conversation 
+        // SEND NOTIFICATIONS
+
+
+        if (strtolower($conversation->type) == 'project') {
+            return ApiResponse::error('Project conversations cannot be deleted.', 'FORBIDDEN', [], 403);
+        }
+    }
+
+    public function ToggleMute(Request $request, int $conversationId)
+    {
+
+        $validated = $request->validate([
+            'duration_minutes' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $userId = auth()->id();
+
+        $participant = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', $userId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$participant) {
+            return ApiResponse::error('Unauthorized or not a member of this conversation.', 'UNAUTHORIZED', [], 403);
+        }
+
+        $durationMinutes = array_key_exists('duration_minutes', $validated) ? $validated['duration_minutes'] : null;
+
+        // duration in-minutes: 0 - null - specific time
+        // if 0 -> unmute
+        // if null -> 100 years
+        // if specific time -> add minutes
+        if ($durationMinutes === 0) {
+            //remove mute
+            $participant->muted_until = null;
+        } elseif ($durationMinutes === null) {
+            // mute forever
+            $participant->muted_until = now()->addYears(100);
+        } else {
+            // mute for specific time
+            $participant->muted_until = now()->addMinutes($durationMinutes);
+        }
+
+        $participant->save();
+
+        $isMuted = $participant->muted_until && $participant->muted_until->isFuture();
+
+        return ApiResponse::success("Mute status updated successfully.", [
+            'is_muted' => $isMuted,
+            'muted_until' => $participant->muted_until ? $participant->muted_until->toIso8601String() : null,
+        ]);
+    }
 }
