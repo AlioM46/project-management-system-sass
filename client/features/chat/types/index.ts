@@ -42,6 +42,8 @@ export interface Conversation {
     participants?: Participant[];
     unread_count?: number;
     last_message?: Message | null;
+    is_muted?: boolean;
+    muted_until?: string | null;
 }
 
 export interface MessageReaction {
@@ -71,6 +73,7 @@ export interface Message {
     attachments?: MessageAttachments[];
     isEdited?: boolean;
     isDeleted?: boolean;
+    is_starred?: boolean;
     deletedById?: number | null;
 }
 
