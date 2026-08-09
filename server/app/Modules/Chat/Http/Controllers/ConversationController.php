@@ -14,6 +14,7 @@ use App\Modules\Chat\Model\ConversationParticipant;
 use App\Modules\Chat\Model\Message;
 use App\Modules\Chat\Model\MessageDeletion;
 use App\Modules\Chat\Model\MessageReaction;
+use App\Modules\Chat\Model\StarredMessage;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Model\Notification;
 use App\Modules\Notifications\Services\NotificationService;
@@ -83,9 +84,15 @@ class ConversationController extends Controller
                 ->first();
 
             // دمج البيانات لإرجاعها في الـ JSON
+            $participant = $conversation->participants->firstWhere('user_id', $userId);
+            $mutedUntil = $participant ? $participant->muted_until : null;
+            $isMuted = $mutedUntil ? $mutedUntil->isFuture() : false;
+
             $data = $conversation->toArray();
             $data['unread_count'] = $unreadCount;
             $data['last_message'] = $lastMessage;
+            $data['is_muted'] = $isMuted;
+            $data['muted_until'] = $mutedUntil ? $mutedUntil->toIso8601String() : null;
 
             return $data;
         });
@@ -133,6 +140,12 @@ class ConversationController extends Controller
                 ->first();
 
             if ($existing) {
+                // Check if the conversation is active
+                $participant = $existing->participants()->where('user_id', $currentUserId)->first();
+                if ($participant && !$participant->is_active) {
+                    // Re-activate the conversation
+                    $participant->update(['is_active' => true, 'joined_at' => now()]);
+                }
                 return ApiResponse::success('Conversation retrieved successfully.', $existing->load('participants.user:id,name,avatar_url')->toArray());
             }
         }
@@ -171,20 +184,27 @@ class ConversationController extends Controller
         $page = $request->query('page', 1); // URL: /messages/search/q=shoes
 
 
-        $isParticipant = ConversationParticipant::where('conversation_id', $conversationId)
+        $conversation = Conversation::findOrFail($conversationId);
+
+        $participant = ConversationParticipant::where('conversation_id', $conversation->id)
             ->where('user_id', auth()->id())
             ->where('is_active', true)
-            ->exists();
+            ->first();
 
-        if (!$isParticipant) {
+        // Security check: non-project chats require an active participant
+        if ($conversation->type !== 'project' && !$participant) {
             return ApiResponse::error('Unauthorized.', 'UNAUTHORIZED_ACCESS', [], 403);
         }
 
+        $userId = auth()->id();
         $messages = Message::where('conversation_id', $conversationId)
+            ->visibleToParticipant($participant)
             ->where('body', 'LIKE', "%{$search}%")
-            ->whereDoesntHave('deletions', function ($query) {
-                $query->where('user_id', auth()->id());
-            })
+            ->withExists([
+                'starredByUsers as is_starred' => function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                }
+            ])
             ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
             ->orderBy('created_at', 'desc')
             ->paginate(30);
@@ -226,14 +246,22 @@ class ConversationController extends Controller
         }
 
         $responseData = [];
+        $participant = ConversationParticipant::where('conversation_id', $id)
+            ->where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->first();
 
+        $userId = auth()->id();
         if ($aroundMessageId) {
             // Case 1: Search Jump context slice (around a target message)
             $anchorMessage = Message::where('conversation_id', $id)
+                ->visibleToParticipant($participant)
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
                 ->where('id', $aroundMessageId)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })
                 ->first();
 
             if (!$anchorMessage) {
@@ -242,20 +270,24 @@ class ConversationController extends Controller
 
             // Get 15 messages before and 15 messages after
             $beforeMessages = Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", "<", $anchorMessage->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })
-                ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
-                ->orderBy('created_at', "desc")
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])->orderBy('created_at', "desc")
                 ->limit(15)
                 ->get();
 
             $afterMessages = Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", ">", $anchorMessage->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
                 ->orderBy('created_at', "asc")
                 ->limit(15)
@@ -270,16 +302,14 @@ class ConversationController extends Controller
             $lastMsg = $sortedMessages->last();
 
             $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", "<", $firstMsg->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })->exists() : false;
+                ->exists() : false;
 
             $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", ">", $lastMsg->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })->exists() : false;
+                ->exists() : false;
 
             $responseData = [
                 'data' => $sortedMessages->toArray(),
@@ -292,10 +322,13 @@ class ConversationController extends Controller
             $beforeMessage = Message::findOrFail($beforeMessageId);
 
             $beforeMessagesList = Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", "<", $beforeMessage->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
                 ->orderBy('created_at', "desc")
                 ->limit(30)
@@ -305,10 +338,9 @@ class ConversationController extends Controller
             $firstMsg = $sortedMessages->first();
 
             $hasMoreMessagesBefore = $firstMsg ? Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", "<", $firstMsg->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })->exists() : false;
+                ->exists() : false;
 
             $responseData = [
                 'data' => $sortedMessages->toArray(),
@@ -321,10 +353,13 @@ class ConversationController extends Controller
             $afterMessage = Message::findOrFail($afterMessageId);
 
             $afterMessagesList = Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", ">", $afterMessage->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
                 ->orderBy('created_at', "asc")
                 ->limit(30)
@@ -334,10 +369,9 @@ class ConversationController extends Controller
             $lastMsg = $sortedMessages->last();
 
             $hasMoreMessagesAfter = $lastMsg ? Message::where("conversation_id", $id)
+                ->visibleToParticipant($participant)
                 ->where("created_at", ">", $lastMsg->created_at)
-                ->whereDoesntHave('deletions', function ($q) {
-                    $q->where('user_id', auth()->id());
-                })->exists() : false;
+                ->exists() : false;
 
             $responseData = [
                 'data' => $sortedMessages->toArray(),
@@ -347,10 +381,13 @@ class ConversationController extends Controller
 
         } else {
             // Case 4: Default paginated load (latest messages first)
-            $messages = $conversation->messages()
-                ->whereDoesntHave('deletions', function ($query) {
-                    $query->where('user_id', auth()->id());
-                })
+            $messages = Message::where('conversation_id', $id)
+                ->visibleToParticipant($participant)
+                ->withExists([
+                    'starredByUsers as is_starred' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
                 ->with(['sender:id,name,avatar_url', 'parent.sender:id,name', 'reactions.user:id,name', 'attachments'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(30);
@@ -415,6 +452,13 @@ class ConversationController extends Controller
 
 
 
+        // Reactivate any inactive participant in direct messages only (so the DM reappears in their sidebar)
+        if ($conversation->type === 'direct') {
+            ConversationParticipant::where('conversation_id', $conversation->id)
+                ->where('is_active', false)
+                ->update(['is_active' => true, "joined_at" => now()]);
+        }
+
         $participantsIds = ConversationParticipant::where('conversation_id', $conversation->id)->where('is_active', true)->pluck('user_id')->toArray();
         // if auth().id() is not in participantsIds
         if (in_array(auth()->id(), $participantsIds)) {
@@ -467,21 +511,30 @@ class ConversationController extends Controller
 
         $workspaceId = $this->workspaceContextService->currentWorkspaceId();
 
-        foreach ($participantsIds as $userId) {
+        // Fetch all active participants to send notifications (with is_muted flag for client-side suppression)
+        $allParticipants = ConversationParticipant::where('conversation_id', $conversation->id)
+            ->where('is_active', true)
+            ->get();
+
+        foreach ($allParticipants as $participant) {
+            if ($participant->user_id == auth()->id()) {
+                continue;
+            }
+
+            $isMuted = $participant->muted_until && $participant->muted_until->isFuture();
 
             $this->notificationService->send(
                 $workspaceId,
-                $userId,
+                $participant->user_id,
                 NotificationType::CHAT_MESSAGE,
                 [
                     'message' => $message,
                     'conversation' => $conversation,
                     'conversationId' => $conversation->id,
                     'senderId' => auth()->id(),
-                    'workspaceId' => $workspaceId
-
+                    'workspaceId' => $workspaceId,
+                    'is_muted' => $isMuted,
                 ]
-
             );
         }
 
@@ -749,6 +802,10 @@ class ConversationController extends Controller
             }
         }
 
+        $myParticipant = $conversation->participants->firstWhere('user_id', $userId);
+        $mutedUntil = $myParticipant ? $myParticipant->muted_until : null;
+        $isMuted = $mutedUntil ? $mutedUntil->isFuture() : false;
+
         return ApiResponse::success('Sidebar info retrieved successfully.', [
             'conversation' => [
                 'id' => $conversation->id,
@@ -757,6 +814,8 @@ class ConversationController extends Controller
                 'type' => $conversation->type,
                 'project' => $conversation->project,
                 'created_at' => $conversation->created_at,
+                'is_muted' => $isMuted,
+                'muted_until' => $mutedUntil ? $mutedUntil->toIso8601String() : null,
             ],
             'participants' => $conversation->participants->map(function ($p) {
                 return [
@@ -814,5 +873,63 @@ class ConversationController extends Controller
         }
 
         return ApiResponse::success('Group details updated successfully.', $conversation->fresh()->toArray());
+    }
+
+    /**
+     * Toggle Star / Unstar on a specific message for current user.
+     */
+    public function toggleStarMessage(int $id, int $messageId): JsonResponse
+    {
+        $userId = auth()->id();
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
+
+        $message = Message::where('conversation_id', $id)
+            ->where('id', $messageId)
+            ->firstOrFail();
+
+        $starred = StarredMessage::where('conversation_id', $id)
+            ->where('message_id', $messageId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($starred) {
+            $starred->delete();
+            return ApiResponse::success('Message unstarred successfully.', ['is_starred' => false]);
+        }
+
+        StarredMessage::create([
+            'workspace_id' => $workspaceId,
+            'conversation_id' => $id,
+            'user_id' => $userId,
+            'message_id' => $messageId,
+        ]);
+
+        return ApiResponse::success('Message starred successfully.', ['is_starred' => true]);
+    }
+
+    /**
+     * Get all starred messages for current user in a conversation.
+     */
+    public function getStarredMessages(int $id): JsonResponse
+    {
+        $userId = auth()->id();
+
+
+
+        $starredMessages = Message::query()
+            ->where('conversation_id', $id)
+            ->whereHas('starredByUsers', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->with(['sender:id,name,avatar_url,username', 'attachments', 'reactions'])
+            ->latest()
+            ->get()
+            ->map(function ($msg) {
+                $msgArray = $msg->toArray();
+                $msgArray['is_starred'] = true;
+                return $msgArray;
+            });
+
+        return ApiResponse::success('Starred messages retrieved successfully.', $starredMessages->toArray());
     }
 }
