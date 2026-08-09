@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -24,6 +24,7 @@ interface ChatMessageAreaProps {
     recordingUsers?: { id: number; name: string }[];
     onRecording?: (isRecording: boolean) => void;
     onToggleReaction?: (messageId: number, emoji: string) => void;
+    onToggleStarMessage?: (messageId: number) => Promise<void>;
     onDeleteForMe?: (messageId: number) => Promise<void>;
     onDeleteForAll?: (messageId: number) => Promise<void>;
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
@@ -96,6 +97,7 @@ export function ChatMessageArea({
     recordingUsers = [],
     onRecording,
     onToggleReaction,
+    onToggleStarMessage,
     onDeleteForMe,
     onDeleteForAll,
     onEditMessage,
@@ -680,7 +682,14 @@ export function ChatMessageArea({
                                                     )}
 
                                                     {/* Message Body */}
-                                                    {msg.body && <div className="text-sm font-normal">{msg.body}</div>}
+                                                    {msg.body && (
+                                                        <div className="flex items-end justify-between gap-2">
+                                                            <div className="text-sm font-normal">{msg.body}</div>
+                                                            {msg.is_starred && (
+                                                                <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0 mb-0.5" />
+                                                            )}
+                                                        </div>
+                                                    )}
 
                                                     {/* Message Attachments */}
                                                     {msg.attachments && msg.attachments.length > 0 && (
@@ -796,7 +805,18 @@ export function ChatMessageArea({
                                                     </button>
 
                                                     {activeMenuMessageId === msg.id && (
-                                                        <div className={`absolute bottom-8 z-50 w-36 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
+                                                        <div className={`absolute bottom-8 z-50 w-40 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (onToggleStarMessage) onToggleStarMessage(msg.id);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                                                            >
+                                                                <Star className={`h-3.5 w-3.5 ${msg.is_starred ? "fill-amber-400 text-amber-400" : ""}`} />
+                                                                <span>{msg.is_starred ? "Unstar Message" : "Star Message"}</span>
+                                                            </button>
                                                             <button
                                                                 disabled={!isMessageEditable(msg)}
                                                                 onClick={(e) => {
