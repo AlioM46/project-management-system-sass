@@ -3,7 +3,6 @@
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { Search, Plus, Hash, Users, MessageCircle, BellOff, Star } from "lucide-react";
 import { Conversation, User } from "../types";
-import { getConversationName, getInitials, formatTime } from "../utils/chatHelpers";
 
 interface ChatSidebarProps {
     conversations: any[];
@@ -16,7 +15,41 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, onOpenStarredTab, isUserOnline, typingUsers = [] }: ChatSidebarProps) {
+    // Helper: Get display name for a conversation
     const { currentUser, isLoading } = useCurrentUser();
+
+    function getConversationName(conv: any): string {
+        // Project
+        if (conv.type === "project" && conv.project) {
+            return conv.project.name;
+        }
+        // Group
+        if (conv.name) return conv.name;
+
+        // DM: show the other person's name
+        if (conv.participants?.[0]?.user?.id !== currentUser?.id && conv.participants?.[0]?.user?.name) {
+            return conv.participants[0].user.name;
+        } else if (conv.participants?.[1]?.user?.id !== currentUser?.id && conv.participants?.[1]?.user?.name) {
+            return conv.participants[1].user.name;
+        }
+        return "Unknown";
+    }
+
+    // Helper: Get initials from a name
+    function getInitials(name: string): string {
+        return name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+    }
+
+    // Helper: Format message timestamp
+    function formatTime(timestamp?: string): string {
+        if (!timestamp) return "";
+        try {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        } catch (e) {
+            return "";
+        }
+    }
 
     // Helper: Get icon/color for conversation type
     function getTypeIcon(conv: any) {
@@ -112,7 +145,7 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                                         <div className="flex items-center justify-between">
                                             <span className={`text-sm font-medium truncate ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"
                                                 }`}>
-                                                {getConversationName(conv, currentUser?.id ? Number(currentUser.id) : undefined)}
+                                                {getConversationName(conv)}
                                             </span>
                                             <div className="flex items-center gap-1 shrink-0 ml-2">
                                                 {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}
@@ -166,7 +199,7 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
                                         <div className="flex items-center justify-between">
                                             <span className={`text-sm font-medium truncate ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"
                                                 }`}>
-                                                {getConversationName(conv, currentUser?.id ? Number(currentUser.id) : undefined)}
+                                                {getConversationName(conv)}
                                             </span>
                                             <div className="flex items-center gap-1 shrink-0 ml-2">
                                                 {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}

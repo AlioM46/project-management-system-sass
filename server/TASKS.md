@@ -106,11 +106,11 @@
 
 ## 8. User Mentions (@Mentions)
 ### Frontend (React)
-- [ ] Display auto-complete user list popover when typing `@` in the text area.
-- [ ] Format and highlight mentioned names with custom color styles inside bubbles.
+- [X] Display auto-complete user list popover when typing `@` in the text area.
+- [X] Format and highlight mentioned names with custom color styles inside bubbles.
 
 ### Backend (Laravel)
-- [ ] Scan message body for `@username` patterns and dispatch prioritized push notifications.
+- [X] Scan message body for `@username` patterns and dispatch prioritized push notifications.
 
 ---
 
@@ -123,12 +123,12 @@
 
 ## 10. Read Receipts (Sent, Delivered, Read Ticks)
 ### Backend (Laravel)
-- [ ] Track message status (sent, delivered, read) and broadcast receipt changes.
+- [x] Track message status (sent, delivered, read) and broadcast receipt changes.
 
 ### Frontend (React)
-- [ ] Render a single grey checkmark when message is successfully sent to server.
-- [ ] Render double grey checkmarks when message is delivered to the recipient's browser.
-- [ ] Render double blue checkmarks when the recipient active-reads the conversation.
+- [x] Render a single grey checkmark when message is successfully sent to server.
+- [x] Render double grey checkmarks when message is delivered to the recipient's browser.
+- [x] Render double blue checkmarks when the recipient active-reads the conversation.
 
 ---
 
@@ -139,10 +139,17 @@
 
 ---
 
-## 12. Favorite & Pinned Conversations (Sidebar)
+## 12. Pinned Conversations (Sidebar)
 ### Backend (Laravel)
 - [ ] Add a favorites database attribute or relation to track pinned sidebar chats.
 
 ### Frontend (React)
 - [ ] Add context actions to pin/favorite conversations.
 - [ ] Position pinned chats persistently at the top of the sidebar list.
+
+
+1. 🔥 WebRTC Audio & Video Calling (Difficulty: 10/10 — HARDEST)
+What it involves:
+WebSockets Signaling: Outgoing ring, incoming ring overlay, Accept/Reject/Cancel call handlers.
+P2P WebRTC Pipeline: Negotiating SDP offers/answers, ICE candidate exchange, handling STUN/TURN NAT traversal servers.
+Media Stream Handling: Capturing local camera & mic streams, rendering remote video streams, mute microphone, toggle video camera, screen sharing, and call duration timers.
