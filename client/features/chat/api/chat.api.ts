@@ -7,6 +7,32 @@ export async function getConversations(): Promise<Conversation[]> {
     return await apiClient.get<Conversation[]>("/conversations");
 }
 
+// When user Connect & Being Online
+export async function markAllDeliveredOnPresenceJoinApi(): Promise<{ status: string }> {
+    try {
+        return await apiClient.post<{ status: string }>("/conversations/presence/deliver-all");
+    } catch {
+        return { status: "error" };
+    }
+}
+// A Single Message Recieved (Incmoing Message)
+export async function markAsDeliveredApi(conversationId: number, messageId: number): Promise<{ status: string }> {
+    try {
+        return await apiClient.post<{ status: string }>(`/conversations/${conversationId}/messages/${messageId}/deliver`);
+    } catch {
+        return { status: "error" };
+    }
+}
+
+// When user Open A Conversation
+export async function markConversationAsReadApi(conversationId: number): Promise<{ status: string }> {
+    try {
+        return await apiClient.post<{ status: string }>(`/conversations/${conversationId}/read`);
+    } catch {
+        return { status: "error" };
+    }
+}
+
 export async function createConversation(
     type: "direct" | "group",
     userIds: number[],
