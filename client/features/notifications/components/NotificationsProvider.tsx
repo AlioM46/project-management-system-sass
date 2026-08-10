@@ -8,6 +8,7 @@ import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } 
 import { getNotificationDescription, getNotificationTitle } from "../lib/notification-copy";
 import { disconnectEchoClient, getEchoClient, leaveEchoChannel } from "../lib/echo";
 import { NotificationItem, NotificationState, RealtimeNotificationEvent } from "../types";
+import { markAsDeliveredApi } from "@/features/chat/api/chat.api";
 import { usePathname, useRouter } from "next/navigation";
 
 type NotificationsContextValue = NotificationState & {
@@ -67,6 +68,14 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
 
     async function handleChatMessageNotification(event: RealtimeNotificationEvent) {
+        // Automatically ACK delivery for any incoming chat message notification!
+        const messageId = event.data?.message?.id || (event.data as any)?.id;
+        const conversationId = event.data?.conversation?.id || (event.data as any)?.conversation_id;
+
+        if (conversationId && messageId) {
+            markAsDeliveredApi(conversationId, messageId);
+        }
+
         if (pathnameRef.current === "/dashboard/chat") {
             await markNotificationAsRead(event.id);
             if (typeof window !== "undefined") {
@@ -83,18 +92,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const eventData = (event?.data || {}) as any;
-
         let redirectionText = ""
-        if (eventData?.conversation?.type === "project") {
-            redirectionText = `in ${eventData?.conversation?.project?.name} Project.`
-        } else if (eventData?.conversation?.type === "group") {
-            redirectionText = `in ${eventData?.conversation?.name} Group.`
+        if (event?.data?.conversation?.type === "project") {
+            redirectionText = `in ${event?.data?.conversation?.project?.name} Project.`
+        } else if (event?.data?.conversation?.type === "group") {
+            redirectionText = `in ${event?.data?.conversation?.name} Group.`
         } else {
             redirectionText = `.`
         }
-        const senderName = eventData?.message?.sender?.username || eventData?.message?.sender?.name || "Someone";
-        const messageBody = eventData?.message?.body || eventData?.message?.content || "";
+        const senderName = event?.data?.message?.sender?.username || event?.data?.message?.sender?.name || "Someone";
+        const messageBody = event?.data?.message?.body || event?.data?.message?.content || "";
 
         toast.info(`New message from ${senderName} ${redirectionText}`, {
             description: `Message: ${messageBody}`,
@@ -166,7 +173,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
                 channelNameRef.current = channelName;
 
-                echo?.private(channelName)
+                echo.private(channelName)
                     .stopListening(".notification.created")
                     .stopListening(".notification.read")
                     .stopListening(".notification.read.all")
