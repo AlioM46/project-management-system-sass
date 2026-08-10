@@ -83,16 +83,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             return;
         }
 
+        const eventData = (event?.data || {}) as any;
+
         let redirectionText = ""
-        if (event?.data?.conversation?.type === "project") {
-            redirectionText = `in ${event?.data?.conversation?.project?.name} Project.`
-        } else if (event?.data?.conversation?.type === "group") {
-            redirectionText = `in ${event?.data?.conversation?.name} Group.`
+        if (eventData?.conversation?.type === "project") {
+            redirectionText = `in ${eventData?.conversation?.project?.name} Project.`
+        } else if (eventData?.conversation?.type === "group") {
+            redirectionText = `in ${eventData?.conversation?.name} Group.`
         } else {
             redirectionText = `.`
         }
-        const senderName = event?.data?.message?.sender?.username || event?.data?.message?.sender?.name || "Someone";
-        const messageBody = event?.data?.message?.body || event?.data?.message?.content || "";
+        const senderName = eventData?.message?.sender?.username || eventData?.message?.sender?.name || "Someone";
+        const messageBody = eventData?.message?.body || eventData?.message?.content || "";
 
         toast.info(`New message from ${senderName} ${redirectionText}`, {
             description: `Message: ${messageBody}`,
@@ -164,7 +166,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
                 channelNameRef.current = channelName;
 
-                echo.private(channelName)
+                echo?.private(channelName)
                     .stopListening(".notification.created")
                     .stopListening(".notification.read")
                     .stopListening(".notification.read.all")
