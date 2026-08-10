@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Chat\Http\Controllers\BlockController;
 use App\Modules\Chat\Http\Controllers\ConversationController;
 use App\Modules\Chat\Http\Controllers\ParticipantsController;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +36,12 @@ Route::prefix('conversations')
         Route::post('/{id}/participants', [ParticipantsController::class, 'AddParticipants'])->whereNumber('id');
         Route::delete('/{id}/participants/{userId}', [ParticipantsController::class, 'RemoveParticipants'])->whereNumber('id')->whereNumber('userId');
         Route::put('/{id}/participants/{participantId}/role', [ParticipantsController::class, 'ChangeParticipantRole'])->whereNumber('id')->whereNumber('participantId');
+    });
+
+Route::prefix('users')
+    ->middleware(['auth:api', 'workspace.context'])
+    ->group(function () {
+        Route::post('/block', [BlockController::class, 'blockUser']);
+        Route::delete('/unblock/{userId}', [BlockController::class, 'unblockUser'])->whereNumber('userId');
+        Route::get('/blocked', [BlockController::class, 'getBlockedUsers']);
     });
