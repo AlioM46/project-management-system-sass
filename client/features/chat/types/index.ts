@@ -44,6 +44,8 @@ export interface Conversation {
     last_message?: Message | null;
     is_muted?: boolean;
     muted_until?: string | null;
+    is_blocked_by_me?: boolean;
+    is_blocked_by_partner?: boolean;
 }
 
 export interface MessageReaction {
