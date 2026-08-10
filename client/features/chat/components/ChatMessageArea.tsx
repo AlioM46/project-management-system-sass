@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
@@ -28,6 +28,7 @@ interface ChatMessageAreaProps {
     onDeleteForMe?: (messageId: number) => Promise<void>;
     onDeleteForAll?: (messageId: number) => Promise<void>;
     onEditMessage?: (messageId: number, body: string) => Promise<void>;
+    onUnblockUser?: (userId: number) => Promise<void>;
     hasBefore?: boolean;
     hasAfter?: boolean;
     onLoadMore?: () => Promise<void>;
@@ -101,6 +102,7 @@ export function ChatMessageArea({
     onDeleteForMe,
     onDeleteForAll,
     onEditMessage,
+    onUnblockUser,
     hasBefore = false,
     hasAfter = false,
     onLoadMore,
@@ -1009,7 +1011,33 @@ export function ChatMessageArea({
                     </div>
                 )}
 
-                {isRecording ? (
+                {conversation?.is_blocked_by_me ? (
+                    /* Blocker Banner (I blocked partner) */
+                    <div className="p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                            <Ban className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span>You have blocked this contact. Unblock to send messages.</span>
+                        </div>
+                        {onUnblockUser && (
+                            <button
+                                onClick={() => {
+                                    const partner = conversation?.participants?.find((p: any) => (p.user_id || p.user?.id || p.id) !== currentUserId);
+                                    const partnerUserId = partner ? (partner.user_id || partner.user?.id || partner.id) : null;
+                                    if (partnerUserId) onUnblockUser(partnerUserId);
+                                }}
+                                className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0"
+                            >
+                                Unblock
+                            </button>
+                        )}
+                    </div>
+                ) : conversation?.is_blocked_by_partner ? (
+                    /* Blocked Banner (Partner blocked me) */
+                    <div className="p-3.5 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl flex items-center justify-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 shadow-xs">
+                        <Info className="h-4 w-4 shrink-0 text-zinc-400" />
+                        <span>You cannot send messages to this contact.</span>
+                    </div>
+                ) : isRecording ? (
                     /* Active Voice Recording Bar (WhatsApp Style) */
                     <div className="flex items-center gap-3 bg-white dark:bg-zinc-800/90 border border-red-500/30 dark:border-red-500/40 rounded-2xl px-4 py-2.5 shadow-md transition-all">
                         {/* Cancel Recording (Trash Icon) */}

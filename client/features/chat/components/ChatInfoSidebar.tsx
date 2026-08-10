@@ -53,6 +53,8 @@ interface ChatInfoSidebarProps {
     onDeleteConversationSuccess?: (deletedId: number) => void;
     onMuteToggleSuccess?: (conversationId: number, isMuted: boolean) => void;
     onSelectMessage?: (messageId: number) => void;
+    onBlockUser?: (userId: number) => Promise<void>;
+    onUnblockUser?: (userId: number) => Promise<void>;
 }
 
 // ─────────────────────────────────────────────
@@ -74,6 +76,8 @@ export function ChatInfoSidebar({
     onDeleteConversationSuccess,
     onMuteToggleSuccess,
     onSelectMessage,
+    onBlockUser,
+    onUnblockUser,
 }: ChatInfoSidebarProps) {
     const [infoData, setInfoData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -90,10 +94,12 @@ export function ChatInfoSidebar({
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
+    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
 
     const [isSubmittingClear, setIsSubmittingClear] = useState(false);
     const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
     const [isSubmittingMute, setIsSubmittingMute] = useState(false);
+    const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
 
     // Starred Messages State
     const [starredMessages, setStarredMessages] = useState<any[]>([]);
@@ -492,6 +498,47 @@ export function ChatInfoSidebar({
                                     <span>Clear chat history</span>
                                 </button>
 
+                                {/* Block / Unblock Contact (Direct Messages only) */}
+                                {isDirect && partner && (
+                                    <button
+                                        onClick={async () => {
+                                            const partnerUserId = partner.id || partner.user_id;
+                                            if (conversation?.is_blocked_by_me) {
+                                                if (onUnblockUser) {
+                                                    // 1. Optimistic UI Update (Instant response)
+                                                    setInfoData((prev: any) => ({
+                                                        ...prev,
+                                                        conversation: {
+                                                            ...prev?.conversation,
+                                                            is_blocked_by_me: false,
+                                                        },
+                                                    }));
+
+                                                    try {
+                                                        // 2. Execute API request in background
+                                                        await onUnblockUser(partnerUserId);
+                                                    } catch (error) {
+                                                        // 3. Rollback state if request fails
+                                                        setInfoData((prev: any) => ({
+                                                            ...prev,
+                                                            conversation: {
+                                                                ...prev?.conversation,
+                                                                is_blocked_by_me: true,
+                                                            },
+                                                        }));
+                                                    }
+                                                }
+                                            } else {
+                                                setIsBlockConfirmOpen(true);
+                                            }
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm font-medium"
+                                    >
+                                        <Ban className="h-4 w-4 text-red-500 shrink-0" />
+                                        <span>{conversation?.is_blocked_by_me ? "Unblock User" : "Block User"}</span>
+                                    </button>
+                                )}
+
                                 {/* Delete / Leave Conversation */}
                                 {!isProject && (
                                     <button
@@ -834,6 +881,70 @@ export function ChatInfoSidebar({
                                 className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Block User Confirmation Modal Dialog ── */}
+            {isBlockConfirmOpen && partner && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-[#111b21] w-full max-w-sm rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 p-5 space-y-4">
+                        <div className="flex items-center gap-3 text-red-500">
+                            <div className="p-2.5 rounded-full bg-red-500/10">
+                                <Ban className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-base text-zinc-900 dark:text-white">Block User?</h4>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                                    Blocked contacts will no longer be able to send you messages.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                            <button
+                                onClick={() => setIsBlockConfirmOpen(false)}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (onBlockUser) {
+                                        const partnerUserId = partner.id || partner.user_id;
+
+                                        // 1. Optimistic UI Update & close modal instantly
+                                        setInfoData((prev: any) => ({
+                                            ...prev,
+                                            conversation: {
+                                                ...prev?.conversation,
+                                                is_blocked_by_me: true,
+                                            },
+                                        }));
+                                        setIsBlockConfirmOpen(false);
+
+                                        try {
+                                            // 2. Execute API call in background
+                                            await onBlockUser(partnerUserId);
+                                        } catch (error) {
+                                            // 3. Rollback state if request fails
+                                            setInfoData((prev: any) => ({
+                                                ...prev,
+                                                conversation: {
+                                                    ...prev?.conversation,
+                                                    is_blocked_by_me: false,
+                                                },
+                                            }));
+                                        }
+                                    }
+                                }}
+                                disabled={isSubmittingBlock}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                                {isSubmittingBlock && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                <span>Block User</span>
                             </button>
                         </div>
                     </div>

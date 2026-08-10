@@ -6,7 +6,7 @@ import { NewConversationModal } from "@/features/chat/components/NewConversation
 import { ChatSearchSidebar } from "@/features/chat/components/ChatSearchSidebar";
 import { ChatInfoSidebar } from "@/features/chat/components/ChatInfoSidebar";
 import { useCallback, useEffect, useState } from "react";
-import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage, toggleStarMessage } from "@/features/chat/api/chat.api";
+import { deleteMessageForAll, deleteMessageForMe, getConversations, getMessages, sendMessage, toggleMessageReaction, updateMessage, toggleStarMessage, blockUser, unblockUser } from "@/features/chat/api/chat.api";
 import { getMe } from "@/features/auth/api/auth.api";
 import { Conversation, Message, MessageReaction } from "@/features/chat/types";
 import { toast } from "sonner";
@@ -397,6 +397,74 @@ export default function ChatPage() {
         }
     };
 
+    const handleBlockUser = async (targetUserId: number) => {
+        // 1. Optimistic UI update (Instant)
+        setConversations((prev) =>
+            prev.map((c) =>
+                c.id === activeConversationId
+                    ? { ...c, is_blocked_by_me: true }
+                    : c
+            )
+        );
+
+        try {
+            // 2. API call in background
+            const res = await blockUser(targetUserId);
+
+            // Defensive Check: Ensure backend payload confirms blocked state
+            if (res?.is_blocked === false) {
+                throw new Error("Backend failed to confirm block state");
+            }
+
+            toast.success("User blocked successfully");
+        } catch (error) {
+            // 3. Rollback on failure
+            setConversations((prev) =>
+                prev.map((c) =>
+                    c.id === activeConversationId
+                        ? { ...c, is_blocked_by_me: false }
+                        : c
+                )
+            );
+            toast.error(getErrorMessage(error, "Failed to block user"));
+            throw error;
+        }
+    };
+
+    const handleUnblockUser = async (targetUserId: number) => {
+        // 1. Optimistic UI update (Instant)
+        setConversations((prev) =>
+            prev.map((c) =>
+                c.id === activeConversationId
+                    ? { ...c, is_blocked_by_me: false }
+                    : c
+            )
+        );
+
+        try {
+            // 2. API call in background
+            const res = await unblockUser(targetUserId);
+
+            // Defensive Check: Ensure backend payload confirms unblocked state
+            if (res?.is_blocked === true) {
+                throw new Error("Backend failed to confirm unblock state");
+            }
+
+            toast.success("User unblocked successfully");
+        } catch (error) {
+            // 3. Rollback on failure
+            setConversations((prev) =>
+                prev.map((c) =>
+                    c.id === activeConversationId
+                        ? { ...c, is_blocked_by_me: true }
+                        : c
+                )
+            );
+            toast.error(getErrorMessage(error, "Failed to unblock user"));
+            throw error;
+        }
+    };
+
     const handleSelectSearchMessage = async (messageId: number) => {
         if (!activeConversationId) return;
 
@@ -478,6 +546,7 @@ export default function ChatPage() {
                 onDeleteForMe={handleDeleteForMeMessage}
                 onDeleteForAll={handleDeleteForAllMessage}
                 onEditMessage={handleUpdateMessage}
+                onUnblockUser={handleUnblockUser}
                 hasBefore={hasBeforeMessages}
                 hasAfter={hasAfterMessages}
                 onLoadMore={handleLoadMoreMessages}
@@ -516,6 +585,8 @@ export default function ChatPage() {
                         );
                     }}
                     onSelectMessage={handleSelectSearchMessage}
+                    onBlockUser={handleBlockUser}
+                    onUnblockUser={handleUnblockUser}
                 />
             )}
 
