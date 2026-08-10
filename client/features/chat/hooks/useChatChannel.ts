@@ -1,6 +1,8 @@
+import { markAsDeliveredApi } from "../api/chat.api";
 import { getEchoClient } from "@/features/notifications/lib/echo";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Message, MessageReaction } from "../types";
+import { toast } from "sonner";
 
 export interface ChatUserActivity {
     id: number;
@@ -16,7 +18,9 @@ export default function useChatChannel(
     currentUserName?: string | null,
     onReactionUpdated?: (data: { conversation_id: number; message_id: number; reactions: MessageReaction[] }) => void,
     onMessageDeleted?: (data: Message) => void,
-    onMessageUpdated?: (data: Message) => void
+    onMessageUpdated?: (data: Message) => void,
+    onMessageDelivered?: (event: { conversationId: number; deliveredAt: string }) => void,
+    onMessageRead?: (event: { conversationId: number; userId: number; readAt: string }) => void
 ) {
     const [typingUsers, setTypingUsers] = useState<ChatUserActivity[]>([]);
     const [recordingUsers, setRecordingUsers] = useState<ChatUserActivity[]>([]);
@@ -33,6 +37,24 @@ export default function useChatChannel(
         channel.listen(".messages.sent", (event: Message) => {
             console.log("Incoming Message from Realtime : # ", event);
             onMessageReceived(event);
+
+            // Auto ACK delivery if message is from someone else
+            const senderId = event?.user_id || event?.sender?.id;
+            if (currentUserId && senderId && Number(senderId) !== Number(currentUserId) && event.id) {
+                markAsDeliveredApi(conversationId, event.id);
+            }
+        });
+
+        channel.listen(".messages.delivered", (event: { conversationId: number; deliveredAt: string }) => {
+            if (onMessageDelivered) {
+                onMessageDelivered(event);
+            }
+        });
+
+        channel.listen(".messages.read", (event: { conversationId: number; userId: number; readAt: string }) => {
+            if (onMessageRead) {
+                onMessageRead(event);
+            }
         });
 
         channel.listen(".messages.updated", (event: Message) => {
@@ -85,6 +107,10 @@ export default function useChatChannel(
 
         return () => {
             channel.stopListening(".messages.sent");
+            channel.stopListening(".messages.delivered");
+            channel.stopListening(".messages.read");
+            channel.stopListening(".messages.updated");
+            channel.stopListening(".messages.deleted");
             channel.stopListening(".messages.reaction.updated");
             channel.stopListeningForWhisper("typing");
             channel.stopListeningForWhisper("recording");
