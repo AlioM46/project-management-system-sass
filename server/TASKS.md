@@ -77,7 +77,7 @@
 
 - [x] **Mute Conversation:** Add `muted_until` column and endpoint (`POST /conversations/{id}/mute`).
 - [x] **Starred Messages:** Add `starred_messages` pivot table with endpoints (`POST /messages/{id}/star` and `GET /conversations/{id}/starred`).
-- [ ] **Block Contact:** Create `blocked_users` table with endpoints (`POST /users/block` and `DELETE /users/block/{userId}`).
+- [x] **Block Contact:** Create `blocked_users` table with endpoints (`POST /users/block` and `DELETE /users/unblock/{userId}`).
 
 ### Frontend (React)
 - [X] **Member Management UI:** Add "+ Add Member" modal, "Remove Member" action, and role toggles inside Members list.
@@ -87,6 +87,7 @@
 - [x] **Delete Conversation Action:** Add confirmation modal to remove conversation and redirect to empty state.
 - [x] **Mute Toggle & Duration Modal:** Wire Mute button with duration selection (15m, 1h, 8h, 24h, 1w, Forever).
 - [x] **Starred Messages UI & Tab:** Add Star/Unstar action to message popover menu and dedicated Starred Messages tab in sidebar.
+- [x] **Block Contact Banner:** Wire Block button for DMs with status banner ("You have blocked this contact") and Optimistic UI updating.
 
 - [ ] **Custom Chat Theme/Wallpaper:** Add wallpaper selection picker in sidebar to personalize chat background.
 - [ ] **Starred Messages View:** Add "Starred Messages" tab/panel inside sidebar to preview saved messages.
