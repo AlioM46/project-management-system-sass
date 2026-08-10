@@ -1,5 +1,6 @@
 "use client";
 
+import { markAllDeliveredOnPresenceJoinApi } from "@/features/chat/api/chat.api";
 import { getEchoClient } from "@/features/notifications/lib/echo";
 import { getCookie } from "@/shared/utils/cookies";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
@@ -30,6 +31,9 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
 
             if (!accessToken || !workspaceId) return;
 
+            // 🚀 Immediately sync delivery status when coming online / switching workspace
+            markAllDeliveredOnPresenceJoinApi();
+
             const echoClient = getEchoClient(accessToken, workspaceId);
             if (!echoClient) return;
 
@@ -38,6 +42,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
             echoClient.join(channelName)
                 .here((users: PresenceUser[]) => {
                     if (isMounted) {
+                        console.log("[Presence] Joined workspace presence channel. Online users:", users);
                         setOnlineUserIds(users.map((u) => u.id));
                     }
                 })
