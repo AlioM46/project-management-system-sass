@@ -225,5 +225,15 @@ export async function getStarredMessages(conversationId: number): Promise<any[]>
     return await apiClient.get(`/conversations/${conversationId}/starred`);
 }
 
+export async function blockUser(blockedUserId: number): Promise<any> {
+    return await apiClient.post(`/users/block`, {
+        blocked_user_id: blockedUserId,
+    });
+}
+
+export async function unblockUser(blockedUserId: number): Promise<any> {
+    return await apiClient.delete(`/users/unblock/${blockedUserId}`);
+}
+
 
 
