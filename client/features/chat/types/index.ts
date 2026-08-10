@@ -61,6 +61,7 @@ export interface MessageReaction {
 
 export interface Message {
     id: number;
+    FormattedBody: string;
     workspace_id: number;
     conversation_id: number;
     message_id: number | null; // Nested reply ID (threading)
