@@ -8,6 +8,7 @@ use App\Modules\Chat\Events\MessageSent;
 use App\Modules\Chat\Events\MessageReactionUpdated;
 use App\Modules\Chat\Events\MessageUpdated;
 use App\Modules\Chat\Events\MessageDeleted;
+use App\Modules\Chat\Model\BlockedUser;
 use App\Modules\Chat\Model\Conversation;
 use App\Modules\Chat\Model\ConversationReadState;
 use App\Modules\Chat\Model\ConversationParticipant;
@@ -83,16 +84,44 @@ class ConversationController extends Controller
                 ->latest()
                 ->first();
 
+
+
             // دمج البيانات لإرجاعها في الـ JSON
             $participant = $conversation->participants->firstWhere('user_id', $userId);
             $mutedUntil = $participant ? $participant->muted_until : null;
             $isMuted = $mutedUntil ? $mutedUntil->isFuture() : false;
+
+            $isBlockedByMe = false;
+            $isBlockedByPartner = false;
+
+            if ($conversation->type === "direct") {
+                $partnerParticipant = ConversationParticipant::where('conversation_id', $conversation->id)
+                    ->where('user_id', '!=', $userId)
+                    ->where('is_active', true)
+                    ->first();
+
+                $partnerId = $partnerParticipant ? $partnerParticipant->user_id : null;
+
+                if ($partnerId) {
+                    $isBlockedByMe = BlockedUser::where("workspace_id", $conversation->workspace_id)
+                        ->where("blocker_id", $userId)
+                        ->where("blocked_id", $partnerId)
+                        ->exists();
+
+                    $isBlockedByPartner = BlockedUser::where("workspace_id", $conversation->workspace_id)
+                        ->where("blocker_id", $partnerId)
+                        ->where("blocked_id", $userId)
+                        ->exists();
+                }
+            }
 
             $data = $conversation->toArray();
             $data['unread_count'] = $unreadCount;
             $data['last_message'] = $lastMessage;
             $data['is_muted'] = $isMuted;
             $data['muted_until'] = $mutedUntil ? $mutedUntil->toIso8601String() : null;
+            $data['is_blocked_by_me'] = $isBlockedByMe;
+            $data['is_blocked_by_partner'] = $isBlockedByPartner;
 
             return $data;
         });
@@ -436,6 +465,7 @@ class ConversationController extends Controller
      */
     public function sendMessage(Request $request, int $id): JsonResponse
     {
+        $workspaceId = $this->workspaceContextService->currentWorkspaceId();
         $conversation = Conversation::findOrFail($id);
 
         // Security check
@@ -457,6 +487,33 @@ class ConversationController extends Controller
             ConversationParticipant::where('conversation_id', $conversation->id)
                 ->where('is_active', false)
                 ->update(['is_active' => true, "joined_at" => now()]);
+
+
+
+            $partnerParticipant = ConversationParticipant::where('conversation_id', $conversation->id)
+                ->where('user_id', '!=', auth()->id())
+                ->where('is_active', true)
+                ->first();
+
+            $partnerId = $partnerParticipant ? $partnerParticipant->user_id : null;
+
+            if (!$partnerId) {
+                return ApiResponse::error('Partner not found.', 'PARTNER_NOT_FOUND', [], 404);
+            }
+
+            $isBlocked = BlockedUser::where("workspace_id", $workspaceId)
+                ->where(function ($query) use ($partnerId) {
+                    $query->where(function ($q1) use ($partnerId) {
+                        $q1->where("blocked_id", $partnerId)->where("blocker_id", auth()->id());
+                    })->orWhere(function ($q2) use ($partnerId) {
+                        $q2->where("blocked_id", auth()->id())->where("blocker_id", $partnerId);
+                    });
+                })
+                ->exists();
+
+            if ($isBlocked) {
+                return ApiResponse::error('Message cannot be delivered. User block relationship is active.', 'USER_BLOCKED', [], 403);
+            }
         }
 
         $participantsIds = ConversationParticipant::where('conversation_id', $conversation->id)->where('is_active', true)->pluck('user_id')->toArray();
@@ -806,6 +863,23 @@ class ConversationController extends Controller
         $mutedUntil = $myParticipant ? $myParticipant->muted_until : null;
         $isMuted = $mutedUntil ? $mutedUntil->isFuture() : false;
 
+        $isBlockedByMe = false;
+        $isBlockedByPartner = false;
+        if ($conversation->type === 'direct') {
+            $partner = $conversation->participants->firstWhere('user_id', '!=', $userId);
+            if ($partner) {
+                $isBlockedByMe = BlockedUser::where('workspace_id', $workspaceId)
+                    ->where('blocker_id', $userId)
+                    ->where('blocked_id', $partner->user_id)
+                    ->exists();
+
+                $isBlockedByPartner = BlockedUser::where('workspace_id', $workspaceId)
+                    ->where('blocker_id', $partner->user_id)
+                    ->where('blocked_id', $userId)
+                    ->exists();
+            }
+        }
+
         return ApiResponse::success('Sidebar info retrieved successfully.', [
             'conversation' => [
                 'id' => $conversation->id,
@@ -816,6 +890,8 @@ class ConversationController extends Controller
                 'created_at' => $conversation->created_at,
                 'is_muted' => $isMuted,
                 'muted_until' => $mutedUntil ? $mutedUntil->toIso8601String() : null,
+                'is_blocked_by_me' => $isBlockedByMe,
+                'is_blocked_by_partner' => $isBlockedByPartner,
             ],
             'participants' => $conversation->participants->map(function ($p) {
                 return [
