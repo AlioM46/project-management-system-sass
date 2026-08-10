@@ -90,9 +90,6 @@
 - [x] **Block Contact Banner:** Wire Block button for DMs with status banner ("You have blocked this contact") and Optimistic UI updating.
 
 - [ ] **Custom Chat Theme/Wallpaper:** Add wallpaper selection picker in sidebar to personalize chat background.
-- [ ] **Starred Messages View:** Add "Starred Messages" tab/panel inside sidebar to preview saved messages.
-- [ ] **Mute Toggle & Duration Modal:** Wire Mute button with duration selection (8 Hours, 1 Week, Always).
-- [ ] **Block Contact Banner:** Wire Block button for DMs with status banner ("You have blocked this contact").
 
 ---
 
