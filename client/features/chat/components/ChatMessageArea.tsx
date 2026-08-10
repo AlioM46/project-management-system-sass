@@ -1,14 +1,13 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Conversation, Message, Participant } from "../types";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
-import { toast } from "sonner";
-import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
+import { Loader2, Star, FileText } from "lucide-react";
 import { getInitials, formatTime } from "../utils/chatHelpers";
-import { useAudioRecorder } from "../hooks/useAudioRecorder";
 import { VoicePlayerCard } from "./VoicePlayerCard";
+import { ChatHeader } from "./ChatHeader";
+import { MessageComposer } from "./MessageComposer";
+import { MessageContextMenu } from "./MessageContextMenu";
+import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
@@ -41,49 +40,6 @@ interface ChatMessageAreaProps {
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
 
-function SelectedFilePreviewCard({ file, onRemove, getFileIcon }: { file: File; onRemove: () => void; getFileIcon: (type: string) => string }) {
-    const [previewUrl, setPreviewUrl] = useState<string>("");
-
-    useEffect(() => {
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        return () => {
-            URL.revokeObjectURL(url);
-        };
-    }, [file]);
-
-    const isImage = file.type?.startsWith('image/') || file.name?.toLowerCase().match(/\.(png|jpe?g|gif|webp|bmp|svg)$/i);
-    const isVideo = file.type?.startsWith('video/') || file.name?.toLowerCase().match(/\.(mp4|webm|mov|avi|m4v)$/i);
-    const isPDF = file.type?.includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
-
-    return (
-        <div className="relative group h-16 w-16 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-200 dark:border-zinc-600 shadow-sm flex items-center justify-center overflow-hidden">
-            {isImage ? (
-                previewUrl && <img className="h-full w-full object-cover" src={previewUrl} alt={file.name} />
-            ) : isVideo ? (
-                previewUrl && <video className="h-full w-full object-cover bg-black" src={previewUrl} />
-            ) : isPDF ? (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-red-50 dark:bg-red-950/40 text-red-500 text-[10px] font-bold">
-                    <FileText className="h-5 w-5 mb-0.5" />
-                    <span>PDF</span>
-                </div>
-            ) : (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-950/40 text-blue-500 text-[10px] font-bold">
-                    <FileText className="h-5 w-5 mb-0.5" />
-                    <span>{getFileIcon(file.type)}</span>
-                </div>
-            )}
-            <button
-                onClick={onRemove}
-                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 hover:bg-red-500 text-white flex items-center justify-center transition-colors shadow-sm"
-                title="Remove attachment"
-            >
-                <X className="h-3 w-3" />
-            </button>
-        </div>
-    );
-}
-
 export function ChatMessageArea({
     conversation,
     messages,
@@ -112,1063 +68,175 @@ export function ChatMessageArea({
     onToggleInfoSidebar,
     isInfoSidebarOpen = false,
 }: ChatMessageAreaProps) {
-    const { currentUser } = useCurrentUser();
-    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const {
-        isRecording,
-        isPaused,
-        formattedTime,
-        audioBlob,
-        audioLevels,
-        startRecording: rawStartRecording,
-        pauseRecording,
-        resumeRecording,
-        stopRecording: rawStopRecording,
-        cancelRecording: rawCancelRecording,
-        resetRecording,
-    } = useAudioRecorder();
-
-    const startRecording = () => {
-        rawStartRecording();
-        if (onRecording) onRecording(true);
-    };
-
-    const stopRecording = () => {
-        rawStopRecording();
-        if (onRecording) onRecording(false);
-    };
-
-    const cancelRecording = () => {
-        rawCancelRecording();
-        if (onRecording) onRecording(false);
-    };
-
-    const [activeMenuMessageId, setActiveMenuMessageId] = useState<number | null>(null);
-    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-
-    useEffect(() => {
-        const handleOutsideClick = () => {
-            setActiveMenuMessageId(null);
-        };
-        window.addEventListener("click", handleOutsideClick);
-        return () => window.removeEventListener("click", handleOutsideClick);
-    }, []);
-
-    useEffect(() => {
-        if (audioBlob) {
-            handleSendVoiceNote(audioBlob);
-        }
-    }, [audioBlob]);
-
-    const isMessageEditable = (msg: Message) => {
-        if (msg.user_id !== currentUserId) return false;
-        const timeDiff = Date.now() - new Date(msg.created_at).getTime();
-        const fifteenMinutes = 15 * 60 * 1000;
-        return timeDiff < fifteenMinutes;
-    };
-
-    // 1 - if admin => YES
-    // 2 if not message owner -> NO
-    // 3 if message owenr  && createdAt <= 15 mins => YES
-    // 4 if message owenr  && createdAt > 15 mins => NO
-    const isMessageDeletableForAll = (msg: Message) => {
-        // Owner or Admin of conversation can always delete for everyone
-        const currentUserParticipant = conversation?.participants?.find(
-            (p: Participant) => p.user_id === currentUserId
-        );
-        const isMsgAdmin = currentUserParticipant?.role === 'admin' || currentUserParticipant?.role === 'owner';
-        if (isMsgAdmin) return true;
-
-        if (msg.user_id !== currentUserId) return false;
-
-        const timeDiff = Date.now() - new Date(msg.created_at).getTime();
-        const fifteenMinutes = 15 * 60 * 1000;
-        return timeDiff < fifteenMinutes;
-    };
-
-    const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
-    const partnerId = partner?.user?.id;
-    const isOnline = Boolean(partnerId && isUserOnline(partnerId));
-    const isPartnerTyping = Boolean(
-        partnerId && typingUsers?.some((user) => Number(user.id) === Number(partnerId))
-    );
-    const isPartnerRecording = Boolean(
-        partnerId && recordingUsers?.some((user) => Number(user.id) === Number(partnerId))
-    );
-
-    // useEffect(() => {
-
-    //     if (partnerId) {
-    //         setIsOnline(isUserOnline(partnerId));
-    //     }
-    // }, [conversation]);
-
-
-
-
-    const handleTextChange = (text: string) => {
-        onInputTextChange(text);
-
-        if (onTyping) {
-            onTyping(true);
-
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
-
-            typingTimeoutRef.current = setTimeout(() => {
-                onTyping(false);
-            }, 1500);
-        }
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const incomingFiles = Array.from(e.target.files);
-            const MAX_SIZE = 15 * 1024 * 1024; // 15MB
-
-            const validSizeFiles = incomingFiles.filter(file => {
-                if (file.size > MAX_SIZE) {
-                    toast.error(`File "${file.name}" exceeds the 15MB size limit.`);
-                    return false;
-                }
-                return true;
-            });
-
-            const uniqueFiles = validSizeFiles.filter((newFile) => {
-                return !selectedFiles.some(
-                    (existingFile) => existingFile.name === newFile.name
-                        && existingFile.size === newFile.size
-                        && existingFile.type === newFile.type
-                        && existingFile.lastModified === newFile.lastModified
-                );
-            });
-
-            setSelectedFiles((prev) => [...prev, ...uniqueFiles]);
-        }
-    };
-
-    const handleSendVoiceNote = async (blob: Blob) => {
-        if (!conversation || isSending) return;
-        const voiceFile = new File([blob], `voice_note_${Date.now()}.webm`, {
-            type: blob.type || "audio/webm",
-        });
-        await handleSendMessage("", conversation.id, replyingTo?.id, [voiceFile]);
-        setReplyingTo(null);
-        resetRecording();
-    };
-
-    const handleSend = async () => {
-        const hasText = Boolean(inputText.trim());
-        const hasFiles = selectedFiles.length > 0;
-        if ((!hasText && !hasFiles) || isSending || !conversation) return;
-
-        if (onTyping) {
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            onTyping(false);
-        }
-
-        if (editingMessage) {
-            if (onEditMessage) {
-                await onEditMessage(editingMessage.id, inputText.trim());
-            }
-            setEditingMessage(null);
-            onInputTextChange("");
-        } else {
-            await handleSendMessage(inputText.trim(), conversation.id, replyingTo?.id, selectedFiles);
-            setReplyingTo(null);
-            setSelectedFiles([]);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
-        }
-    };
-
-
-    const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    const [isPrevLoading, setIsPrevLoading] = useState(false);
-    const [showNewMessagesBtn, setShowNewMessagesBtn] = useState(false);
-    const [newMessagesCount, setNewMessagesCount] = useState(0);
+    const [replyingTo, setReplyingTo] = useState<any | null>(null);
+    const [editingMessage, setEditingMessage] = useState<{ id: number; body: string } | null>(null);
+    const [previewAttachment, setPreviewAttachment] = useState<any | null>(null);
 
-    const prevScrollHeightRef = useRef<number>(0);
-    const isFetchingRef = useRef<boolean>(false);
-    const prevMessagesLengthRef = useRef<number>(messages?.length || 0);
-
-    const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
-        const container = e.currentTarget;
-        if (!container) return;
-
-
-        console.log("scrollTop ", container.scrollTop)
-        console.log("hasBefore ", hasBefore)
-        console.log("onLoadMore ", onLoadMore)
-        console.log("isFetchingRef.current ", isFetchingRef.current)
-        // 1. Detect if user is near top and has more
-        if (container.scrollTop <= 10 && hasBefore && onLoadMore && !isFetchingRef.current) {
-            isFetchingRef.current = true;
-            setIsPrevLoading(true);
-
-            prevScrollHeightRef.current = container.scrollHeight;
-
-            try {
-                await onLoadMore();
-            } finally {
-                isFetchingRef.current = false;
-                setIsPrevLoading(false);
-            }
-        }
-
-        // 2. Detect if user is near bottom
-        const distanceToBottom = container.scrollHeight - container.clientHeight - container.scrollTop;
-        if (distanceToBottom < 150) {
-            setShowNewMessagesBtn(false);
-            setNewMessagesCount(0);
-
-            if (hasAfter && onLoadNewer && !isFetchingRef.current) {
-                isFetchingRef.current = true;
-                try {
-                    await onLoadNewer();
-                } finally {
-                    isFetchingRef.current = false;
-                }
-            }
-        }
-    };
-
-    const scrollToBottomSmoothly = () => {
-        messagesEndRef.current?.scrollTo({
-            top: messagesEndRef.current.scrollHeight,
-            behavior: "smooth",
-        });
-        setShowNewMessagesBtn(false);
-        setNewMessagesCount(0);
-    };
-
+    // Auto-scroll to bottom on initial message load
     useEffect(() => {
-        if (!messages) return;
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages.length]);
 
-        const container = messagesEndRef.current;
-        if (!container) return;
-
-        // means there is previous messages loaded
-        if (prevScrollHeightRef.current > 0) {
-            // Restore reading position after prepending older messages
-            // 1500px - 1000px => 500px
-            const heightDiff = container.scrollHeight - prevScrollHeightRef.current;
-            // keep the distnace from top 500px
-            container.scrollTop = heightDiff;
-
-            prevScrollHeightRef.current = 0; // Reset
-        } else {
-            // Check if messages count increased by a new message
-            const hasNewIncomingMessage = messages.length > prevMessagesLengthRef.current;
-            if (hasNewIncomingMessage) {
-                const lastMessage = messages[messages.length - 1];
-                const isSentByMe = lastMessage?.user_id === currentUserId;
-
-                const distanceToBottom = container.scrollHeight - container.clientHeight - container.scrollTop;
-                const isNearBottom = distanceToBottom < 150;
-
-                if (isNearBottom || isSentByMe) {
-                    requestAnimationFrame(() => {
-                        container.scrollTop = container.scrollHeight;
-                    });
-                } else {
-                    setShowNewMessagesBtn(true);
-                    setNewMessagesCount((prev) => prev + 1);
-                }
-            } else {
-                //  With requestAnimationFrame: The browser waits until it has fully rendered the new message and recalculated the height, and then it scrolls. You are guaranteed to scroll to the true, new bottom.
-
-
-                // rAF means:
-                // Hey Browser, I will wait until you fully render your UI
-                // then I will catch your REAL "scrollHeight"
-
-                // The trick: use requestAnimationFrame to wait for the NEXT frame.
-                // This ensures React has finished rendering the new message and updated the scrollHeight before we scroll.
-                // Initial load
-                requestAnimationFrame(() => {
-                    container.scrollTop = container.scrollHeight;
-                });
-            }
-        }
-
-        prevMessagesLengthRef.current = messages.length;
-    }, [messages, currentUserId]);
-
-    // Auto-focus textarea when sending finishes or conversation changes
-    useEffect(() => {
-        if (!isSending && conversation) {
-            textAreaRef.current?.focus();
-        }
-    }, [isSending, conversation?.id]);
-
-
-    // Helper: Get label/icon text for files
-    function getFileIcon(type: string): string {
-        if (type.includes("pdf")) return "PDF";
-        if (type.includes("word") || type.includes("officedocument.word")) return "DOC";
-        if (type.includes("excel") || type.includes("officedocument.sheet")) return "XLS";
-        if (type.includes("zip") || type.includes("rar") || type.includes("compressed")) return "ZIP";
-        if (type.startsWith("video/")) return "VID";
-        if (type.startsWith("audio/")) return "AUD";
-        return "FILE";
-    }
-
-    // Helper: Get display name for the conversation header
-    function getHeaderName(): string {
-        if (!conversation) return "";
-        if (conversation.type === "project" && conversation.project) return conversation.project.name;
-        if (conversation.name) return conversation.name;
-        if (conversation.participants?.[0]?.user?.name && currentUser && currentUser.id !== conversation.participants[0].user.id) return conversation.participants[0].user.name;
-        if (conversation.participants?.[1]?.user?.name && currentUser && currentUser.id !== conversation.participants[1].user.id) return conversation.participants[1].user.name;
-        return "Unknown";
-    }
-
-    // Helper: Get type label
-    function getTypeLabel(): string {
-        if (!conversation) return "";
-        if (conversation.type === "project") return "Project Channel";
-        if (conversation.type === "group") return `${conversation.participants?.length || 0} members`;
-        return "Direct Message";
-    }
-
-    // Helper: Render status subtitle for Direct Messages & Group/Project channels
-    function renderStatusSubtitle() {
-        if (recordingUsers.length > 0) {
-            const text =
-                conversation?.type === "direct"
-                    ? "recording audio..."
-                    : recordingUsers.length === 1
-                        ? `${recordingUsers[0].name} is recording audio...`
-                        : `${recordingUsers[0].name} & ${recordingUsers.length - 1} other${recordingUsers.length > 2 ? "s" : ""} recording...`;
-
-            return (
-                <span className="text-red-500 font-semibold animate-pulse flex items-center gap-1">
-                    <Mic className="h-3 w-3 inline" /> {text}
-                </span>
-            );
-        }
-
-        if (typingUsers.length > 0) {
-            const text =
-                conversation?.type === "direct"
-                    ? "typing..."
-                    : typingUsers.length === 1
-                        ? `${typingUsers[0].name} is typing...`
-                        : `${typingUsers[0].name} & ${typingUsers.length - 1} other${typingUsers.length > 2 ? "s" : ""} typing...`;
-
-            return (
-                <span className="text-blue-500 font-semibold animate-pulse">
-                    {text}
-                </span>
-            );
-        }
-
-
-        // Later on, Check if each user in the group is online or not.
-        if (conversation?.type === "direct") {
-            const statusText = (partner as any)?.custom_status ? ` · "${(partner as any).custom_status}"` : "";
-            return isOnline ? (
-                <span className="text-emerald-600 dark:text-emerald-400">Online{statusText}</span>
-            ) : (
-                <span className="text-zinc-400">Offline{statusText}</span>
-            );
-        }
-
-        return <span className="text-zinc-500 dark:text-zinc-400">{getTypeLabel()}</span>;
-    }
-
-    // ─── Empty State ───────────────────────────────────────────────────
     if (!conversation) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-zinc-50/50 dark:bg-[#050505]">
-                <div className="text-center">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 flex items-center justify-center mx-auto mb-4">
-                        <Send className="h-7 w-7 text-blue-500 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
-                        Select a conversation
-                    </h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">
-                        Choose a chat from the sidebar to start messaging your team members.
-                    </p>
+            <div className="flex-1 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-8 text-center">
+                <div className="h-16 w-16 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4 shadow-xs">
+                    <FileText className="h-8 w-8" />
                 </div>
+                <h3 className="font-bold text-lg text-zinc-900 dark:text-white mb-1">No Conversation Selected</h3>
+                <p className="text-sm text-zinc-500 max-w-sm">Choose a conversation from the left sidebar to start chatting.</p>
             </div>
         );
     }
 
-    const scrollToMessage = (messageId: number) => {
-        const el = document.getElementById(`message-${messageId}`);
-        if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-            el.classList.add("ring-2", "ring-blue-500", "ring-offset-2");
-            setTimeout(() => {
-                el.classList.remove("ring-2", "ring-blue-500", "ring-offset-2");
-            }, 1500);
-        }
-    };
-
     return (
-        <div className="flex-1 flex flex-col bg-zinc-50/50 dark:bg-[#050505]">
-            {/* ─── Chat Header ─────────────────────────────────────────── */}
-            <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shrink-0">
-                <div
-                    onClick={onToggleInfoSidebar}
-                    className="flex items-center gap-3 cursor-pointer group py-1 rounded-lg transition-opacity hover:opacity-85"
-                    title="View conversation info"
-                >
-                    {/* Avatar/Icon */}
-                    {conversation.type === "project" ? (
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
-                            <Hash className="h-4 w-4 text-white" />
-                        </div>
-                    ) : conversation.type === "group" ? (
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
-                            <Users className="h-4 w-4 text-white" />
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                <span className="text-xs font-bold text-white">{getInitials(getHeaderName())}</span>
-                            </div>
+        <div className="flex-1 flex flex-col h-full bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden">
+            {/* Header */}
+            <ChatHeader
+                conversation={conversation}
+                currentUserId={currentUserId}
+                isUserOnline={isUserOnline}
+                onToggleSearch={onToggleSearch}
+                isSearchOpen={isSearchOpen}
+                onToggleInfoSidebar={onToggleInfoSidebar}
+                isInfoSidebarOpen={isInfoSidebarOpen}
+            />
 
-                            {isOnline ? (
-                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
-                            ) : (
-                                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-gray-500 border-2 border-white dark:border-[#0a0a0a]" />
-                            )}
-
-                        </div>
-                    )}
-
-                    <div>
-                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-blue-500 transition-colors">
-                            {getHeaderName()}
-                        </h3>
-                        <p className="text-[11px] font-medium">
-                            {renderStatusSubtitle()}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Header Actions */}
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={onToggleSearch}
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isSearchOpen ? "bg-blue-500/10 text-blue-500" : "hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400"}`}
-                        title="Search messages"
-                    >
-                        <Search className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={onToggleInfoSidebar}
-                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${isInfoSidebarOpen ? "bg-blue-500/10 text-blue-500" : "hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400"}`}
-                        title="Conversation info"
-                    >
-                        <Info className="h-4 w-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* ─── Messages List ───────────────────────────────────────── */}
-            <div className="flex-1 relative overflow-hidden flex flex-col">
-                {isPrevLoading && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xs px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center gap-2 text-xs text-zinc-500">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
-                        <span>Loading older messages...</span>
+            {/* Scrollable Messages Area */}
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800"
+            >
+                {/* Pagination Load More Button */}
+                {hasBefore && onLoadMore && (
+                    <div className="flex justify-center my-2">
+                        <button
+                            onClick={onLoadMore}
+                            className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 shadow-xs transition-all"
+                        >
+                            Load older messages
+                        </button>
                     </div>
                 )}
 
-                <div
-                    className="flex-1 overflow-y-auto px-5 py-4 space-y-1"
-                    ref={messagesEndRef}
-                    onScroll={handleScroll}
-                >
-                    {messages.map((msg: Message | any, index) => {
-                        const isMe = msg.sender?.id === currentUserId;
+                {messages.map((msg) => {
+                    const isOwnMessage = msg.user_id === currentUserId;
+                    const isVoiceNote = msg.attachments?.some(
+                        (att: any) => att.file_type?.startsWith("audio/") || att.original_name?.contains?.("voice_note") || att.file_name?.includes("voice_note")
+                    );
 
-                        const showAvatar =
-                            !isMe && (index === 0 || messages[index - 1]?.user_id !== msg.user_id);
-
-                        const isLastInGroup =
-                            index === messages.length - 1 || messages[index + 1]?.user_id !== msg.user_id;
-
-                        return (
-                            <div
-                                id={`message-${msg.id}`}
-                                key={msg.id}
-                                className={`flex items-end gap-2 transition-all duration-300 ${isMe ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-3" : "mb-0.5"
-                                    }`}
-                            >
-                                {/* Other user's avatar */}
-                                {!isMe && (
-                                    <div className="w-8 shrink-0">
-                                        {showAvatar ? (
-                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                                <span className="text-[10px] font-bold text-white">
-                                                    {getInitials(msg.sender?.name || "U")}
-                                                </span>
-                                            </div>
-                                        ) : null}
+                    return (
+                        <div
+                            key={msg.id}
+                            id={`message-${msg.id}`}
+                            className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} group relative`}
+                        >
+                            <div className="flex items-end gap-2 max-w-[75%]">
+                                {!isOwnMessage && (
+                                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 mb-1">
+                                        {getInitials(msg.user?.name || "User")}
                                     </div>
                                 )}
 
-                                <div
-                                    className={`max-w-[70%] group ${isMe ? "order-1" : ""}`}
-                                    onMouseLeave={() => {
-                                        if (activeMenuMessageId === msg.id) {
-                                            setActiveMenuMessageId(null);
-                                        }
-                                    }}
-                                >
-                                    {/* Sender name */}
-                                    {showAvatar && !isMe && (
-                                        <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 ml-1">
-                                            {msg.sender?.name}
-                                        </p>
-                                    )}
+                                <div className="relative group">
+                                    {/* Context Popover Menu */}
+                                    <MessageContextMenu
+                                        message={msg}
+                                        isOwnMessage={isOwnMessage}
+                                        quickEmojis={QUICK_EMOJIS}
+                                        onReply={(m) => setReplyingTo(m)}
+                                        onToggleReaction={onToggleReaction}
+                                        onToggleStar={onToggleStarMessage}
+                                        onEdit={(m) => {
+                                            setEditingMessage({ id: m.id, body: m.body });
+                                            onInputTextChange(m.body);
+                                        }}
+                                        onDeleteForMe={onDeleteForMe}
+                                        onDeleteForAll={onDeleteForAll}
+                                    />
 
-                                    <div className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                        {/* Bubble */}
-                                        <div
-                                            className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all relative ${msg.isDeleted
-                                                ? "bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl"
-                                                : isMe
-                                                    ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
-                                                    : "bg-white dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200/80 dark:border-white/10 rounded-2xl rounded-bl-md"
-                                                }`}
-                                        >
-                                            {msg.isDeleted ? (
-                                                <div className="text-sm italic text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 py-0.5">
-                                                    <span>🚫</span>
-                                                    <span>
-                                                        {msg.deletedById === msg.user_id
-                                                            ? isMe
-                                                                ? "You deleted this message"
-                                                                : `${msg.sender?.name || "User"} deleted this message`
-                                                            : "This message was deleted by Admin"
-                                                        }
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    {/* Quoted Parent Message (WhatsApp Style Card) */}
-                                                    {msg.parent && (
-                                                        <div
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (msg.parent?.id) scrollToMessage(msg.parent.id);
-                                                            }}
-                                                            title="Click to jump to original message"
-                                                            className={`mb-2 p-2.5 rounded-xl border-l-[4px] text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                                ? "bg-black/20 border-white text-white hover:bg-black/30"
-                                                                : "bg-zinc-100 dark:bg-white/10 border-blue-500 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
-                                                                }`}
-                                                        >
-                                                            <div className={`flex items-center justify-between gap-2 font-bold text-[11px] ${isMe ? "text-white" : "text-blue-600 dark:text-blue-400"}`}>
-                                                                <span>{msg.parent.sender?.name || "User"}</span>
-                                                                <Reply className="h-3 w-3 opacity-80" />
-                                                            </div>
-                                                            <p className={`line-clamp-2 mt-0.5 font-normal ${isMe ? "text-blue-100" : "text-zinc-600 dark:text-zinc-300"}`}>
-                                                                {msg.parent.body}
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                    {/* Message Bubble Container */}
+                                    <div
+                                        className={`rounded-2xl px-4 py-2.5 shadow-xs transition-all ${isOwnMessage
+                                                ? "bg-blue-600 text-white rounded-br-xs"
+                                                : "bg-white dark:bg-white/10 text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10 rounded-bl-xs"
+                                            }`}
+                                    >
+                                        {!isOwnMessage && (
+                                            <p className="text-[11px] font-bold text-blue-500 dark:text-blue-400 mb-1">
+                                                {msg.user?.name}
+                                            </p>
+                                        )}
 
-                                                    {/* Message Body */}
-                                                    {msg.body && (
-                                                        <div className="flex items-end justify-between gap-2">
-                                                            <div className="text-sm font-normal">{msg.body}</div>
-                                                            {msg.is_starred && (
-                                                                <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0 mb-0.5" />
-                                                            )}
-                                                        </div>
-                                                    )}
+                                        {/* Voice Player or Text */}
+                                        {isVoiceNote ? (
+                                            <VoicePlayerCard
+                                                url={msg.attachments[0].download_url}
+                                                isMe={isOwnMessage}
+                                            />
+                                        ) : (
+                                            <p className="text-sm whitespace-pre-wrap leading-relaxed select-text">{msg.body}</p>
+                                        )}
 
-                                                    {/* Message Attachments */}
-                                                    {msg.attachments && msg.attachments.length > 0 && (
-                                                        <div className="mt-2.5 space-y-2 border-t border-zinc-100 dark:border-white/5 pt-2">
-                                                            {msg.attachments.map((attachment: any) => {
-                                                                const isAudio = Boolean(
-                                                                    attachment.file_type?.startsWith("audio/") ||
-                                                                    attachment.original_name?.toLowerCase().includes("voice_note") ||
-                                                                    attachment.file_name?.toLowerCase().includes("voice_note") ||
-                                                                    attachment.original_name?.toLowerCase().match(/\.(webm|opus|ogg|mp3|wav|m4a)$/i)
-                                                                );
-                                                                const showRawPreview =
-                                                                    !isAudio && (
-                                                                        attachment.file_type?.startsWith("image/") ||
-                                                                        attachment.file_type?.startsWith("video/") ||
-                                                                        attachment.file_type?.includes("pdf")
-                                                                    );
-
-                                                                if (isAudio) {
-                                                                    return (
-                                                                        <VoicePlayerCard
-                                                                            key={attachment.id}
-                                                                            url={attachment.download_url}
-                                                                            isMe={isMe}
-                                                                        />
-                                                                    );
-                                                                }
-
-                                                                if (showRawPreview) {
-                                                                    return (
-                                                                        <div key={attachment.id} className="rounded-xl overflow-hidden shadow-xs border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-1">
-                                                                            <AttachmentPreview
-                                                                                url={attachment.download_url}
-                                                                                fileName={attachment.file_name}
-                                                                                fileType={attachment.file_type}
-                                                                            />
-                                                                        </div>
-                                                                    );
-                                                                }
-
-                                                                return (
-                                                                    <a
-                                                                        key={attachment.id}
-                                                                        href={attachment.download_url}
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all shadow-sm ${isMe
-                                                                            ? "bg-black/20 border-white/20 text-white hover:bg-black/30"
-                                                                            : "bg-zinc-100 dark:bg-white/10 border-zinc-200 dark:border-white/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-white/15"
-                                                                            }`}
-                                                                    >
-                                                                        <div className="flex items-center gap-2 min-w-0">
-                                                                            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
-                                                                                <Paperclip className="h-4 w-4" />
-                                                                            </div>
-                                                                            <div className="min-w-0">
-                                                                                <p className="font-semibold truncate max-w-[180px]">{attachment.file_name}</p>
-                                                                                <p className="text-[10px] opacity-75 mt-0.5">{(attachment.file_size / 1024).toFixed(1)} KB</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </a>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-
-                                        {/* Floating Hover Actions (Reply + Quick Emoji Picker) & Timestamp */}
-                                        {!msg.isDeleted && (
-                                            <div className={`flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all shrink-0 relative ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                                {/* Quick Emoji Picker Floating Overlay */}
-                                                <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
-                                                    {QUICK_EMOJIS.map((emoji) => {
-                                                        const hasReacted = msg.reactions?.some(
-                                                            (r: any) => r.user_id === currentUserId && r.emoji === emoji
-                                                        );
-                                                        return (
-                                                            <button
-                                                                key={emoji}
-                                                                onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
-                                                                title={`React with ${emoji}`}
-                                                                className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                                    }`}
-                                                            >
-                                                                {emoji}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-
-                                                {/* Reply Button */}
-                                                <button
-                                                    onClick={() => setReplyingTo(msg)}
-                                                    title="Reply to message"
-                                                    className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
-                                                >
-                                                    <Reply className="h-3.5 w-3.5" />
-                                                </button>
-
-                                                {/* More Actions Dropdown Button */}
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActiveMenuMessageId(activeMenuMessageId === msg.id ? null : msg.id);
-                                                        }}
-                                                        title="More actions"
-                                                        className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                        {/* Attachments */}
+                                        {msg.attachments && msg.attachments.length > 0 && !isVoiceNote && (
+                                            <div className="mt-2 space-y-1.5">
+                                                {msg.attachments.map((att: any) => (
+                                                    <div
+                                                        key={att.id}
+                                                        onClick={() => setPreviewAttachment(att)}
+                                                        className="flex items-center gap-2 p-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 transition-colors cursor-pointer"
                                                     >
-                                                        <MoreVertical className="h-3.5 w-3.5" />
-                                                    </button>
-
-                                                    {activeMenuMessageId === msg.id && (
-                                                        <div className={`absolute bottom-8 z-50 w-40 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (onToggleStarMessage) onToggleStarMessage(msg.id);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                                                            >
-                                                                <Star className={`h-3.5 w-3.5 ${msg.is_starred ? "fill-amber-400 text-amber-400" : ""}`} />
-                                                                <span>{msg.is_starred ? "Unstar Message" : "Star Message"}</span>
-                                                            </button>
-                                                            <button
-                                                                disabled={!isMessageEditable(msg)}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setEditingMessage(msg);
-                                                                    onInputTextChange(msg.body);
-                                                                    setReplyingTo(null);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageEditable(msg)
-                                                                    ? "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                                    : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
-                                                                    }`}
-                                                            >
-                                                                Edit Message
-                                                            </button>
-                                                            <button
-                                                                disabled={!isMessageDeletableForAll(msg)}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (onDeleteForAll) onDeleteForAll(msg.id);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageDeletableForAll(msg)
-                                                                    ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                                                    : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
-                                                                    }`}
-                                                            >
-                                                                Delete for Everyone
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (onDeleteForMe) onDeleteForMe(msg.id);
-                                                                    setActiveMenuMessageId(null);
-                                                                }}
-                                                                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                                                            >
-                                                                Delete for Me
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center gap-1 select-none">
-                                                    {msg.isEdited && (
-                                                        <span className="text-[9px] text-zinc-400 dark:text-zinc-500 italic mr-0.5">
-                                                            edited
-                                                        </span>
-                                                    )}
-                                                    <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
-                                                        {formatTime(msg.created_at)}
-                                                    </span>
-                                                </div>
+                                                        <FileText className="h-4 w-4 shrink-0" />
+                                                        <span className="text-xs truncate max-w-[180px] font-medium">{att.original_name}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
-                                    </div>
 
-                                    {/* Aggregated Reaction Badges under Bubble */}
-                                    {msg.reactions && msg.reactions.length > 0 && (
-                                        <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                                            {Object.values(
-                                                msg.reactions.reduce((acc: any, r: any) => {
-                                                    if (!acc[r.emoji]) {
-                                                        acc[r.emoji] = { emoji: r.emoji, count: 0, hasReacted: false, users: [] };
-                                                    }
-                                                    acc[r.emoji].count += 1;
-                                                    acc[r.emoji].users.push(r.user?.name || "User");
-                                                    if (r.user_id === currentUserId) {
-                                                        acc[r.emoji].hasReacted = true;
-                                                    }
-                                                    return acc;
-                                                }, {})
-                                            ).map((reaction: any) => (
-                                                <button
-                                                    key={reaction.emoji}
-                                                    onClick={() => onToggleReaction && onToggleReaction(msg.id, reaction.emoji)}
-                                                    title={`Reacted by: ${reaction.users.join(", ")}`}
-                                                    className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border transition-all cursor-pointer ${reaction.hasReacted
-                                                        ? "bg-blue-50 dark:bg-blue-950/60 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold shadow-xs"
-                                                        : "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                        }`}
-                                                >
-                                                    <span>{reaction.emoji}</span>
-                                                    <span className="text-[11px] font-bold">{reaction.count}</span>
-                                                </button>
-                                            ))}
+                                        {/* Timestamp & Star Status */}
+                                        <div className="flex items-center justify-end gap-1.5 mt-1 text-[10px] opacity-75">
+                                            {msg.is_starred && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
+                                            <span>{formatTime(msg.created_at)}</span>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    );
+                })}
 
-                {showNewMessagesBtn && (
-                    <button
-                        onClick={scrollToBottomSmoothly}
-                        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 animate-bounce"
-                    >
-                        <span>New Messages</span>
-                        {newMessagesCount > 0 && (
-                            <span className="bg-red-500 text-white text-[10px] h-4 min-w-4 px-1 rounded-full flex items-center justify-center font-bold">
-                                {newMessagesCount}
-                            </span>
-                        )}
-                        <span>↓</span>
-                    </button>
-                )}
+                <div ref={messagesEndRef} />
             </div>
 
-            {/* ─── Message Input ────────────────────────────────────────── */}
-            <div className="px-5 pb-4 pt-2 shrink-0">
-                {/* WhatsApp Web Style Replying-To Quote Preview Banner */}
-                {replyingTo && (
-                    <div className="mb-2.5 p-3 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex-1 min-w-0 pr-3">
-                            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                                <Reply className="h-3.5 w-3.5" />
-                                <span>Replying to {replyingTo.sender?.name || "User"}</span>
-                            </div>
-                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{replyingTo.body}</p>
-                        </div>
-                        <button
-                            onClick={() => setReplyingTo(null)}
-                            className="h-7 w-7 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
-                )}
+            {/* Composer */}
+            <MessageComposer
+                conversation={conversation}
+                currentUserId={currentUserId}
+                inputText={inputText}
+                isSending={isSending}
+                onInputTextChange={onInputTextChange}
+                handleSendMessage={handleSendMessage}
+                typingUsers={typingUsers}
+                onTyping={onTyping}
+                recordingUsers={recordingUsers}
+                onRecording={onRecording}
+                editingMessage={editingMessage}
+                onCancelEditing={() => setEditingMessage(null)}
+                onUnblockUser={onUnblockUser}
+            />
 
-                {/* WhatsApp Web Style Editing-Message Quote Preview Banner */}
-                {editingMessage && (
-                    <div className="mb-2.5 p-3 bg-amber-50/90 dark:bg-amber-950/20 border-l-[5px] border-amber-500 rounded-r-2xl shadow-md flex items-center justify-between text-xs animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex-1 min-w-0 pr-3">
-                            <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs">
-                                <span>Editing Message</span>
-                            </div>
-                            <p className="text-zinc-600 dark:text-zinc-300 truncate mt-1 text-xs font-normal">{editingMessage.body}</p>
-                        </div>
-                        <button
-                            onClick={() => {
-                                setEditingMessage(null);
-                                onInputTextChange("");
-                            }}
-                            className="h-7 w-7 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/40 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all shrink-0"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
-                )}
-                {/* Typing Indicator Banner */}
-                {typingUsers && typingUsers.length > 0 && (
-                    <div className="px-3 py-1 mb-1.5 text-xs text-zinc-500 dark:text-zinc-400 italic flex items-center gap-2">
-                        <span>
-                            {typingUsers.map((u) => u.name).join(", ")}{" "}
-                            {typingUsers.length === 1 ? "is typing..." : "are typing..."}
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.2s]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce [animation-delay:0.4s]" />
-                        </div>
-                    </div>
-                )}
-
-                {/* Selected Files Preview Banner */}
-                {selectedFiles.length > 0 && (
-                    <div className="mb-2.5 p-3.5 bg-zinc-100/90 dark:bg-zinc-800/90 border-l-[5px] border-blue-500 rounded-r-2xl shadow-md flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
-                            <span>Selected Attachments ({selectedFiles.length})</span>
-                            <button
-                                onClick={() => setSelectedFiles([])}
-                                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                            >
-                                Clear All
-                            </button>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                            {selectedFiles.map((file, idx) => (
-                                <SelectedFilePreviewCard
-                                    key={idx}
-                                    file={file}
-                                    onRemove={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
-                                    getFileIcon={getFileIcon}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {conversation?.is_blocked_by_me ? (
-                    /* Blocker Banner (I blocked partner) */
-                    <div className="p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
-                        <div className="flex items-center gap-2.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                            <Ban className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                            <span>You have blocked this contact. Unblock to send messages.</span>
-                        </div>
-                        {onUnblockUser && (
-                            <button
-                                onClick={() => {
-                                    const partner = conversation?.participants?.find((p: any) => (p.user_id || p.user?.id || p.id) !== currentUserId);
-                                    const partnerUserId = partner ? (partner.user_id || partner.user?.id || partner.id) : null;
-                                    if (partnerUserId) onUnblockUser(partnerUserId);
-                                }}
-                                className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0"
-                            >
-                                Unblock
-                            </button>
-                        )}
-                    </div>
-                ) : conversation?.is_blocked_by_partner ? (
-                    /* Blocked Banner (Partner blocked me) */
-                    <div className="p-3.5 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl flex items-center justify-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 shadow-xs">
-                        <Info className="h-4 w-4 shrink-0 text-zinc-400" />
-                        <span>You cannot send messages to this contact.</span>
-                    </div>
-                ) : isRecording ? (
-                    /* Active Voice Recording Bar (WhatsApp Style) */
-                    <div className="flex items-center gap-3 bg-white dark:bg-zinc-800/90 border border-red-500/30 dark:border-red-500/40 rounded-2xl px-4 py-2.5 shadow-md transition-all">
-                        {/* Cancel Recording (Trash Icon) */}
-                        <button
-                            onClick={cancelRecording}
-                            className="h-8 w-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors shrink-0"
-                            title="Delete / Cancel recording"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-
-                        {/* Red Pulsing Recording Indicator + Live Timer */}
-                        <div className="flex items-center gap-2 shrink-0">
-                            <span className={`h-2.5 w-2.5 rounded-full bg-red-500 ${isPaused ? "" : "animate-ping"}`} />
-                            <span className="font-mono text-xs font-bold text-red-600 dark:text-red-400">
-                                {formattedTime}
-                            </span>
-                        </div>
-
-                        {/* Live Realtime Audio Amplitude Waveform Bar Graph */}
-                        <div className="flex-1 flex items-center gap-[2.5px] h-6 overflow-hidden px-2">
-                            {audioLevels.length > 0 ? (
-                                audioLevels.map((level, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`flex-1 rounded-full transition-all duration-100 ${isPaused ? "bg-zinc-300 dark:bg-zinc-600" : "bg-red-500"
-                                            }`}
-                                        style={{
-                                            height: `${level}%`,
-                                            minHeight: "15%",
-                                        }}
-                                    />
-                                ))
-                            ) : (
-                                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 italic">
-                                    {isPaused ? "Recording paused" : "Listening..."}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Pause / Resume Recording Button */}
-                        <button
-                            onClick={isPaused ? resumeRecording : pauseRecording}
-                            className={`h-8 w-8 rounded-full flex items-center justify-center transition-all shrink-0 ${isPaused
-                                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                : "bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-700 dark:text-zinc-300"
-                                }`}
-                            title={isPaused ? "Resume Recording" : "Pause Recording"}
-                        >
-                            {isPaused ? <Play className="h-3.5 w-3.5 ml-0.5" /> : <Pause className="h-3.5 w-3.5" />}
-                        </button>
-
-                        {/* Stop & Send Recording Button */}
-                        <button
-                            onClick={stopRecording}
-                            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shrink-0 shadow-sm"
-                            title="Stop & Send Voice Note"
-                        >
-                            <Send className="h-4 w-4 text-white" />
-                        </button>
-                    </div>
-                ) : (
-                    /* Standard Message Composer Bar */
-                    <div className="flex items-end gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2 shadow-sm focus-within:border-blue-500/50 focus-within:shadow-md transition-all">
-                        {/* Hidden File Input */}
-                        <input
-                            type="file"
-                            multiple
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={handleFileChange}
-                        />
-
-                        {/* Attachment */}
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5 ${selectedFiles.length > 0 ? "text-blue-500 bg-blue-500/10" : ""}`}
-                        >
-                            <Paperclip className="h-4 w-4 text-zinc-400" />
-                        </button>
-
-                        {/* Text Input */}
-                        <textarea
-                            ref={textAreaRef}
-                            value={inputText}
-                            onChange={(e) => handleTextChange(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSend();
-                                }
-                            }}
-                            placeholder="Type a message..."
-                            rows={1}
-                            className="flex-1 resize-none bg-transparent text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none py-1.5 max-h-32 overflow-y-auto"
-                            disabled={isSending}
-                        />
-
-                        {/* Emoji */}
-                        <button className="h-8 w-8 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 flex items-center justify-center transition-colors shrink-0 mb-0.5">
-                            <Smile className="h-4 w-4 text-zinc-400" />
-                        </button>
-
-                        {/* Send OR Mic Button */}
-                        {inputText.trim() || selectedFiles.length > 0 ? (
-                            <button
-                                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all shrink-0 mb-0.5 ${!isSending
-                                    ? "bg-blue-600 hover:bg-blue-700 shadow-sm"
-                                    : "bg-blue-600/70 cursor-not-allowed"
-                                    }`}
-                                onClick={handleSend}
-                                disabled={isSending}
-                            >
-                                {isSending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                                ) : (
-                                    <Send className="h-4 w-4 text-white" />
-                                )}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={startRecording}
-                                className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all shrink-0 mb-0.5 shadow-sm"
-                                title="Record Voice Message"
-                            >
-                                <Mic className="h-4 w-4 text-white" />
-                            </button>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div >
+            {/* Attachment Preview Modal */}
+            {previewAttachment && (
+                <AttachmentPreview
+                    url={previewAttachment.download_url}
+                    fileName={previewAttachment.original_name}
+                    fileType={previewAttachment.file_type}
+                />
+            )}
+        </div>
     );
 }
