@@ -85,20 +85,35 @@ class Comment extends Model
     {
         $escaped = e((string) $this->content);
 
-        $formatted = preg_replace(
-            '/(^|\\s)(@([\\w-]+))/u',
-            '$1<span style="display:inline-block;border-radius:0.375rem;background:rgba(59,130,246,0.12);padding:0.125rem 0.375rem;color:#2563eb;font-weight:600;">$2</span>',
-            $escaped
-        );
+        // 1. Get ONLY valid usernames from DB mentions table
+        $validUsernames = $this->mentions
+            ->loadMissing('mentionedUser')
+            ->pluck('mentionedUser.username')
+            ->filter()
+            ->toArray();
 
-        return nl2br((string) $formatted);
+        // 2. No valid mentions? Return plain text
+        if (empty($validUsernames)) {
+            return nl2br((string) $escaped);
+        }
+
+        // 3. Sort usernames by length descending (longest first)
+        usort($validUsernames, fn($a, $b) => strlen($b) - strlen($a));
+
+        // Highlight ONLY valid usernames with original Comment inline style badge
+        foreach ($validUsernames as $username) {
+            $badge = '<span style="display:inline-block;border-radius:0.375rem;background:rgba(59,130,246,0.12);padding:0.125rem 0.375rem;color:#2563eb;font-weight:600;">@' . $username . '</span>';
+            $escaped = str_replace('@' . $username, $badge, $escaped);
+        }
+
+        return nl2br((string) $escaped);
     }
 
     public function getCanUpdateAttribute(): bool
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 

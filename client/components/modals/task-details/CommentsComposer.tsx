@@ -51,7 +51,7 @@ export function CommentsComposer({
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     useEffect(() => {
-        getMe().then(setCurrentUser).catch(() => {});
+        getMe().then(setCurrentUser).catch(() => { });
     }, []);
 
     const avatarUrl = currentUser?.avatar_url || currentUser?.avatar;
