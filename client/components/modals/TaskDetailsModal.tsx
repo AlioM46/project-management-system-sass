@@ -120,7 +120,7 @@ function TaskDetailsModalContent({ onClose, task, onUpdate }: TaskDetailsModalCo
     const sidebarRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        getMembers().then((res) => setMembers(res.members || [])).catch(() => {});
+        getMembers().then((res) => setMembers(res.members || [])).catch(() => { });
     }, []);
 
     useEffect(() => {

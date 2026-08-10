@@ -102,6 +102,14 @@ class MentionService
             return collect();
         }
 
+        //         SELECT * FROM users
+// WHERE username IN ('ali_omar', 'john_doe')
+//   AND EXISTS (
+//       SELECT 1 FROM workspace_members
+//       WHERE workspace_members.user_id = users.id
+//         AND workspace_members.workspace_id = 5
+//   )
+
         return User::whereIn('username', $usernames)
             ->whereHas('workspaces', fn($q) => $q->where('workspace_id', $workspaceId))
             ->get();
