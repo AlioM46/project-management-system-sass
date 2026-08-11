@@ -1,5 +1,4 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# AGENTS.md — Frontend Guidelines
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+> [!NOTE]
+> All project rules, standards, and AI agent guidelines for both Laravel (`server/`) and Next.js (`client/`) are centrally maintained in the master [.agents/AGENTS.md](file:///c:/Users/aliom/OneDrive/Desktop/PM_COPY/project-management-system-sass/.agents/AGENTS.md).

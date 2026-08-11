@@ -79,6 +79,15 @@ export default function ChatPage() {
         }
     }, []);
 
+    const refreshConversations = async () => {
+        try {
+            const convos = await getConversations();
+            setConversations(convos || []);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed To Load Conversations"));
+        }
+    };
+
     useEffect(() => {
         async function loadConversations() {
             try {
@@ -109,23 +118,62 @@ export default function ChatPage() {
     useEffect(() => {
         if (!activeConversationId) return;
 
+        //Explain Race Condition : Swapping between Conversations
+        /**
+         * ── SIMULATION & CODE TRACE (RACE CONDITION FIX) ──────────────────────────
+         *
+         * Why this is needed:
+         * When switching fast between Chat 10 -> Chat 20, 2 async HTTP requests fire.
+         * Network latency can cause Request #1 (Chat 10) to finish AFTER Request #2 (Chat 20).
+         *
+         * STEP 1: Click Chat 10 (Instance #1)
+         *   - Memory: conversationId = 10, isCancelled = false
+         *   - Action: Fires HTTP Request #1 (GET /conversations/10/messages)
+         *
+         * STEP 2: Fast Click Chat 20 (Instance #2) at 0.05s
+         *   - React detects dependency change (activeConversationId changed 10 -> 20)
+         *   - CLEANUP RUNS: React executes Instance #1 cleanup: () => { isCancelled = true }
+         *   - Action: React starts Instance #2 (conversationId = 20, isCancelled = false)
+         *   - Action: Fires HTTP Request #2 (GET /conversations/20/messages)
+         *
+         * STEP 3: Request #1 (Chat 10) finishes late at 0.30s
+         *   - Execution: Checks `if (!isCancelled)` -> FALSE (cancelled in Step 2!)
+         *   - Action: Response for Chat 10 is DISCARDED. State is NOT touched!
+         *
+         * STEP 4: Request #2 (Chat 20) finishes at 0.35s
+         *   - Execution: Checks `if (!isCancelled)` -> TRUE (valid for Instance #2)
+         *   - Action: `setMessages(res.data)` runs cleanly for Chat 20!
+         * ──────────────────────────────────────────────────────────────────────────
+         */
+        let isCancelled = false;
         const conversationId = activeConversationId;
 
         async function loadMessages() {
+            setMessages([]);
             setIsLoading(true);
             try {
                 const res = await getMessages(conversationId);
-                setMessages(res.data || []);
-                sethasBeforeMessages(res.has_before ?? false);
-                sethasAfterMessages(res.has_after ?? false);
+                if (!isCancelled) {
+                    setMessages(res.data || []);
+                    sethasBeforeMessages(res.has_before ?? false);
+                    sethasAfterMessages(res.has_after ?? false);
+                }
             } catch (error) {
-                toast.error(getErrorMessage(error, "Failed To Load Messages"));
+                if (!isCancelled) {
+                    toast.error(getErrorMessage(error, "Failed To Load Messages"));
+                }
             } finally {
-                setIsLoading(false);
+                if (!isCancelled) {
+                    setIsLoading(false);
+                }
             }
         }
 
         loadMessages();
+
+        return () => {
+            isCancelled = true;
+        };
     }, [activeConversationId]);
 
     const handleLoadMoreMessages = async () => {
@@ -338,6 +386,23 @@ export default function ChatPage() {
         [currentUserId]
     );
 
+    const handleMessagePinned = useCallback(
+        (data: { pinned_message: any; unpinned_message_id?: number | null }) => {
+            setMessages((prev) =>
+                prev.map((msg) => {
+                    if (msg.id === data.pinned_message?.id) {
+                        return { ...msg, is_pinned: data.pinned_message.is_pinned, pinned_at: data.pinned_message.pinned_at };
+                    }
+                    if (data.unpinned_message_id && msg.id === data.unpinned_message_id) {
+                        return { ...msg, is_pinned: false, pinned_at: null };
+                    }
+                    return msg;
+                })
+            );
+        },
+        []
+    );
+
     const { typingUsers, sendTyping, recordingUsers, sendRecording } = useChatChannel(
         getCookie("access_token") || "",
         getCookie("workspace_id") || "",
@@ -349,7 +414,8 @@ export default function ChatPage() {
         handleDeletingMessage,
         handleUpdatingMessage,
         handleMessageDelivered,
-        handleMessageRead
+        handleMessageRead,
+        handleMessagePinned
     );
 
     // Listen for incoming notifications when a reactivated conversation receives a new message
@@ -572,6 +638,7 @@ export default function ChatPage() {
                     }
                 }}
                 typingUsers={typingUsers}
+                onRefreshConversations={refreshConversations}
             />
 
             {/* Middle: Message Area */}
@@ -603,6 +670,8 @@ export default function ChatPage() {
                 isSearchOpen={isSearchOpen}
                 onToggleInfoSidebar={() => setIsInfoSidebarOpen((prev) => !prev)}
                 isInfoSidebarOpen={isInfoSidebarOpen}
+                onJumpToMessage={handleSelectSearchMessage}
+                isLoading={isLoading}
             />
 
             {/* Right: Message Search Sidebar */}

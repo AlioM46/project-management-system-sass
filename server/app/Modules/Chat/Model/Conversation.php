@@ -62,4 +62,9 @@ class Conversation extends Model
             'id'
         );
     }
+
+    public function pinnedUsers(): HasMany
+    {
+        return $this->hasMany(PinnedConversation::class, 'conversation_id');
+    }
 }

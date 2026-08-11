@@ -1,8 +1,0 @@
-- # EPIC 9 — Audit Logging
-- ## Feature 9.1 — Audit Engine
-- ### Services / Actions Used
-    - **Service:** `AuditLogger`
-- ### Domain Rules
-    - All security-sensitive changes must log.
-    - Must store before/after values.
-    - Must include actor and workspace.

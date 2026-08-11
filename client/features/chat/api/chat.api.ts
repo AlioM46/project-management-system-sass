@@ -261,5 +261,25 @@ export async function unblockUser(blockedUserId: number): Promise<any> {
     return await apiClient.delete(`/users/unblock/${blockedUserId}`);
 }
 
+export async function togglePinMessage(
+    conversationId: number,
+    messageId: number
+): Promise<{ is_pinned: boolean; pinned_at: string | null; unpinned_message_id?: number | null; message: Message }> {
+    return await apiClient.post(`/conversations/${conversationId}/messages/${messageId}/pin`);
+}
+
+export async function getPinnedMessage(
+    conversationId: number
+): Promise<{ pinned_message: Message | null }> {
+    return await apiClient.get(`/conversations/${conversationId}/pinned-message`);
+}
+
+export async function togglePinConversation(
+    conversationId: number
+): Promise<{ is_pinned: boolean }> {
+    return await apiClient.post(`/conversations/${conversationId}/pin`);
+}
+
+
 
 

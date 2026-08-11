@@ -1,8 +1,12 @@
 "use client";
 
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
-import { Search, Plus, Hash, Users, MessageCircle, BellOff, Star } from "lucide-react";
-import { Conversation, User } from "../types";
+import { Search, Plus, MessageCircle, Pin } from "lucide-react";
+import { Conversation } from "../types";
+import { togglePinConversation } from "../api/chat.api";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { ConversationSidebarItem } from "./ConversationSidebarItem";
 
 interface ChatSidebarProps {
     conversations: any[];
@@ -12,21 +16,43 @@ interface ChatSidebarProps {
     onOpenStarredTab?: () => void;
     isUserOnline: (userId: number | undefined | null) => boolean;
     typingUsers?: { id: number; name: string }[];
+    onRefreshConversations?: () => void;
 }
 
-export function ChatSidebar({ conversations, activeConversationId, onSelectConversation, onOpenNewConversationModal, onOpenStarredTab, isUserOnline, typingUsers = [] }: ChatSidebarProps) {
-    // Helper: Get display name for a conversation
-    const { currentUser, isLoading } = useCurrentUser();
+export function ChatSidebar({
+    conversations,
+    activeConversationId,
+    onSelectConversation,
+    onOpenNewConversationModal,
+    onOpenStarredTab,
+    isUserOnline,
+    typingUsers = [],
+    onRefreshConversations,
+}: ChatSidebarProps) {
+    const { currentUser } = useCurrentUser();
+    const [menuState, setMenuState] = useState<{
+        convId: number;
+        top: number;
+        left: number;
+        placeAbove: boolean;
+    } | null>(null);
+
+    useEffect(() => {
+        const handleClose = () => setMenuState(null);
+        window.addEventListener("click", handleClose);
+        window.addEventListener("scroll", handleClose, true);
+        return () => {
+            window.removeEventListener("click", handleClose);
+            window.removeEventListener("scroll", handleClose, true);
+        };
+    }, []);
 
     function getConversationName(conv: any): string {
-        // Project
         if (conv.type === "project" && conv.project) {
             return conv.project.name;
         }
-        // Group
         if (conv.name) return conv.name;
 
-        // DM: show the other person's name
         if (conv.participants?.[0]?.user?.id !== currentUser?.id && conv.participants?.[0]?.user?.name) {
             return conv.participants[0].user.name;
         } else if (conv.participants?.[1]?.user?.id !== currentUser?.id && conv.participants?.[1]?.user?.name) {
@@ -35,54 +61,85 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
         return "Unknown";
     }
 
-    // Helper: Get initials from a name
     function getInitials(name: string): string {
         return name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
     }
 
-    // Helper: Format message timestamp
     function formatTime(timestamp?: string): string {
         if (!timestamp) return "";
         try {
             const date = new Date(timestamp);
             return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        } catch (e) {
+        } catch {
             return "";
         }
     }
 
-    // Helper: Get icon/color for conversation type
-    function getTypeIcon(conv: any) {
-        // Project
-        if (conv.type === "project") {
-            return (
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <Hash className="h-4 w-4 text-white" />
-                </div>
-            );
+    const handleTogglePin = async (e: React.MouseEvent, conversationId: number) => {
+        e.stopPropagation();
+        try {
+            const res = await togglePinConversation(conversationId);
+            toast.success(res.is_pinned ? "Conversation pinned to top" : "Conversation unpinned");
+            if (onRefreshConversations) {
+                onRefreshConversations();
+            }
+        } catch {
+            toast.error("Failed to update pinned conversation");
         }
-        if (conv.type === "group") {
-            return (
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <Users className="h-4 w-4 text-white" />
-                </div>
-            );
+    };
+
+    const handleOpenMenu = (e: React.MouseEvent, convId: number) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (menuState?.convId === convId) {
+            setMenuState(null);
+            return;
         }
-        // DM: show avatar initials
-        const name = getConversationName(conv);
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const placeAbove = spaceBelow < 120;
+
+        setMenuState({
+            convId,
+            top: placeAbove ? rect.top : rect.bottom,
+            left: Math.max(10, rect.right - 180),
+            placeAbove,
+        });
+    };
+
+    const renderSidebarItem = (conv: any) => {
+        const isActive = conv.id === activeConversationId;
+        const partner = conv.participants?.find((p: any) => p?.user?.id !== currentUser?.id);
+        const isOnline = conv.type === "direct" && partner?.user?.id ? isUserOnline(partner.user.id) : false;
+        const isMenuOpen = menuState?.convId === conv.id;
+
         return (
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
-                <span className="text-xs font-bold text-white">{getInitials(name)}</span>
-            </div>
+            <ConversationSidebarItem
+                key={conv.id}
+                conv={conv}
+                isActive={isActive}
+                currentUserId={currentUser?.id}
+                isOnline={isOnline}
+                isMenuOpen={isMenuOpen}
+                typingUsers={typingUsers}
+                getConversationName={getConversationName}
+                getInitials={getInitials}
+                formatTime={formatTime}
+                onSelect={() => onSelectConversation(conv.id)}
+                onOpenMenu={(e) => handleOpenMenu(e, conv.id)}
+            />
         );
-    }
+    };
 
-    function getParticipantAvatar(conv: Conversation) {
-
-    }
+    const pinnedConversations = conversations?.filter((c) => c.is_pinned) || [];
+    const directConversations = conversations?.filter((c) => c.type === "direct" && !c.is_pinned) || [];
+    const groupConversations = conversations?.filter((c) => c.type === "group" && !c.is_pinned) || [];
+    const projectConversations = conversations?.filter((c) => c.type === "project" && !c.is_pinned) || [];
 
     return (
-        <div className="w-80 shrink-0 border-r border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] flex flex-col">
+        <div className="w-80 shrink-0 border-r border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] flex flex-col relative">
             {/* Header */}
             <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-white/10 shrink-0">
                 <div className="flex items-center gap-2">
@@ -108,167 +165,77 @@ export function ChatSidebar({ conversations, activeConversationId, onSelectConve
 
             {/* Conversation List */}
             <div className="flex-1 overflow-y-auto py-2 px-2">
+                {/* 📌 Pinned Section */}
+                {pinnedConversations.length > 0 && (
+                    <div className="mb-3">
+                        <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-3 py-1.5 flex items-center gap-1.5">
+                            <Pin className="h-3 w-3 fill-blue-500/20" />
+                            <span>Pinned ({pinnedConversations.length})</span>
+                        </p>
+                        {pinnedConversations.map(renderSidebarItem)}
+                    </div>
+                )}
+
                 {/* DMs Section */}
-                <div className="mb-1">
-                    <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-2">
-                        Direct Messages
-                    </p>
-                    {conversations
-                        ?.filter((c) => c.type === "direct")
-                        .map((conv) => {
-                            const partner = conv.participants.find((participant: any) => participant?.user?.id != currentUser?.id)
-                            const isActive = conv.id === activeConversationId;
-
-                            const isOnline = partner?.user?.id ? isUserOnline(partner.user.id) : false;
-
-                            // const isUserOnline = isUserOnline(conv.user?.id)
-                            return (
-                                <button
-                                    key={conv.id}
-                                    onClick={() => onSelectConversation(conv.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${isActive
-                                        ? "bg-blue-50 dark:bg-blue-500/10"
-                                        : "hover:bg-zinc-50 dark:hover:bg-white/5"
-                                        }`}
-                                >
-                                    {/* Avatar */}
-                                    <div className="relative">
-                                        {getTypeIcon(conv)}
-                                        {/* Online indicator */}
-                                        {isOnline && (
-                                            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0a0a0a]" />
-                                        )}
-                                    </div>
-
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-medium truncate ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"
-                                                }`}>
-                                                {getConversationName(conv)}
-                                            </span>
-                                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                                                {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}
-                                                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                                                    {formatTime(conv.last_message?.created_at)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-0.5">
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
-                                                {isActive && typingUsers && typingUsers.length > 0 ? (
-                                                    <span className="text-blue-500 font-semibold animate-pulse">
-                                                        typing...
-                                                    </span>
-                                                ) : (
-                                                    conv.last_message?.body
-                                                )}
-                                            </p>
-                                            {conv.unread_count > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-blue-600 text-[11px] font-bold text-white flex items-center justify-center shrink-0">
-                                                    {conv.unread_count}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                </div>
+                {directConversations.length > 0 && (
+                    <div className="mb-2">
+                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                            Direct Messages
+                        </p>
+                        {directConversations.map(renderSidebarItem)}
+                    </div>
+                )}
 
                 {/* Groups Section */}
-                <div className="mb-1 mt-2">
-                    <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-2">
-                        Groups
-                    </p>
-                    {conversations
-                        ?.filter((c) => c.type === "group")
-                        .map((conv) => {
-                            const isActive = conv.id === activeConversationId;
-                            return (
-                                <button
-                                    key={conv.id}
-                                    onClick={() => onSelectConversation(conv.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${isActive
-                                        ? "bg-blue-50 dark:bg-blue-500/10"
-                                        : "hover:bg-zinc-50 dark:hover:bg-white/5"
-                                        }`}
-                                >
-                                    {getTypeIcon(conv)}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-medium truncate ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"
-                                                }`}>
-                                                {getConversationName(conv)}
-                                            </span>
-                                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                                                {conv.is_muted && <BellOff className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />}
-                                                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                                                    {formatTime(conv.last_message?.created_at)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-0.5">
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
-                                                {conv.last_message?.body}
-                                            </p>
-                                            {conv.unread_count > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-blue-600 text-[11px] font-bold text-white flex items-center justify-center shrink-0">
-                                                    {conv.unread_count}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                </div>
+                {groupConversations.length > 0 && (
+                    <div className="mb-2">
+                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                            Groups
+                        </p>
+                        {groupConversations.map(renderSidebarItem)}
+                    </div>
+                )}
 
                 {/* Projects Section */}
-                <div className="mt-2">
-                    <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-2">
-                        Project Channels
-                    </p>
-                    {conversations
-                        ?.filter((c) => c.type === "project")
-                        .map((conv) => {
-                            const isActive = conv.id === activeConversationId;
-                            return (
-                                <button
-                                    key={conv.id}
-                                    onClick={() => onSelectConversation(conv.id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${isActive
-                                        ? "bg-blue-50 dark:bg-blue-500/10"
-                                        : "hover:bg-zinc-50 dark:hover:bg-white/5"
-                                        }`}
-                                >
-                                    {getTypeIcon(conv)}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-medium truncate ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"
-                                                }`}>
-                                                {getConversationName(conv)}
-                                            </span>
-                                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-                                                {formatTime(conv.last_message?.created_at)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-0.5">
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate pr-2">
-                                                {conv.last_message?.body}
-                                            </p>
-                                            {conv.unread_count > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-blue-600 text-[11px] font-bold text-white flex items-center justify-center shrink-0">
-                                                    {conv.unread_count}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                </div>
+                {projectConversations.length > 0 && (
+                    <div>
+                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                            Project Channels
+                        </p>
+                        {projectConversations.map(renderSidebarItem)}
+                    </div>
+                )}
             </div>
+
+            {/* Smart Non-Overflow Fixed Action Dropdown */}
+            {menuState && (
+                <div
+                    className="fixed z-[99999] w-48 p-1.5 bg-white dark:bg-[#121215] border border-zinc-200/90 dark:border-zinc-800 shadow-2xl rounded-2xl animate-in fade-in zoom-in-95 duration-100"
+                    style={{
+                        top: menuState.placeAbove ? "auto" : `${menuState.top + 4}px`,
+                        bottom: menuState.placeAbove ? `${window.innerHeight - menuState.top + 4}px` : "auto",
+                        left: `${menuState.left}px`,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {(() => {
+                        const targetConv = conversations.find((c) => c.id === menuState.convId);
+                        if (!targetConv) return null;
+                        return (
+                            <button
+                                onClick={(e) => {
+                                    handleTogglePin(e, targetConv.id);
+                                    setMenuState(null);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 rounded-xl transition-all text-left group"
+                            >
+                                <Pin className={`h-3.5 w-3.5 ${targetConv.is_pinned ? "fill-blue-500 text-blue-500" : "text-zinc-400 group-hover:text-blue-500"}`} />
+                                <span>{targetConv.is_pinned ? "Unpin Conversation" : "Pin Conversation"}</span>
+                            </button>
+                        );
+                    })()}
+                </div>
+            )}
         </div>
     );
 }

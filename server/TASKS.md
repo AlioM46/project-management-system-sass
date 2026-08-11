@@ -95,12 +95,12 @@
 
 ## 7. Pin Messages
 ### Backend (Laravel)
-- [ ] Add `is_pinned` boolean column to `messages` table.
-- [ ] Implement toggle endpoint to pin/unpin a message and broadcast the updated status globally.
+- [x] Add `is_pinned` boolean column to `messages` table.
+- [x] Implement toggle endpoint to pin/unpin a message and broadcast the updated status globally.
 
 ### Frontend (React)
-- [ ] Add "Pin" option to message context menus.
-- [ ] Display active pinned messages in a floating banner at the top of the chat area.
+- [x] Add "Pin" option to message context menus.
+- [x] Display active pinned messages in a floating banner at the top of the chat area.
 
 ---
 
@@ -141,11 +141,11 @@
 
 ## 12. Pinned Conversations (Sidebar)
 ### Backend (Laravel)
-- [ ] Add a favorites database attribute or relation to track pinned sidebar chats.
+- [x] Add a favorites database attribute or relation to track pinned sidebar chats.
 
 ### Frontend (React)
-- [ ] Add context actions to pin/favorite conversations.
-- [ ] Position pinned chats persistently at the top of the sidebar list.
+- [x] Add context actions to pin/favorite conversations.
+- [x] Position pinned chats persistently at the top of the sidebar list.
 
 
 1. 🔥 WebRTC Audio & Video Calling (Difficulty: 10/10 — HARDEST)

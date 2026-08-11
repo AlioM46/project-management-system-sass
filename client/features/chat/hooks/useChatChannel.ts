@@ -20,7 +20,8 @@ export default function useChatChannel(
     onMessageDeleted?: (data: Message) => void,
     onMessageUpdated?: (data: Message) => void,
     onMessageDelivered?: (event: { conversationId: number; deliveredAt: string }) => void,
-    onMessageRead?: (event: { conversationId: number; userId: number; readAt: string }) => void
+    onMessageRead?: (event: { conversationId: number; userId: number; readAt: string }) => void,
+    onMessagePinned?: (data: { pinned_message: any; unpinned_message_id?: number | null }) => void
 ) {
     const [typingUsers, setTypingUsers] = useState<ChatUserActivity[]>([]);
     const [recordingUsers, setRecordingUsers] = useState<ChatUserActivity[]>([]);
@@ -77,6 +78,12 @@ export default function useChatChannel(
             }
         });
 
+        channel.listen(".message.pinned_updated", (event: { pinned_message: any; unpinned_message_id?: number | null }) => {
+            if (onMessagePinned) {
+                onMessagePinned(event);
+            }
+        });
+
         // 1. Whisper for "typing" status
         channel.listenForWhisper("typing", (event: { userId: number; userName: string; isTyping: boolean }) => {
             if (currentUserId && Number(event.userId) === Number(currentUserId)) return;
@@ -112,6 +119,7 @@ export default function useChatChannel(
             channel.stopListening(".messages.updated");
             channel.stopListening(".messages.deleted");
             channel.stopListening(".messages.reaction.updated");
+            channel.stopListening(".message.pinned_updated");
             channel.stopListeningForWhisper("typing");
             channel.stopListeningForWhisper("recording");
             echo.leave(channelName);
