@@ -25,12 +25,16 @@ class Message extends Model
         'isEdited',
         'isDeleted',
         'deletedById',
+        'is_pinned',
+        'pinned_at',
     ];
 
     protected $casts = [
         'isEdited' => 'boolean',
         'isDeleted' => 'boolean',
+        'is_pinned' => 'boolean',
         'delivered_at' => 'datetime',
+        'pinned_at' => 'datetime',
     ];
 
     protected $appends = [

@@ -46,6 +46,7 @@ export interface Conversation {
     muted_until?: string | null;
     is_blocked_by_me?: boolean;
     is_blocked_by_partner?: boolean;
+    is_pinned?: boolean;
 }
 
 export interface MessageReaction {
@@ -77,6 +78,8 @@ export interface Message {
     isEdited?: boolean;
     isDeleted?: boolean;
     is_starred?: boolean;
+    is_pinned?: boolean;
+    pinned_at?: string | null;
     deletedById?: number | null;
 }
 

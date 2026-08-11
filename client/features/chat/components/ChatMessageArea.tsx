@@ -1,9 +1,9 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban, Check, CheckCheck } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban, Check, CheckCheck, Pin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
-import { markConversationAsReadApi } from "../api/chat.api";
+import { markConversationAsReadApi, getPinnedMessage, togglePinMessage } from "../api/chat.api";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { toast } from "sonner";
 import { AttachmentPreview } from "@/components/modals/task-details/attachment-preview";
@@ -41,6 +41,8 @@ interface ChatMessageAreaProps {
     isSearchOpen?: boolean;
     onToggleInfoSidebar?: () => void;
     isInfoSidebarOpen?: boolean;
+    onJumpToMessage?: (messageId: number) => void;
+    isLoading?: boolean;
 }
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉"];
@@ -115,6 +117,8 @@ export function ChatMessageArea({
     isSearchOpen = false,
     onToggleInfoSidebar,
     isInfoSidebarOpen = false,
+    onJumpToMessage,
+    isLoading = false,
 }: ChatMessageAreaProps) {
     const { currentUser } = useCurrentUser();
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -122,6 +126,44 @@ export function ChatMessageArea({
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
+    const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
+
+    useEffect(() => {
+        if (!conversation?.id) {
+            setPinnedMessage(null);
+            return;
+        }
+        getPinnedMessage(conversation.id)
+            .then((res) => {
+                setPinnedMessage(res.pinned_message);
+            })
+            .catch(() => {
+                setPinnedMessage(null);
+            });
+    }, [conversation?.id]);
+
+    useEffect(() => {
+        const pinnedInList = messages.find((m) => m.is_pinned);
+        if (pinnedInList) {
+            setPinnedMessage(pinnedInList);
+        }
+    }, [messages]);
+
+    const handleTogglePin = async (msg: Message) => {
+        if (!conversation?.id) return;
+        try {
+            const res = await togglePinMessage(conversation.id, msg.id);
+            if (res.is_pinned) {
+                setPinnedMessage(res.message);
+                toast.success("Message pinned");
+            } else {
+                setPinnedMessage(null);
+                toast.success("Message unpinned");
+            }
+        } catch {
+            toast.error("Failed to update pinned message");
+        }
+    };
 
 
     const isDirect = useMemo(() => {
@@ -264,6 +306,16 @@ export function ChatMessageArea({
         const fifteenMinutes = 15 * 60 * 1000;
         return timeDiff < fifteenMinutes;
     };
+
+    const canPinMessage = useMemo(() => {
+        if (!conversation) return false;
+        if (conversation.type === "direct") return true;
+
+        const myParticipant = conversation?.participants?.find(
+            (p: Participant) => p.user_id === currentUserId
+        );
+        return myParticipant?.role === "admin" || myParticipant?.role === "owner";
+    }, [conversation, currentUserId]);
 
     const partner = conversation?.participants?.find((participant: any) => participant?.user?.id != currentUser?.id);
     const partnerId = partner?.user?.id;
@@ -424,8 +476,21 @@ export function ChatMessageArea({
         setNewMessagesCount(0);
     };
 
+    // Reset scroll tracking state when active conversation changes
+    useEffect(() => {
+        prevMessagesLengthRef.current = 0;
+        prevScrollHeightRef.current = 0;
+        setShowNewMessagesBtn(false);
+        setNewMessagesCount(0);
+    }, [conversation?.id]);
+
     useEffect(() => {
         if (!messages) return;
+
+        // Guard against stale message arrays from another conversation during fast switching
+        if (messages.length > 0 && conversation?.id && Number(messages[0].conversation_id) !== Number(conversation.id)) {
+            return;
+        }
 
         const container = messagesEndRef.current;
         if (!container) return;
@@ -433,15 +498,15 @@ export function ChatMessageArea({
         // means there is previous messages loaded
         if (prevScrollHeightRef.current > 0) {
             // Restore reading position after prepending older messages
-            // 1500px - 1000px => 500px
             const heightDiff = container.scrollHeight - prevScrollHeightRef.current;
-            // keep the distnace from top 500px
             container.scrollTop = heightDiff;
 
             prevScrollHeightRef.current = 0; // Reset
         } else {
             // Check if messages count increased by a new message
-            const hasNewIncomingMessage = messages.length > prevMessagesLengthRef.current;
+            const isInitialLoad = prevMessagesLengthRef.current === 0;
+            const hasNewIncomingMessage = !isInitialLoad && messages.length > prevMessagesLengthRef.current;
+
             if (hasNewIncomingMessage) {
                 const lastMessage = messages[messages.length - 1];
                 const isSentByMe = lastMessage?.user_id === currentUserId;
@@ -458,24 +523,19 @@ export function ChatMessageArea({
                     setNewMessagesCount((prev) => prev + 1);
                 }
             } else {
-                //  With requestAnimationFrame: The browser waits until it has fully rendered the new message and recalculated the height, and then it scrolls. You are guaranteed to scroll to the true, new bottom.
-
-
-                // rAF means:
-                // Hey Browser, I will wait until you fully render your UI
-                // then I will catch your REAL "scrollHeight"
-
-                // The trick: use requestAnimationFrame to wait for the NEXT frame.
-                // This ensures React has finished rendering the new message and updated the scrollHeight before we scroll.
-                // Initial load
+                // Initial load or context change: scroll directly to bottom after DOM paint
                 requestAnimationFrame(() => {
-                    container.scrollTop = container.scrollHeight;
+                    requestAnimationFrame(() => {
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
                 });
             }
         }
 
         prevMessagesLengthRef.current = messages.length;
-    }, [messages, currentUserId]);
+    }, [messages, currentUserId, conversation?.id]);
 
     // Auto-focus textarea when sending finishes or conversation changes
     useEffect(() => {
@@ -587,6 +647,8 @@ export function ChatMessageArea({
             setTimeout(() => {
                 el.classList.remove("ring-2", "ring-blue-500", "ring-offset-2");
             }, 1500);
+        } else if (onJumpToMessage) {
+            onJumpToMessage(messageId);
         }
     };
 
@@ -652,8 +714,53 @@ export function ChatMessageArea({
                 </div>
             </div>
 
+            {/* ─── Pinned Message Banner ─────────────────────────────── */}
+            {pinnedMessage && !pinnedMessage.isDeleted && (
+                <div
+                    onClick={() => scrollToMessage(pinnedMessage.id)}
+                    className="mx-5 mt-2.5 px-3.5 py-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-blue-200 dark:border-blue-900/40 rounded-xl shadow-xs flex items-center justify-between gap-3 cursor-pointer hover:bg-blue-50/60 dark:hover:bg-zinc-800/80 transition-all z-20 shrink-0 group"
+                >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-7 w-7 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                            <Pin className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 text-xs">
+                            <p className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 truncate">
+                                <span>Pinned Message</span>
+                                <span className="text-[10px] font-normal text-zinc-400">· {pinnedMessage.sender?.name || "Member"}</span>
+                            </p>
+                            <p className="text-zinc-500 dark:text-zinc-400 truncate text-[11px]">
+                                {pinnedMessage.body || (pinnedMessage.attachments?.length ? "[Media Attachment]" : "Message")}
+                            </p>
+                        </div>
+                    </div>
+                    {canPinMessage && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleTogglePin(pinnedMessage);
+                            }}
+                            title="Unpin Message"
+                            className="h-6 w-6 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 flex items-center justify-center transition-colors shrink-0"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+            )}
+
             {/* ─── Messages List ───────────────────────────────────────── */}
             <div className="flex-1 relative overflow-hidden flex flex-col">
+                {isLoading && (
+                    <div className="absolute inset-0 z-40 bg-white/70 dark:bg-[#050505]/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2.5 transition-all animate-in fade-in duration-150">
+                        <div className="h-10 w-10 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs border border-blue-200/60 dark:border-blue-800/40">
+                            <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
+                            Loading messages...
+                        </p>
+                    </div>
+                )}
                 {isPrevLoading && (
                     <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xs px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center gap-2 text-xs text-zinc-500">
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
@@ -763,6 +870,9 @@ export function ChatMessageArea({
                                                             {msg.is_starred && (
                                                                 <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0 mb-0.5" />
                                                             )}
+                                                            {(msg.is_pinned || pinnedMessage?.id === msg.id) && (
+                                                                <Pin className="h-3 w-3 fill-blue-500 text-blue-500 shrink-0 mb-0.5" />
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -847,110 +957,123 @@ export function ChatMessageArea({
                                             )}
                                         </div>
 
-                                                {/* Floating Hover Actions (Reply + Quick Emoji Picker + More Actions) */}
-                                                {!msg.isDeleted && (
-                                                    <div className={`flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0 relative ${isMe ? "flex-row-reverse" : "flex-row"}`}>
-                                                        {/* Quick Emoji Picker Floating Overlay */}
-                                                        <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
-                                                            {QUICK_EMOJIS.map((emoji) => {
-                                                                const hasReacted = msg.reactions?.some(
-                                                                    (r: any) => r.user_id === currentUserId && r.emoji === emoji
-                                                                );
-                                                                return (
-                                                                    <button
-                                                                        key={emoji}
-                                                                        onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
-                                                                        title={`React with ${emoji}`}
-                                                                        className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                                            }`}
-                                                                    >
-                                                                        {emoji}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
+                                        {/* Floating Hover Actions (Reply + Quick Emoji Picker + More Actions) */}
+                                        {!msg.isDeleted && (
+                                            <div className={`flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0 relative ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+                                                {/* Quick Emoji Picker Floating Overlay */}
+                                                <div className="flex items-center gap-0.5 p-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full shadow-md">
+                                                    {QUICK_EMOJIS.map((emoji) => {
+                                                        const hasReacted = msg.reactions?.some(
+                                                            (r: any) => r.user_id === currentUserId && r.emoji === emoji
+                                                        );
+                                                        return (
+                                                            <button
+                                                                key={emoji}
+                                                                onClick={() => onToggleReaction && onToggleReaction(msg.id, emoji)}
+                                                                title={`React with ${emoji}`}
+                                                                className={`h-6 w-6 rounded-full flex items-center justify-center text-xs hover:scale-125 active:scale-95 transition-transform ${hasReacted ? "bg-blue-100 dark:bg-blue-900/50 ring-1 ring-blue-500" : "hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                                    }`}
+                                                            >
+                                                                {emoji}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
 
-                                                        {/* Reply Button */}
-                                                        <button
-                                                            onClick={() => setReplyingTo(msg)}
-                                                            title="Reply to message"
-                                                            className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
-                                                        >
-                                                            <Reply className="h-3.5 w-3.5" />
-                                                        </button>
+                                                {/* Reply Button */}
+                                                <button
+                                                    onClick={() => setReplyingTo(msg)}
+                                                    title="Reply to message"
+                                                    className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                                >
+                                                    <Reply className="h-3.5 w-3.5" />
+                                                </button>
 
-                                                        {/* More Actions Dropdown Button */}
-                                                        <div className="relative">
+                                                {/* More Actions Dropdown Button */}
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveMenuMessageId(activeMenuMessageId === msg.id ? null : msg.id);
+                                                        }}
+                                                        title="More actions"
+                                                        className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                                    >
+                                                        <MoreVertical className="h-3.5 w-3.5" />
+                                                    </button>
+
+
+                                                    {activeMenuMessageId === msg.id && (
+                                                        <div className={`absolute bottom-8 z-50 w-40 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    setActiveMenuMessageId(activeMenuMessageId === msg.id ? null : msg.id);
+                                                                    if (onToggleStarMessage) onToggleStarMessage(msg.id);
+                                                                    setActiveMenuMessageId(null);
                                                                 }}
-                                                                title="More actions"
-                                                                className="h-7 w-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all"
+                                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                                                             >
-                                                                <MoreVertical className="h-3.5 w-3.5" />
+                                                                <Star className={`h-3.5 w-3.5 ${msg.is_starred ? "fill-amber-400 text-amber-400" : ""}`} />
+                                                                <span>{msg.is_starred ? "Unstar Message" : "Star Message"}</span>
                                                             </button>
-
-
-                                                            {activeMenuMessageId === msg.id && (
-                                                                <div className={`absolute bottom-8 z-50 w-40 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg ${isMe ? "left-0" : "right-0"}`}>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (onToggleStarMessage) onToggleStarMessage(msg.id);
-                                                                            setActiveMenuMessageId(null);
-                                                                        }}
-                                                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                                                                    >
-                                                                        <Star className={`h-3.5 w-3.5 ${msg.is_starred ? "fill-amber-400 text-amber-400" : ""}`} />
-                                                                        <span>{msg.is_starred ? "Unstar Message" : "Star Message"}</span>
-                                                                    </button>
-                                                                    <button
-                                                                        disabled={!isMessageEditable(msg)}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setEditingMessage(msg);
-                                                                            onInputTextChange(msg.body);
-                                                                            setReplyingTo(null);
-                                                                            setActiveMenuMessageId(null);
-                                                                        }}
-                                                                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageEditable(msg)
-                                                                            ? "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                                                            : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
-                                                                            }`}
-                                                                    >
-                                                                        Edit Message
-                                                                    </button>
-                                                                    <button
-                                                                        disabled={!isMessageDeletableForAll(msg)}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (onDeleteForAll) onDeleteForAll(msg.id);
-                                                                            setActiveMenuMessageId(null);
-                                                                        }}
-                                                                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageDeletableForAll(msg)
-                                                                            ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                                                            : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
-                                                                            }`}
-                                                                    >
-                                                                        Delete for Everyone
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (onDeleteForMe) onDeleteForMe(msg.id);
-                                                                            setActiveMenuMessageId(null);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                                                                    >
-                                                                        Delete for Me
-                                                                    </button>
-                                                                </div>
+                                                            {canPinMessage && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleTogglePin(msg);
+                                                                        setActiveMenuMessageId(null);
+                                                                    }}
+                                                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                                                                >
+                                                                    <Pin className={`h-3.5 w-3.5 ${msg.is_pinned || pinnedMessage?.id === msg.id ? "fill-blue-500 text-blue-500" : ""}`} />
+                                                                    <span>{msg.is_pinned || pinnedMessage?.id === msg.id ? "Unpin Message" : "Pin Message"}</span>
+                                                                </button>
                                                             )}
+                                                            <button
+                                                                disabled={!isMessageEditable(msg)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEditingMessage(msg);
+                                                                    onInputTextChange(msg.body);
+                                                                    setReplyingTo(null);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageEditable(msg)
+                                                                    ? "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                                                    : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
+                                                                    }`}
+                                                            >
+                                                                Edit Message
+                                                            </button>
+                                                            <button
+                                                                disabled={!isMessageDeletableForAll(msg)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (onDeleteForAll) onDeleteForAll(msg.id);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${isMessageDeletableForAll(msg)
+                                                                    ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                                    : "text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60"
+                                                                    }`}
+                                                            >
+                                                                Delete for Everyone
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (onDeleteForMe) onDeleteForMe(msg.id);
+                                                                    setActiveMenuMessageId(null);
+                                                                }}
+                                                                className="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                                                            >
+                                                                Delete for Me
+                                                            </button>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Aggregated Reaction Badges under Bubble */}
