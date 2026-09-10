@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+vendor/
+node_modules/
+npm-debug.log
+yarn-error.log
+.idea/
+.vscode/
+.cursor/
+tests/
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
