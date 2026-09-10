@@ -75,7 +75,9 @@ class EmailVerficationService
 
         $signature = $this->makeSignature($path, $expires);
 
-        return rtrim((string) env('FRONT_END_URL'), '/') . $path . '?' . http_build_query([
+        $baseUrl = env('APP_URL') ?: env('FRONT_END_URL') ?: config('app.url', 'http://localhost:8000');
+
+        return rtrim((string) $baseUrl, '/') . $path . '?' . http_build_query([
             'expires' => $expires,
             'signature' => $signature,
         ], '', '&', PHP_QUERY_RFC3986);
