@@ -24,7 +24,7 @@ class GoogleScriptTransport extends AbstractTransport
         $subject = $email->getSubject() ?? '';
         $html = $email->getHtmlBody() ?? $email->getTextBody() ?? '';
 
-        Http::timeout(15)->post($this->endpoint, [
+        Http::timeout(15)->asJson()->post($this->endpoint, [
             'to' => $to,
             'subject' => $subject,
             'html' => (string) $html,
