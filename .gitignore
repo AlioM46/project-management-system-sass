@@ -1,1 +1,20 @@
 .DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+auth.json
+
+# Design, planning & explanation docs at root
+/DB_SCHEMA_DETAILED_URGENT.md
+/EXECUTION_PLAN_ORGANIZED.md
+/features_mapping_report.md
+/PHASES.md
+/REQUIREMENTS_ORGANIZED.md
+/tasks
+/Project Management SASS Docs/
+/other/
