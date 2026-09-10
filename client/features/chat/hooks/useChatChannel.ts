@@ -31,6 +31,8 @@ export default function useChatChannel(
         if (!conversationId || !accessToken || !workspaceId) return;
 
         const echo = getEchoClient(accessToken, workspaceId);
+        if (!echo) return;
+
         const channelName = `workspaces.${workspaceId}.conversations.${conversationId}`;
         const channel = echo.private(channelName);
         channelRef.current = channel;
@@ -122,7 +124,7 @@ export default function useChatChannel(
             channel.stopListening(".message.pinned_updated");
             channel.stopListeningForWhisper("typing");
             channel.stopListeningForWhisper("recording");
-            echo.leave(channelName);
+            echo?.leave(channelName);
             channelRef.current = null;
             setTypingUsers([]);
             setRecordingUsers([]);

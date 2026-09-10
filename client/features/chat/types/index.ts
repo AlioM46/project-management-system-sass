@@ -81,6 +81,8 @@ export interface Message {
     is_pinned?: boolean;
     pinned_at?: string | null;
     deletedById?: number | null;
+    status?: "sent" | "delivered" | "read";
+    delivered_at?: string | null;
 }
 
 export interface MessageDeletion {

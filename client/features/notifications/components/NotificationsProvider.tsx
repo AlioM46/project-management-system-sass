@@ -68,9 +68,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
 
     async function handleChatMessageNotification(event: RealtimeNotificationEvent) {
+        const eventData = (event.data || {}) as Record<string, any>;
         // Automatically ACK delivery for any incoming chat message notification!
-        const messageId = event.data?.message?.id || (event.data as any)?.id;
-        const conversationId = event.data?.conversation?.id || (event.data as any)?.conversation_id;
+        const messageId = eventData.message?.id || eventData.id;
+        const conversationId = eventData.conversation?.id || eventData.conversation_id;
 
         if (conversationId && messageId) {
             markAsDeliveredApi(conversationId, messageId);
@@ -86,34 +87,33 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         }
 
         // Suppress Toast popup if conversation is muted for the current user
-        if ((event?.data as any)?.is_muted || (event?.data as any)?.conversation?.is_muted) {
+        if (eventData.is_muted || eventData.conversation?.is_muted) {
             setItems((currentItems) => upsertNotification(currentItems, event));
 
             return;
         }
 
-        let redirectionText = ""
-        if (event?.data?.conversation?.type === "project") {
-            redirectionText = `in ${event?.data?.conversation?.project?.name} Project.`
-        } else if (event?.data?.conversation?.type === "group") {
-            redirectionText = `in ${event?.data?.conversation?.name} Group.`
+        let redirectionText = "";
+        if (eventData.conversation?.type === "project") {
+            redirectionText = `in ${eventData.conversation?.project?.name} Project.`;
+        } else if (eventData.conversation?.type === "group") {
+            redirectionText = `in ${eventData.conversation?.name} Group.`;
         } else {
-            redirectionText = `.`
+            redirectionText = `.`;
         }
-        const senderName = event?.data?.message?.sender?.username || event?.data?.message?.sender?.name || "Someone";
-        const messageBody = event?.data?.message?.body || event?.data?.message?.content || "";
+        const senderName = eventData.message?.sender?.username || eventData.message?.sender?.name || "Someone";
+        const messageBody = eventData.message?.body || eventData.message?.content || "";
 
         toast.info(`New message from ${senderName} ${redirectionText}`, {
             description: `Message: ${messageBody}`,
             action: {
                 label: "Go to chat",
                 onClick: () => {
-                    router.push(`/dashboard/chat?conversationId=${event?.data?.conversationId}`);
+                    router.push(`/dashboard/chat?conversationId=${eventData.conversationId}`);
                 },
             },
         });
         setItems((currentItems) => upsertNotification(currentItems, event));
-
     }
 
 
@@ -165,6 +165,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                 }
 
                 const echo = getEchoClient(accessToken, workspaceId);
+                if (!echo) {
+                    setConnectionStatus("idle");
+                    return;
+                }
+
                 const channelName = `workspaces.${workspaceId}.users.${user.id}`;
 
                 if (channelNameRef.current && channelNameRef.current !== channelName) {
@@ -189,12 +194,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                         if (event.type?.toLowerCase() === "chat_message") {
 
                             window.dispatchEvent(new CustomEvent("new-chat-message", {
-                                detail: event.data.message
+                                detail: (event.data as Record<string, any>)?.message
                             }));
 
                             handleChatMessageNotification(event);
 
-                            return
+                            return;
                         }
 
                         setItems((currentItems) => upsertNotification(currentItems, event));

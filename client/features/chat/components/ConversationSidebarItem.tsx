@@ -7,7 +7,7 @@ import { Conversation } from "../types";
 interface ConversationSidebarItemProps {
     conv: any;
     isActive: boolean;
-    currentUserId?: number;
+    currentUserId?: number | string;
     isOnline: boolean;
     isMenuOpen: boolean;
     typingUsers?: { id: number; name: string }[];

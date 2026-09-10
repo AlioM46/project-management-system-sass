@@ -251,27 +251,30 @@ export function ChatMessageArea({
 
         if (status === "read") {
             return (
-                <CheckCheck
-                    className="h-3.5 w-3.5 text-blue-500 font-bold stroke-[2.5] transition-all ml-0.5"
-                    title="Read"
-                />
+                <span title="Read" className="inline-flex items-center">
+                    <CheckCheck
+                        className="h-3.5 w-3.5 text-blue-500 font-bold stroke-[2.5] transition-all ml-0.5"
+                    />
+                </span>
             );
         }
 
         if (status === "delivered") {
             return (
-                <CheckCheck
-                    className="h-3.5 w-3.5 text-zinc-400 font-medium stroke-[1.8] transition-all ml-0.5"
-                    title="Delivered"
-                />
+                <span title="Delivered" className="inline-flex items-center">
+                    <CheckCheck
+                        className="h-3.5 w-3.5 text-zinc-400 font-medium stroke-[1.8] transition-all ml-0.5"
+                    />
+                </span>
             );
         }
 
         return (
-            <Check
-                className="h-3.5 w-3.5 text-zinc-400 font-medium stroke-[1.8] transition-all ml-0.5"
-                title="Sent"
-            />
+            <span title="Sent" className="inline-flex items-center">
+                <Check
+                    className="h-3.5 w-3.5 text-zinc-400 font-medium stroke-[1.8] transition-all ml-0.5"
+                />
+            </span>
         );
     };
 
