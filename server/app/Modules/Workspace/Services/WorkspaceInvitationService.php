@@ -33,7 +33,9 @@ class WorkspaceInvitationService
 
     public function buildAcceptUrl(int $invitationId, string $token): string
     {
-        return rtrim((string) config('app.url'), '/') . '/accept-invite?' . http_build_query([
+        $frontendUrl = (string) (env('FRONT_END_URL') ?: env('FRONTEND_URL') ?: 'http://localhost:3000');
+
+        return rtrim($frontendUrl, '/') . '/accept-invite?' . http_build_query([
             'invitation_id' => $invitationId,
             'token' => $token,
         ], '', '&', PHP_QUERY_RFC3986);

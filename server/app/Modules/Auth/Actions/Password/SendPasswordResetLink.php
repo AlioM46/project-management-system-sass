@@ -27,8 +27,8 @@ class SendPasswordResetLink
             'token' => hash('sha256', $plainToken),
             'expires_at' => now()->addMinutes(30),
         ]);
-        $frontendUrl = (string) env('FRONT_END_URL', 'http://localhost:3000');
-        $resetUrl = $frontendUrl . '/reset-password?email=' . urlencode($email) . '&token=' . urlencode($plainToken);
+        $frontendUrl = (string) (env('FRONT_END_URL') ?: env('FRONTEND_URL') ?: 'http://localhost:3000');
+        $resetUrl = rtrim($frontendUrl, '/') . '/reset-password?email=' . urlencode($email) . '&token=' . urlencode($plainToken);
 
         // TEMP: disabled while testing the local reset page.
         // Revert by uncommenting the line below and removing the temporary controller response.
