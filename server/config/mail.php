@@ -65,6 +65,11 @@ return [
             'transport' => 'resend',
         ],
 
+        'google_script' => [
+            'transport' => 'google_script',
+            'endpoint' => env('GOOGLE_SCRIPT_MAIL_URL'),
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
