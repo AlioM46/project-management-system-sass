@@ -1,10 +1,11 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install system dependencies, tools, and libraries
 RUN apk add --no-cache \
     nginx \
     supervisor \
     curl \
+    curl-dev \
     git \
     zip \
     unzip \
@@ -15,7 +16,8 @@ RUN apk add --no-cache \
     libxml2-dev \
     libzip-dev \
     oniguruma-dev \
-    postgresql-dev
+    postgresql-dev \
+    linux-headers
 
 # Install required PHP extensions for Laravel, MySQL, and PostgreSQL
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -36,17 +38,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for Docker layer caching
-COPY composer.json composer.lock ./
-
-# Install dependencies without running scripts
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
 # Copy application files
 COPY . .
 
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --no-dev
+# Install dependencies (production, optimized autoloader, no interaction)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
 # Copy Nginx, Supervisord, and Entrypoint configurations
 COPY docker/nginx.conf.template /etc/nginx/templates/nginx.conf.template
