@@ -24,9 +24,14 @@ class EmailVerficationController extends Controller
         );
     }
 
-    public function verify(Request $request, int|string $id, string $hash, VerifyEmailAction $action): JsonResponse
+    public function verify(Request $request, int|string $id, string $hash, VerifyEmailAction $action): mixed
     {
         $result = $action->execute($request, $id, $hash);
+
+        if ($request->acceptsHtml() && !$request->expectsJson()) {
+            $frontendUrl = rtrim((string) (env('FRONT_END_URL') ?: env('FRONTEND_URL') ?: 'http://localhost:3000'), '/');
+            return redirect()->to($frontendUrl . '/login?verified=true');
+        }
 
         return ApiResponse::success(
             message: $result['verified']

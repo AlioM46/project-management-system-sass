@@ -75,9 +75,11 @@ class EmailVerficationService
 
         $signature = $this->makeSignature($path, $expires);
 
-        $baseUrl = env('APP_URL') ?: env('FRONT_END_URL') ?: config('app.url', 'http://localhost:8000');
+        $frontendUrl = (string) (env('FRONT_END_URL') ?: env('FRONTEND_URL') ?: 'http://localhost:3000');
 
-        return rtrim((string) $baseUrl, '/') . $path . '?' . http_build_query([
+        return rtrim($frontendUrl, '/') . '/verify-email?' . http_build_query([
+            'id' => $user->getKey(),
+            'hash' => $hash,
             'expires' => $expires,
             'signature' => $signature,
         ], '', '&', PHP_QUERY_RFC3986);

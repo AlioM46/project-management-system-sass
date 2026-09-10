@@ -51,3 +51,7 @@ export async function getMe(): Promise<User> {
 
     return "user" in response ? response.user : response;
 }
+
+export async function verifyEmailApi(id: string, hash: string, queryParams: string): Promise<{ message: string; verified: boolean }> {
+    return apiClient.get<{ message: string; verified: boolean }>(`/auth/email/verify/${id}/${hash}?${queryParams}`, { skipRefresh: true });
+}
