@@ -4,26 +4,41 @@ import { useState, useEffect } from "react";
 import { Save, Trash2, Building, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateWorkspaceSettings, deleteWorkspace, leaveWorkspace } from "@/features/settings/api/settings.api";
+import { useWorkspace } from "@/features/workspaces/components/WorkspaceProvider";
 import { toast } from "sonner";
-import { getCookie, removeCookie } from "@/shared/utils/cookies";
+import { removeCookie } from "@/shared/utils/cookies";
 import { getErrorMessage } from "@/shared/api/ApiError";
 
 export default function GeneralSettingsPage() {
+    const { currentWorkspace, refreshWorkspaces } = useWorkspace();
     const [workspaceName, setWorkspaceName] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
-        setWorkspaceName(`Workspace #${getCookie("workspace_id") || "Current"}`);
-    }, []);
+        if (currentWorkspace?.name) {
+            setWorkspaceName(currentWorkspace.name);
+        }
+    }, [currentWorkspace?.name]);
+
+    const canEdit = !currentWorkspace?.role || currentWorkspace.role.slug === "owner" || currentWorkspace.role.slug === "admin";
+    const isUnchanged = workspaceName.trim() === (currentWorkspace?.name || "").trim();
 
     const handleSaveSettings = async (e: React.FormEvent) => {
         e.preventDefault();
+        const trimmedName = workspaceName.trim();
+        if (!trimmedName) {
+            toast.error("Workspace name cannot be empty.");
+            return;
+        }
+        if (isUnchanged) return;
+
         setIsSaving(true);
         try {
-            await updateWorkspaceSettings({ name: workspaceName });
-            toast.success("Workspace settings updated.");
+            await updateWorkspaceSettings({ name: trimmedName });
+            await refreshWorkspaces();
+            toast.success("Workspace name updated successfully.");
         } catch (error) {
             console.error("Failed to update settings:", error);
             toast.error(getErrorMessage(error, "Failed to update workspace settings."));
@@ -88,18 +103,38 @@ export default function GeneralSettingsPage() {
                 </div>
                 <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-900 dark:text-white">Workspace Name</label>
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-zinc-900 dark:text-white">Workspace Name</label>
+                            {currentWorkspace?.role?.name && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 font-medium">
+                                    Your Role: {currentWorkspace.role.name}
+                                </span>
+                            )}
+                        </div>
                         <input
                             type="text"
                             value={workspaceName}
                             onChange={(e) => setWorkspaceName(e.target.value)}
-                            className="w-full max-w-md px-3 py-2 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white"
+                            disabled={!canEdit || isSaving}
+                            placeholder="e.g. Acme Corp"
+                            className="w-full max-w-md px-3 py-2 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
                             required
                         />
+                        {!canEdit && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                                Only workspace owners and admins can edit workspace details.
+                            </p>
+                        )}
                     </div>
-                    <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium">
-                        {isSaving ? "Saving..." : <><Save className="h-4 w-4 mr-2" /> Save Changes</>}
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            type="submit"
+                            disabled={isSaving || isUnchanged || !workspaceName.trim()}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition-all"
+                        >
+                            {isSaving ? "Saving..." : <><Save className="h-4 w-4 mr-2" /> Save Changes</>}
+                        </Button>
+                    )}
                 </form>
             </div>
 
@@ -112,7 +147,6 @@ export default function GeneralSettingsPage() {
                     </h4>
                 </div>
 
-                {/* Leave Workspace */}
                 <div className="p-6 space-y-3">
                     <h5 className="text-sm font-semibold text-zinc-900 dark:text-white">Leave Workspace</h5>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -130,7 +164,6 @@ export default function GeneralSettingsPage() {
                     </Button>
                 </div>
 
-                {/* Delete Workspace */}
                 <div className="p-6 space-y-3">
                     <h5 className="text-sm font-semibold text-red-600 dark:text-red-400">Delete Workspace</h5>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
