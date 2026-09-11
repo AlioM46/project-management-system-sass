@@ -21,8 +21,17 @@ class ShowCurrentWorkspace
 
         $workspace->load([
             'owner:id,name,email',
+            'subscription.plan',
         ])->loadCount('members');
 
-        return ['workspace' => $workspace];
+        $sub = $workspace->subscription;
+        $isSubscribed = (bool) ($sub && $sub->isActive() && $sub->plan && $sub->plan->slug !== \App\Modules\Billing\Model\Plan::SLUG_FREE);
+
+        $workspaceData = $workspace->toArray();
+        $workspaceData['is_subscribed'] = $isSubscribed;
+        $workspaceData['plan_name'] = $isSubscribed ? $sub->plan->name : 'Free';
+        $workspaceData['plan_slug'] = $isSubscribed ? $sub->plan->slug : 'free';
+
+        return ['workspace' => $workspaceData];
     }
 }
