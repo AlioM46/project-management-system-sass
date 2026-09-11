@@ -90,12 +90,19 @@ it('lists the user workspaces with a simple summary payload', function () {
     expect($ownedWorkspaceData)->not->toBeNull()
         ->and($ownedWorkspaceData['id'])->toBe($ownedWorkspace->id)
         ->and($ownedWorkspaceData['members_count'])->toBe(2)
-        ->and(array_keys($ownedWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count']);
+        ->and($ownedWorkspaceData['role'])->toBe([
+            'id' => null,
+            'name' => 'Owner',
+            'slug' => 'owner',
+        ])
+        ->and(array_keys($ownedWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role']);
 
     $memberWorkspaceData = $workspaces->get('Member Workspace');
 
     expect($memberWorkspaceData)->not->toBeNull()
         ->and($memberWorkspaceData['id'])->toBe($memberWorkspace->id)
         ->and($memberWorkspaceData['members_count'])->toBe(3)
-        ->and(array_keys($memberWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count']);
+        ->and($memberWorkspaceData['role'])->toBeNull()
+        ->and(array_keys($memberWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role']);
 });
+
