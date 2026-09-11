@@ -1,19 +1,35 @@
+// client/features/workspaces/components/WorkspaceSwitcher.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { useWorkspace } from "./WorkspaceProvider";
 import { Workspace } from "../types";
-import { Building, ChevronsUpDown, Check, Plus, ShieldCheck, User } from "lucide-react";
+import { Building, ChevronsUpDown, Check, Plus, ShieldCheck, User, Crown, Sparkles } from "lucide-react";
 
 function getRoleBadge(workspace: Workspace) {
-    const roleSlug = workspace.role?.slug?.toLowerCase() || (workspace.role?.name?.toLowerCase());
+    const roleSlug = workspace.role?.slug?.toLowerCase() || workspace.role?.name?.toLowerCase();
     if (roleSlug === "owner") {
-        return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Owner</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <Crown className="h-2.5 w-2.5" />
+                <span>Owner</span>
+            </span>
+        );
     }
     if (roleSlug === "admin") {
-        return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Admin</span>;
+        return (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <ShieldCheck className="h-2.5 w-2.5" />
+                <span>Admin</span>
+            </span>
+        );
     }
-    return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20">Member</span>;
+    return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20">
+            <User className="h-2.5 w-2.5" />
+            <span>Member</span>
+        </span>
+    );
 }
 
 export function WorkspaceSwitcher() {
@@ -53,7 +69,9 @@ export function WorkspaceSwitcher() {
         };
     }, [isOpen]);
 
+    const roleSlug = currentWorkspace?.role?.slug?.toLowerCase() || currentWorkspace?.role?.name?.toLowerCase();
     const activeRoleText = currentWorkspace?.role?.name || "Workspace";
+    const isSubscribed = Boolean(currentWorkspace?.is_subscribed);
 
     return (
         <>
@@ -65,15 +83,44 @@ export function WorkspaceSwitcher() {
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
             >
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm text-white font-bold text-xs uppercase">
-                    {currentWorkspace?.name ? currentWorkspace.name.charAt(0) : <Building className="h-4 w-4 text-white" />}
+                <div className="relative">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm text-white font-bold text-xs uppercase">
+                        {currentWorkspace?.name ? currentWorkspace.name.charAt(0) : <Building className="h-4 w-4 text-white" />}
+                    </div>
+                    {isSubscribed && (
+                        <div
+                            title="Active Paid Subscription"
+                            className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-white flex items-center justify-center shadow-xs ring-2 ring-white dark:ring-[#050505]"
+                        >
+                            <Sparkles className="h-2.5 w-2.5 fill-white" />
+                        </div>
+                    )}
                 </div>
+
                 <div className="flex flex-col flex-1 overflow-hidden">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                        {currentWorkspace?.name || "My Workspace"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                            {currentWorkspace?.name || "My Workspace"}
+                        </span>
+                        {isSubscribed && (
+                            <span
+                                title="Paid Plan Active"
+                                className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-extrabold uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0"
+                            >
+                                <Sparkles className="h-2 w-2" />
+                                <span>{currentWorkspace?.plan_name || "Pro"}</span>
+                            </span>
+                        )}
+                    </div>
                     <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1">
-                        {activeRoleText}
+                        {roleSlug === "owner" ? (
+                            <Crown className="h-3 w-3 text-amber-500 shrink-0" />
+                        ) : roleSlug === "admin" ? (
+                            <ShieldCheck className="h-3 w-3 text-blue-500 shrink-0" />
+                        ) : (
+                            <User className="h-3 w-3 text-zinc-400 shrink-0" />
+                        )}
+                        <span>{activeRoleText}</span>
                     </span>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0" />
@@ -108,10 +155,26 @@ export function WorkspaceSwitcher() {
                                     }`}
                                 >
                                     <div className="flex items-center gap-2.5 overflow-hidden flex-1">
-                                        <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 uppercase">
-                                            {w.name.charAt(0)}
+                                        <div className="relative shrink-0">
+                                            <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-[11px] font-bold text-zinc-700 dark:text-zinc-300 uppercase">
+                                                {w.name.charAt(0)}
+                                            </div>
+                                            {w.is_subscribed && (
+                                                <div
+                                                    title="Active Subscription"
+                                                    className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-500 text-white flex items-center justify-center ring-1 ring-white dark:ring-[#0c0c0e]"
+                                                >
+                                                    <Sparkles className="h-2 w-2 fill-white" />
+                                                </div>
+                                            )}
                                         </div>
+
                                         <span className="truncate flex-1">{w.name}</span>
+                                        {w.is_subscribed && (
+                                            <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 flex items-center gap-0.5 shrink-0">
+                                                <Sparkles className="h-2.5 w-2.5" />
+                                            </span>
+                                        )}
                                         {getRoleBadge(w)}
                                     </div>
                                     {isActive && <Check className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />}
@@ -120,14 +183,14 @@ export function WorkspaceSwitcher() {
                         })}
                     </div>
 
-                    <div className="pt-1 mt-1 border-t border-zinc-200 dark:border-zinc-800/80 px-1">
+                    <div className="pt-1.5 mt-1 border-t border-zinc-200 dark:border-zinc-800/80 px-1">
                         <button
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
                                 setIsCreateModalOpen(true);
                             }}
-                            className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors text-left"
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors text-left cursor-pointer"
                         >
                             <Plus className="h-3.5 w-3.5" />
                             <span>Create New Workspace</span>
