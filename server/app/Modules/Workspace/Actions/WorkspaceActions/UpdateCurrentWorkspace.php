@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Workspace\Actions\WorkspaceActions;
 
 use App\Models\User;
@@ -23,6 +25,10 @@ class UpdateCurrentWorkspace
 
         if ($workspace === null) {
             throw WorkspaceContextException::missingScopedModelContext('Workspace');
+        }
+
+        if (isset($data['name'])) {
+            $data['name'] = trim((string) $data['name']);
         }
 
         if ($data !== []) {

@@ -66,7 +66,7 @@ class WorkspaceController extends Controller
     public function updateCurrent(UpdateWorkspaceRequest $request, UpdateCurrentWorkspace $action): JsonResponse
     {
         return ApiResponse::success(
-            message: 'Workspace update endpoint scaffolded. Logic not implemented yet.',
+            message: 'Workspace updated successfully.',
             data: $action->execute($request->validated(), $request->user())
         );
     }
