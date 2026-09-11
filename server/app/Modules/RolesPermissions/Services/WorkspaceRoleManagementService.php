@@ -22,7 +22,8 @@ class WorkspaceRoleManagementService
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly PermissionCatalogService $permissionCatalogService,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly \App\Modules\Billing\Services\PlanLimitService $planLimitService
     ) {}
 
     public function currentWorkspace(): Workspace
@@ -51,6 +52,8 @@ class WorkspaceRoleManagementService
 
     public function createCustomRole(Workspace $workspace, array $data, User $actor): Role
     {
+        $this->planLimitService->enforceMaxCustomRoles($workspace);
+
         $name = trim((string) $data['name']);
         $slug = strtolower(trim((string) $data['slug']));
 
