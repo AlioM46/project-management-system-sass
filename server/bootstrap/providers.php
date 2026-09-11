@@ -22,5 +22,5 @@ return [
     CommentsServiceProvider::class,
     NotificationsServiceProvider::class,
     ChatServiceProvider::class,
-
+    \App\Modules\Billing\BillingServiceProvider::class,
 ];
