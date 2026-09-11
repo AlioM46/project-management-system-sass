@@ -17,6 +17,25 @@ class CommentAttachmentService
      */
     public function upload(Comment $comment, array $attachments): void
     {
+        $comment->loadMissing('task.project');
+        $workspace = $comment->task?->workspace
+            ?? \App\Modules\Workspace\Model\Workspace::find($comment->task?->workspace_id);
+
+        if ($workspace) {
+            $planLimitService = app(\App\Modules\Billing\Services\PlanLimitService::class);
+            $totalIncomingBytes = 0;
+            foreach ($attachments as $attachment) {
+                if ($attachment instanceof UploadedFile) {
+                    $size = $attachment->getSize();
+                    $totalIncomingBytes += $size;
+                    $planLimitService->enforceMaxFileSize($workspace, $size);
+                }
+            }
+            if ($totalIncomingBytes > 0) {
+                $planLimitService->enforceStorageLimit($workspace, $totalIncomingBytes);
+            }
+        }
+
         $diskName = CommentAttachmentStorage::diskName();
 
         foreach ($attachments as $attachment) {

@@ -36,6 +36,24 @@ class MessageAttachmentService
     public function upload(Message $message, array $attachments): void
     {
         // $attachments => array of "files"
+        $message->loadMissing('conversation');
+        $workspace = $message->conversation?->workspace
+            ?? \App\Modules\Workspace\Model\Workspace::find($message->conversation?->workspace_id);
+
+        if ($workspace) {
+            $planLimitService = app(\App\Modules\Billing\Services\PlanLimitService::class);
+            $totalIncomingBytes = 0;
+            foreach ($attachments as $attachment) {
+                if ($attachment instanceof UploadedFile) {
+                    $size = $attachment->getSize();
+                    $totalIncomingBytes += $size;
+                    $planLimitService->enforceMaxFileSize($workspace, $size);
+                }
+            }
+            if ($totalIncomingBytes > 0) {
+                $planLimitService->enforceStorageLimit($workspace, $totalIncomingBytes);
+            }
+        }
 
         $diskName = MessageAttachmentStorage::diskName();
 
