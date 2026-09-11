@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        $this->call(\App\Modules\Billing\Database\Seeders\PlanSeeder::class);
     }
 }
