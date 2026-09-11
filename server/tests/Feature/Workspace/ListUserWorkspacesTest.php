@@ -95,7 +95,7 @@ it('lists the user workspaces with a simple summary payload', function () {
             'name' => 'Owner',
             'slug' => 'owner',
         ])
-        ->and(array_keys($ownedWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role']);
+        ->and(array_keys($ownedWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role', 'is_subscribed', 'plan_name', 'plan_slug']);
 
     $memberWorkspaceData = $workspaces->get('Member Workspace');
 
@@ -103,6 +103,6 @@ it('lists the user workspaces with a simple summary payload', function () {
         ->and($memberWorkspaceData['id'])->toBe($memberWorkspace->id)
         ->and($memberWorkspaceData['members_count'])->toBe(3)
         ->and($memberWorkspaceData['role'])->toBeNull()
-        ->and(array_keys($memberWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role']);
+        ->and(array_keys($memberWorkspaceData))->toEqualCanonicalizing(['id', 'name', 'members_count', 'role', 'is_subscribed', 'plan_name', 'plan_slug']);
 });
 

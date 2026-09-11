@@ -25,7 +25,18 @@ function makeWorkspaceRoleCrudUser(string $email, string $name = 'Role API User'
 
 function createWorkspaceRoleCrudWorkspace(User $user, string $name = 'RBAC Workspace'): Workspace
 {
-    return app(CreateWorkspace::class)->execute(['name' => $name], $user);
+    $workspace = app(CreateWorkspace::class)->execute(['name' => $name], $user);
+
+    $proPlan = \App\Modules\Billing\Model\Plan::query()->where('slug', \App\Modules\Billing\Model\Plan::SLUG_PRO)->first();
+    if (! $proPlan) {
+        (new \App\Modules\Billing\Database\Seeders\PlanSeeder)->run();
+        $proPlan = \App\Modules\Billing\Model\Plan::query()->where('slug', \App\Modules\Billing\Model\Plan::SLUG_PRO)->first();
+    }
+    if ($proPlan) {
+        app(\App\Modules\Billing\Actions\AssignPlanAction::class)->execute($workspace, $proPlan->slug);
+    }
+
+    return $workspace;
 }
 
 function findWorkspaceRoleBySlug(int $workspaceId, string $slug): Role
