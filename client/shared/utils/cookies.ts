@@ -1,18 +1,20 @@
 // src/shared/utils/cookies.ts
 
-export function setCookie(name: string, value: string, days = 7) {
+export function setCookie(name: string, value: string | number, days = 7) {
     const maxAge = days * 24 * 60 * 60;
+    const strVal = String(value);
 
     document.cookie = `${name}=${encodeURIComponent(
-        value
+        strVal
     )}; path=/; max-age=${maxAge}; samesite=lax`;
 
     if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("app-cookie-change", {
-            detail: { name, value },
+            detail: { name, value: strVal },
         }));
     }
 }
+
 
 export function getCookie(name: string) {
     const cookies = document.cookie.split("; ");

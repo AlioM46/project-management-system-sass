@@ -5,6 +5,7 @@ import React from "react";
 
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { DashboardNavbar } from "@/components/layout/DashboardNavbar";
+import { DashboardContent } from "@/components/layout/DashboardContent";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -18,11 +19,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {/* Main Content Area */}
                         <div className="flex flex-col flex-1 w-full md:pl-64 transition-all duration-300">
                             <DashboardNavbar />
-                            
+
                             <main className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-transparent w-full">
-                                <div className="w-full h-full">
+                                <DashboardContent>
                                     {children}
-                                </div>
+                                </DashboardContent>
                             </main>
                         </div>
                     </div>
@@ -31,3 +32,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </WorkspaceProvider>
     );
 }
+
