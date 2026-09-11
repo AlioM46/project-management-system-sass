@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Sliders, ShieldCheck } from "lucide-react";
+import { User, Sliders, ShieldCheck, CreditCard } from "lucide-react";
 
 const NAV_ITEMS = [
     {
@@ -22,6 +22,12 @@ const NAV_ITEMS = [
         name: "Roles & Permissions",
         href: "/dashboard/settings/roles-permissions",
         icon: ShieldCheck,
+        exact: false,
+    },
+    {
+        name: "Billing & Plans",
+        href: "/dashboard/settings/billing",
+        icon: CreditCard,
         exact: false,
     },
 ];
