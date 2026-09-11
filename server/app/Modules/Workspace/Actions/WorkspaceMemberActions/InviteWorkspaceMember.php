@@ -6,6 +6,7 @@ use App\Modules\Audit\Enums\AuditAction;
 use App\Modules\Audit\Enums\AuditMetadataKey;
 use App\Modules\Audit\Enums\AuditTargetType;
 use App\Modules\Audit\Services\AuditLogger;
+use App\Modules\Billing\Services\PlanLimitService;
 use App\Modules\RolesPermissions\Model\Role;
 use App\Modules\Workspace\Exceptions\WorkspaceContextException;
 use App\Modules\Workspace\Mail\WorkspaceInviteMail;
@@ -22,7 +23,8 @@ class InviteWorkspaceMember
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly WorkspaceMembersService $workspaceMembersService,
         private readonly WorkspaceInvitationService $workspaceInvitationService,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly PlanLimitService $planLimitService
     ) {
     }
 
@@ -33,6 +35,8 @@ class InviteWorkspaceMember
         if ($currentWorkspace === null) {
             throw WorkspaceContextException::missingScopedModelContext('Workspace');
         }
+
+        $this->planLimitService->enforceMaxMembers($currentWorkspace);
 
         $currentMembership = $this->workspaceContextService->currentMembership();
 
