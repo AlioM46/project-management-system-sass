@@ -35,7 +35,7 @@ export async function getAuditLogs(filters?: AuditLogFilters): Promise<Paginated
     const url = `/audit-logs${queryString ? `?${queryString}` : ""}`;
 
     const response = await apiClient.getPaginated<any>(url);
-    
+
     const payload = response.data || {};
     const meta = response.meta?.pagination || {};
 
@@ -72,13 +72,16 @@ export async function exportAuditLogs(filters?: AuditLogFilters): Promise<void> 
         method: "GET",
         credentials: "include",
         headers: {
+            Accept: "application/json",
             ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
             ...(workspaceId && { "X-Workspace-Id": workspaceId }),
         },
     });
 
     if (!response.ok) {
-        throw new Error("Failed to download CSV export.");
+        const errorJson = await response.json().catch(() => null);
+        const errorMsg = errorJson?.message || errorJson?.error?.message || "Failed to download CSV export.";
+        throw new Error(errorMsg);
     }
 
     const blob = await response.blob();

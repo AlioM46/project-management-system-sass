@@ -18,7 +18,8 @@ class AuditLogService
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly \App\Modules\Billing\Services\PlanLimitService $planLimitService
     ) {
     }
 
@@ -35,6 +36,7 @@ class AuditLogService
 
     public function listForWorkspace(Workspace $workspace, array $filters = []): LengthAwarePaginator
     {
+        $this->planLimitService->enforceFeatureGate($workspace, 'has_audit_logs', 'Activity Audit Logs');
 
         /*
         If the user sends:
@@ -86,6 +88,8 @@ So the per_page can never be less than 1 or more than 100.
 
     public function exportForWorkspace(Workspace $workspace, array $filters, User $actor): StreamedResponse
     {
+        $this->planLimitService->enforceFeatureGate($workspace, 'has_data_export', 'Data Export');
+
         $logs = $this->queryForWorkspace($workspace, $filters);
 
 
