@@ -14,6 +14,9 @@ export interface Workspace {
     name: string;                // The name of the workspace (e.g., "My Startup")
     members_count?: number;      // Total number of members
     role?: WorkspaceRole | null; // The authenticated user's role in this workspace
+    is_subscribed?: boolean;     // Whether the workspace has an active paid subscription
+    plan_name?: string;          // Name of the active plan
+    plan_slug?: string;          // Slug of the active plan
     created_at?: string;         // When it was created
     updated_at?: string;         // When it was last updated
 }
