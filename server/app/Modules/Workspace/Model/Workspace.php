@@ -49,6 +49,11 @@ class Workspace extends Model
     {
         return $this->hasMany(Notification::class);
     }
+
+    public function subscription(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Modules\Billing\Model\Subscription::class, 'workspace_id');
+    }
     // Scopes and helpers
     public function scopeAccessibleTo(Builder $query, int $userId): Builder
     {
