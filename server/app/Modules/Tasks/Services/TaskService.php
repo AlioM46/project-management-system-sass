@@ -24,7 +24,8 @@ class TaskService
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,
         private readonly TaskAssignmentService $taskAssignmentService,
-        private readonly AuditLogger $auditLogger
+        private readonly AuditLogger $auditLogger,
+        private readonly \App\Modules\Billing\Services\PlanLimitService $planLimitService
     ) {
     }
 
@@ -42,6 +43,8 @@ class TaskService
     public function createTask(Workspace $workspace, array $data, User $actor): Task
     {
         $project = $this->resolveProject($workspace, (int) $data['project_id']);
+        $this->planLimitService->enforceMaxTasksPerProject($project);
+
         $title = $this->normalizeTitle((string) $data['title']);
         $description = $this->normalizeDescription($data['description'] ?? null);
         $assigneeIds = $data['assignee_ids'] ?? [];
