@@ -645,6 +645,8 @@ export default function ChatPage() {
 
             <ChatMessageArea
                 conversation={activeConversation}
+                hasConversations={conversations.length > 0}
+                onOpenNewConversationModal={() => setIsModalOpen(true)}
                 messages={messages}
                 currentUserId={currentUserId ?? 0}
                 inputText={inputText}

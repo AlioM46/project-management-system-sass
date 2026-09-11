@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban, Check, CheckCheck, Pin } from "lucide-react";
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, Hash, Users, Loader2, Reply, X, FileText, Search, Mic, Trash2, Pause, Play, Info, Star, Ban, Check, CheckCheck, Pin, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Conversation, Message, Participant } from "../types";
 import { markConversationAsReadApi, getPinnedMessage, togglePinMessage } from "../api/chat.api";
@@ -10,12 +10,15 @@ import { AttachmentPreview } from "@/components/modals/task-details/attachment-p
 import { getInitials, formatTime } from "../utils/chatHelpers";
 import { useAudioRecorder } from "../hooks/useAudioRecorder";
 import { VoicePlayerCard } from "./VoicePlayerCard";
+import { ChatEmptyState } from "./ChatEmptyState";
 import useMentions from "../hooks/useMentions";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useMemo } from "react";
 
 interface ChatMessageAreaProps {
     conversation: any | null;
+    hasConversations?: boolean;
+    onOpenNewConversationModal?: () => void;
     messages: Message[];
     currentUserId: number;
     inputText: string;
@@ -92,6 +95,8 @@ function SelectedFilePreviewCard({ file, onRemove, getFileIcon }: { file: File; 
 
 export function ChatMessageArea({
     conversation,
+    hasConversations = true,
+    onOpenNewConversationModal,
     messages,
     currentUserId,
     inputText,
@@ -625,18 +630,31 @@ export function ChatMessageArea({
 
     // ─── Empty State ───────────────────────────────────────────────────
     if (!conversation) {
+        if (!hasConversations) {
+            return <ChatEmptyState onOpenNewConversationModal={onOpenNewConversationModal} />;
+        }
+
         return (
             <div className="flex-1 flex items-center justify-center bg-zinc-50/50 dark:bg-[#050505]">
                 <div className="text-center">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 flex items-center justify-center mx-auto mb-4">
+                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 flex items-center justify-center mx-auto mb-4 shadow-sm">
                         <Send className="h-7 w-7 text-blue-500 dark:text-blue-400" />
                     </div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
                         Select a conversation
                     </h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">
-                        Choose a chat from the sidebar to start messaging your team members.
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mb-4">
+                        Choose a chat from the sidebar to continue messaging, or start a new conversation.
                     </p>
+                    {onOpenNewConversationModal && (
+                        <button
+                            onClick={onOpenNewConversationModal}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/10 dark:hover:bg-white/15 text-xs font-medium text-zinc-800 dark:text-zinc-200 transition-colors"
+                        >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>New Conversation</span>
+                        </button>
+                    )}
                 </div>
             </div>
         );

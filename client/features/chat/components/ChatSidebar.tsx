@@ -133,10 +133,18 @@ export function ChatSidebar({
         );
     };
 
-    const pinnedConversations = conversations?.filter((c) => c.is_pinned) || [];
-    const directConversations = conversations?.filter((c) => c.type === "direct" && !c.is_pinned) || [];
-    const groupConversations = conversations?.filter((c) => c.type === "group" && !c.is_pinned) || [];
-    const projectConversations = conversations?.filter((c) => c.type === "project" && !c.is_pinned) || [];
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredConversations = (conversations || []).filter((c) => {
+        if (!searchQuery.trim()) return true;
+        const name = getConversationName(c).toLowerCase();
+        return name.includes(searchQuery.toLowerCase().trim());
+    });
+
+    const pinnedConversations = filteredConversations.filter((c) => c.is_pinned);
+    const directConversations = filteredConversations.filter((c) => c.type === "direct" && !c.is_pinned);
+    const groupConversations = filteredConversations.filter((c) => c.type === "group" && !c.is_pinned);
+    const projectConversations = filteredConversations.filter((c) => c.type === "project" && !c.is_pinned);
 
     return (
         <div className="w-80 shrink-0 border-r border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] flex flex-col relative">
@@ -157,6 +165,8 @@ export function ChatSidebar({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <input
                         type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search conversations..."
                         className="w-full h-9 pl-9 pr-3 rounded-lg bg-zinc-100 dark:bg-white/5 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-white/10 focus:outline-none transition-all"
                     />
@@ -164,46 +174,81 @@ export function ChatSidebar({
             </div>
 
             {/* Conversation List */}
-            <div className="flex-1 overflow-y-auto py-2 px-2">
-                {/* 📌 Pinned Section */}
-                {pinnedConversations.length > 0 && (
-                    <div className="mb-3">
-                        <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-3 py-1.5 flex items-center gap-1.5">
-                            <Pin className="h-3 w-3 fill-blue-500/20" />
-                            <span>Pinned ({pinnedConversations.length})</span>
+            <div className="flex-1 overflow-y-auto py-2 px-2 flex flex-col">
+                {conversations.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center my-auto">
+                        <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500 shadow-xs">
+                            <MessageCircle className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-1">
+                            No conversations yet
                         </p>
-                        {pinnedConversations.map(renderSidebarItem)}
+                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4 max-w-[200px] leading-relaxed">
+                            Start a direct chat or group to communicate with your team.
+                        </p>
+                        {onOpenNewConversationModal && (
+                            <button
+                                onClick={onOpenNewConversationModal}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium shadow-xs transition-colors"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                <span>New Chat</span>
+                            </button>
+                        )}
                     </div>
-                )}
+                ) : filteredConversations.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center my-auto">
+                        <Search className="h-6 w-6 text-zinc-400 dark:text-zinc-500 mb-2" />
+                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                            No matches found
+                        </p>
+                        <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                            No conversations match &ldquo;{searchQuery}&rdquo;
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        {/* 📌 Pinned Section */}
+                        {pinnedConversations.length > 0 && (
+                            <div className="mb-3">
+                                <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-3 py-1.5 flex items-center gap-1.5">
+                                    <Pin className="h-3 w-3 fill-blue-500/20" />
+                                    <span>Pinned ({pinnedConversations.length})</span>
+                                </p>
+                                {pinnedConversations.map(renderSidebarItem)}
+                            </div>
+                        )}
 
-                {/* DMs Section */}
-                {directConversations.length > 0 && (
-                    <div className="mb-2">
-                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
-                            Direct Messages
-                        </p>
-                        {directConversations.map(renderSidebarItem)}
-                    </div>
-                )}
+                        {/* DMs Section */}
+                        {directConversations.length > 0 && (
+                            <div className="mb-2">
+                                <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                                    Direct Messages
+                                </p>
+                                {directConversations.map(renderSidebarItem)}
+                            </div>
+                        )}
 
-                {/* Groups Section */}
-                {groupConversations.length > 0 && (
-                    <div className="mb-2">
-                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
-                            Groups
-                        </p>
-                        {groupConversations.map(renderSidebarItem)}
-                    </div>
-                )}
+                        {/* Groups Section */}
+                        {groupConversations.length > 0 && (
+                            <div className="mb-2">
+                                <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                                    Groups
+                                </p>
+                                {groupConversations.map(renderSidebarItem)}
+                            </div>
+                        )}
 
-                {/* Projects Section */}
-                {projectConversations.length > 0 && (
-                    <div>
-                        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
-                            Project Channels
-                        </p>
-                        {projectConversations.map(renderSidebarItem)}
-                    </div>
+                        {/* Projects Section */}
+                        {projectConversations.length > 0 && (
+                            <div>
+                                <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 py-1.5">
+                                    Project Channels
+                                </p>
+                                {projectConversations.map(renderSidebarItem)}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
