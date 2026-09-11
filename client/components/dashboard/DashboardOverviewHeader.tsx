@@ -1,8 +1,11 @@
 type DashboardOverviewHeaderProps = {
     workspaceId: string | null | undefined;
+    workspaceName?: string | null;
 };
 
-export function DashboardOverviewHeader({ workspaceId }: DashboardOverviewHeaderProps) {
+export function DashboardOverviewHeader({ workspaceId, workspaceName }: DashboardOverviewHeaderProps) {
+    const displayName = workspaceName || (workspaceId ? `Workspace #${workspaceId}` : "Workspace");
+
     return (
         <div className="flex items-center justify-between space-y-2">
             <div>
@@ -13,10 +16,11 @@ export function DashboardOverviewHeader({ workspaceId }: DashboardOverviewHeader
                     <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                     Live metrics for{" "}
                     <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        Workspace #{workspaceId || "Unknown"}
+                        {displayName}
                     </span>
                 </p>
             </div>
         </div>
     );
 }
+

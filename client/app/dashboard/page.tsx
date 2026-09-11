@@ -8,23 +8,27 @@ import { PerformanceChartCard } from "@/components/dashboard/PerformanceChartCar
 import { RecentActivityPanel } from "@/components/dashboard/RecentActivityPanel";
 import { TaskDistributionCard } from "@/components/dashboard/TaskDistributionCard";
 import { getDashboardSummary, DashboardSummary } from "@/features/dashboard/api/dashboard.api";
-import { getCookie } from "@/shared/utils/cookies";
+import { useWorkspace } from "@/features/workspaces/hooks/useWorkspace";
 
 export default function DashboardPage() {
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const workspaceId = getCookie("workspace_id");
+    const { currentWorkspace, currentWorkspaceId } = useWorkspace();
 
     useEffect(() => {
+        setIsLoading(true);
         getDashboardSummary()
             .then(setSummary)
             .catch(console.error)
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [currentWorkspaceId]);
 
     return (
         <div className="min-h-screen flex-1 space-y-8 bg-[#fafafa] p-8 pt-6 dark:bg-[#050505]">
-            <DashboardOverviewHeader workspaceId={workspaceId} />
+            <DashboardOverviewHeader 
+                workspaceId={currentWorkspaceId} 
+                workspaceName={currentWorkspace?.name} 
+            />
             <DashboardStatsGrid isLoading={isLoading} summary={summary} />
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
@@ -35,3 +39,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+
