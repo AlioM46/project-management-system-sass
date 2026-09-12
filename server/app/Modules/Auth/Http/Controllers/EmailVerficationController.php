@@ -28,7 +28,7 @@ class EmailVerficationController extends Controller
     {
         $result = $action->execute($request, $id, $hash);
 
-        if ($request->acceptsHtml() && !$request->expectsJson()) {
+        if (!$request->expectsJson()) {
             $frontendUrl = rtrim((string) (env('FRONT_END_URL') ?: env('FRONTEND_URL') ?: 'http://localhost:3000'), '/');
             return redirect()->to($frontendUrl . '/login?verified=true');
         }

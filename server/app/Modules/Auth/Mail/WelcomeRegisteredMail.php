@@ -9,26 +9,25 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Carbon;
 
-class EmailVerificationMail extends Mailable implements ShouldQueue
+class WelcomeRegisteredMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public User $user,
-        public string $verificationUrl,
-        public Carbon $expiresAt
+        public User $user
     ) {}
 
     public function build(): self
     {
-        return $this->subject('Verify your email address')
-            ->view('emails.auth.verify-email')
+        $appUrl = config('app.frontend_url', config('app.url', 'http://localhost:3000'));
+
+        return $this->subject('Welcome to ' . config('app.name', 'Taskflow'))
+            ->view('emails.auth.welcome')
             ->with([
                 'user' => $this->user,
-                'verificationUrl' => $this->verificationUrl,
-                'expiresAt' => $this->expiresAt,
+                'dashboardUrl' => rtrim((string) $appUrl, '/') . '/dashboard',
             ]);
     }
 }
+
