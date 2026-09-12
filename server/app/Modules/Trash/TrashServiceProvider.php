@@ -26,3 +26,4 @@ class TrashServiceProvider extends ServiceProvider
             ->group(__DIR__ . '/Http/routes.php');
     }
 }
+

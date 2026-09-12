@@ -72,3 +72,4 @@ class PurgeDeletedWorkspacesCommand extends Command
         return Command::SUCCESS;
     }
 }
+

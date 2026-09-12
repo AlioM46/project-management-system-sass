@@ -41,3 +41,4 @@ export interface EmptyTrashResponse {
     purged_projects: number;
     message: string;
 }
+

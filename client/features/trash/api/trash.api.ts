@@ -26,3 +26,4 @@ export async function emptyTrash(): Promise<EmptyTrashResponse> {
     const response = await apiClient.delete<EmptyTrashResponse>("/trash/empty");
     return response;
 }
+

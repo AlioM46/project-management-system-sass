@@ -154,3 +154,4 @@ it('purges soft-deleted records via retention purge console command', function (
     // Recent task is preserved in trash
     expect(Task::onlyTrashed()->withoutGlobalScope(WorkspaceTenantScope::class)->where('id', $recentTask->id)->exists())->toBeTrue();
 });
+

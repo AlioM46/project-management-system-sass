@@ -11,3 +11,4 @@ Route::middleware(['auth:api', 'workspace.context'])->prefix('trash')->group(fun
     Route::post('/{type}/{id}/restore', [TrashController::class, 'restore']);
     Route::delete('/{type}/{id}/force', [TrashController::class, 'forceDelete']);
 });
+
