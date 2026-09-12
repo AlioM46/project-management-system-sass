@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Tasks\Services;
 
 use App\Models\User;
@@ -8,6 +10,7 @@ use App\Modules\Audit\Enums\AuditMetadataKey;
 use App\Modules\Audit\Enums\AuditTargetType;
 use App\Modules\Audit\Services\AuditLogger;
 use App\Modules\Tasks\Exceptions\TasksException;
+use App\Modules\Tasks\Mail\TaskAssignedMail;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Tasks\Model\TaskAssignment;
 use App\Modules\Workspace\Model\Workspace;
@@ -15,6 +18,8 @@ use App\Modules\Workspace\Model\Workspace_Members;
 use App\Modules\Workspace\Scopes\WorkspaceTenantScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class TaskAssignmentService
 {
@@ -72,6 +77,8 @@ class TaskAssignmentService
                         ]
                     );
                 }
+
+                $this->notifyAssignees($task, $userIdsToAdd, $actor);
             }
 
             return $this->loadTaskRelations($task->fresh());
@@ -185,6 +192,8 @@ class TaskAssignmentService
                         ]
                     );
                 }
+
+                $this->notifyAssignees($task, $userIdsToAdd, $actor);
             }
 
             return $this->loadTaskRelations($task->fresh());
@@ -196,6 +205,22 @@ class TaskAssignmentService
         return $task->assignees()
             ->orderBy('name')
             ->get();
+    }
+
+    private function notifyAssignees(Task $task, array $userIds, User $actor): void
+    {
+        $assigneeUsers = User::query()
+            ->whereIn('id', $userIds)
+            ->where('id', '!=', $actor->id)
+            ->get();
+
+        foreach ($assigneeUsers as $assignee) {
+            try {
+                Mail::to($assignee->email)->send(new TaskAssignedMail($task, $assignee, $actor));
+            } catch (\Throwable $e) {
+                Log::error("Failed to queue task assignment email to {$assignee->email}: {$e->getMessage()}");
+            }
+        }
     }
 
     private function resolveWorkspace(Task $task): Workspace

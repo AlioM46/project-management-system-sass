@@ -102,7 +102,8 @@ class CommentService
                 sourceType: 'comment',
                 sourceId: $comment->id,
                 workspaceId: $workspaceId,
-                mentionedBy: $user->id
+                mentionedBy: $user->id,
+                content: $content
             );
 
             if (! empty($attachments)) {

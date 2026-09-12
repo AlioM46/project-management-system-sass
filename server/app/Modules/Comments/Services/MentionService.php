@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Comments\Services;
 
 use App\Models\User;
+use App\Modules\Comments\Mail\MentionNotificationMail;
+use App\Modules\Comments\Model\Mention as ModelMention;
 use App\Modules\Notifications\Enums\NotificationType;
 use App\Modules\Notifications\Services\NotificationService;
 use Illuminate\Support\Collection;
-use App\Modules\Comments\Model\Mention as ModelMention;
-use Notification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class MentionService
 {
@@ -74,8 +79,9 @@ class MentionService
         ModelMention::insert($rows);
 
         // 🔔 6. Notify ONLY new mentions
-        foreach ($users->whereIn('id', $toNotifyIds) as $user) {
+        $newMentionsToNotify = $users->whereIn('id', $toNotifyIds);
 
+        foreach ($newMentionsToNotify as $user) {
             app(NotificationService::class)->send(
                 $workspaceId,
                 $user->id,
@@ -86,7 +92,10 @@ class MentionService
                 ]
             );
         }
+
+        $this->sendMentionEmails($newMentionsToNotify, $sourceType, $mentionedBy, $content);
     }
+
     public function extractUsernames(string $content): Collection
     {
         preg_match_all('/@([\w]+)/', $content, $matches);
@@ -102,14 +111,6 @@ class MentionService
             return collect();
         }
 
-        //         SELECT * FROM users
-// WHERE username IN ('ali_omar', 'john_doe')
-//   AND EXISTS (
-//       SELECT 1 FROM workspace_members
-//       WHERE workspace_members.user_id = users.id
-//         AND workspace_members.workspace_id = 5
-//   )
-
         return User::whereIn('username', $usernames)
             ->whereHas('workspaces', fn($q) => $q->where('workspace_id', $workspaceId))
             ->get();
@@ -120,10 +121,12 @@ class MentionService
         string $sourceType,
         int $sourceId,
         int $workspaceId,
-        int $mentionedBy
+        int $mentionedBy,
+        ?string $content = null
     ): void {
-        if ($users->isEmpty())
+        if ($users->isEmpty()) {
             return;
+        }
 
         $rows = $users->map(fn($user) => [
             'mentioned_user_id' => $user->id,
@@ -136,7 +139,6 @@ class MentionService
         ])->toArray();
 
         foreach ($users as $user) {
-
             app(NotificationService::class)->send(
                 $workspaceId,
                 $user->id,
@@ -148,10 +150,35 @@ class MentionService
             );
         }
 
-        // Notify each user about the mention (you can implement this as needed, e.g., using Laravel Notifications)
-
-
+        $this->sendMentionEmails($users, $sourceType, $mentionedBy, $content);
 
         ModelMention::insertOrIgnore($rows);
+    }
+
+    private function sendMentionEmails(Collection $users, string $sourceType, int $mentionedById, ?string $content = null): void
+    {
+        $author = User::find($mentionedById);
+        if (!$author) {
+            return;
+        }
+
+        $excerpt = $content ? Str::limit(strip_tags($content), 120) : 'You were mentioned in a discussion.';
+
+        foreach ($users as $user) {
+            if ($user->id === $mentionedById) {
+                continue;
+            }
+
+            try {
+                Mail::to($user->email)->send(new MentionNotificationMail(
+                    mentionedUser: $user,
+                    mentionedBy: $author,
+                    sourceType: $sourceType,
+                    sourceExcerpt: $excerpt
+                ));
+            } catch (\Throwable $e) {
+                Log::error("Failed to queue mention email to {$user->email}: {$e->getMessage()}");
+            }
+        }
     }
 }
