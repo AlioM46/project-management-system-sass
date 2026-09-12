@@ -26,9 +26,10 @@ it('sends a custom verification mail after registration', function () {
 
     $user = User::query()->where('email', 'ali@example.com')->firstOrFail();
 
-    Mail::assertSent(EmailVerificationMail::class, function (EmailVerificationMail $mail) use ($user) {
+    Mail::assertQueued(EmailVerificationMail::class, function (EmailVerificationMail $mail) use ($user) {
         return $mail->hasTo($user->email)
-            && str_contains($mail->verificationUrl, '/api/auth/email/verify/'.$user->id.'/'.sha1($user->email))
+            && str_contains($mail->verificationUrl, 'id='.$user->id)
+            && str_contains($mail->verificationUrl, 'hash='.sha1($user->email))
             && str_contains($mail->verificationUrl, 'expires=')
             && str_contains($mail->verificationUrl, 'signature=');
     });
@@ -53,7 +54,7 @@ it('resends a custom verification mail to an authenticated unverified user', fun
         ->assertJsonPath('data.user.email', 'ali@example.com')
         ->assertJsonPath('data.user.email_verified_at', null);
 
-    Mail::assertSent(EmailVerificationMail::class, function (EmailVerificationMail $mail) use ($user) {
+    Mail::assertQueued(EmailVerificationMail::class, function (EmailVerificationMail $mail) use ($user) {
         return $mail->hasTo($user->email);
     });
 });
@@ -68,11 +69,10 @@ it('verifies an email address through the manual signed link', function () {
     ]);
 
     $url = app(EmailVerficationService::class)->generateVerificationUrl($user);
-
-    $path = parse_url($url, PHP_URL_PATH);
     $query = parse_url($url, PHP_URL_QUERY);
+    $hash = sha1($user->email);
 
-    $response = $this->getJson($path.'?'.$query);
+    $response = $this->getJson("/api/auth/email/verify/{$user->id}/{$hash}?{$query}");
 
     $response->assertOk()
         ->assertJsonPath('message', 'Email verified successfully.')
@@ -91,12 +91,13 @@ it('rejects a tampered manual verification signature', function () {
     ]);
 
     $url = app(EmailVerficationService::class)->generateVerificationUrl($user);
+    $hash = sha1($user->email);
 
     parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
     $query['signature'] = 'tampered-signature';
 
     $response = $this->getJson(
-        parse_url($url, PHP_URL_PATH).'?'.http_build_query($query, '', '&', PHP_QUERY_RFC3986)
+        "/api/auth/email/verify/{$user->id}/{$hash}?".http_build_query($query, '', '&', PHP_QUERY_RFC3986)
     );
 
     $response->assertForbidden()

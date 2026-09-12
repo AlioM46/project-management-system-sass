@@ -22,15 +22,15 @@ RUN apk add --no-cache \
 # Install required PHP extensions for Laravel, MySQL, and PostgreSQL
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
-        bcmath \
-        mbstring \
-        pdo \
-        pdo_mysql \
-        pdo_pgsql \
-        zip \
-        opcache \
-        gd \
-        pcntl
+    bcmath \
+    mbstring \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    zip \
+    opcache \
+    gd \
+    pcntl
 
 # Install Composer from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

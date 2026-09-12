@@ -26,6 +26,29 @@ it('records role created audit log through the API', function () {
     $user = makeRoleAuditUser('role-audit@example.com');
     $workspace = app(CreateWorkspace::class)->execute(['name' => 'Role WS'], $user);
 
+    $proPlan = \App\Modules\Billing\Model\Plan::query()->create([
+        'name' => 'Pro',
+        'slug' => 'pro',
+        'price_monthly_cents' => 1500,
+        'price_yearly_cents' => 15000,
+        'max_members' => 25,
+        'max_projects' => null,
+        'max_tasks_per_project' => null,
+        'max_storage_bytes' => 21474836480,
+        'max_file_size_bytes' => 104857600,
+        'max_custom_roles' => 10,
+        'has_audit_logs' => true,
+        'has_advanced_analytics' => true,
+        'has_data_export' => true,
+        'has_priority_support' => false,
+    ]);
+
+    \App\Modules\Billing\Model\Subscription::query()->create([
+        'workspace_id' => $workspace->id,
+        'plan_id' => $proPlan->id,
+        'status' => 'active',
+    ]);
+
     Permission::query()->count();
 
     $response = $this->withToken(JWTAuth::fromUser($user))

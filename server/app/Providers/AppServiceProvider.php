@@ -1,8 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Modules\Auth\Events\UserRegistered;
+use App\Modules\Auth\Listeners\SendWelcomeEmail;
 use App\Services\Mail\GoogleScriptTransport;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
