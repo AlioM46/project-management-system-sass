@@ -17,7 +17,9 @@ class PurgeDeletedWorkspacesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'workspace:purge-deleted {--days=30 : The number of retention days before permanent deletion}';
+    protected $signature = 'workspace:purge-deleted 
+                            {--days= : The number of retention days before permanent deletion (default: 30)}
+                            {--minutes= : The number of retention minutes for fast testing (e.g. --minutes=1)}';
 
     /**
      * The console command description.
@@ -31,13 +33,20 @@ class PurgeDeletedWorkspacesCommand extends Command
      */
     public function handle(): int
     {
-        $days = (int) $this->option('days');
-        if ($days < 1) {
-            $days = 30;
-        }
+        $minutesOption = $this->option('minutes');
 
-        $cutoff = now()->subDays($days);
-        $this->info("Purging soft-deleted records older than {$days} days (before {$cutoff->toDateTimeString()})...");
+        if ($minutesOption !== null && $minutesOption !== '') {
+            $minutes = max(1, (int) $minutesOption);
+            $cutoff = now()->subMinutes($minutes);
+            $this->info("Purging soft-deleted records older than {$minutes} minute(s) (before {$cutoff->toDateTimeString()})...");
+        } else {
+            $days = (int) ($this->option('days') ?: 30);
+            if ($days < 1) {
+                $days = 30;
+            }
+            $cutoff = now()->subDays($days);
+            $this->info("Purging soft-deleted records older than {$days} days (before {$cutoff->toDateTimeString()})...");
+        }
 
         // 1. Purge soft-deleted Comments
         $purgedComments = Comment::onlyTrashed()
@@ -51,17 +60,55 @@ class PurgeDeletedWorkspacesCommand extends Command
             ->where('deleted_at', '<=', $cutoff)
             ->forceDelete();
 
-        // 3. Purge soft-deleted Projects (and associated tasks)
-        $purgedProjects = Project::onlyTrashed()
+        // 3. Purge soft-deleted Projects (and associated tasks & comments)
+        $projectsToPurge = Project::onlyTrashed()
             ->withoutGlobalScopes()
             ->where('deleted_at', '<=', $cutoff)
-            ->forceDelete();
+            ->get();
 
-        // 4. Purge soft-deleted Workspaces
-        $purgedWorkspaces = Workspace::onlyTrashed()
+        $purgedProjects = 0;
+        foreach ($projectsToPurge as $project) {
+            $taskIds = Task::withTrashed()
+                ->withoutGlobalScopes()
+                ->where('project_id', $project->id)
+                ->pluck('id');
+
+            if ($taskIds->isNotEmpty()) {
+                Comment::withTrashed()->whereIn('task_id', $taskIds)->forceDelete();
+                Task::withTrashed()->whereIn('id', $taskIds)->forceDelete();
+            }
+
+            $project->forceDelete();
+            $purgedProjects++;
+        }
+
+        // 4. Purge soft-deleted Workspaces (and clean up associated entities)
+        $workspacesToPurge = Workspace::onlyTrashed()
             ->withoutGlobalScopes()
             ->where('deleted_at', '<=', $cutoff)
-            ->forceDelete();
+            ->get();
+
+        $purgedWorkspaces = 0;
+        foreach ($workspacesToPurge as $ws) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($ws) {
+                $taskIds = Task::withTrashed()->withoutGlobalScopes()->where('workspace_id', $ws->id)->pluck('id');
+                if ($taskIds->isNotEmpty()) {
+                    Comment::withTrashed()->whereIn('task_id', $taskIds)->forceDelete();
+                    Task::withTrashed()->whereIn('id', $taskIds)->forceDelete();
+                }
+
+                Project::withTrashed()->withoutGlobalScopes()->where('workspace_id', $ws->id)->forceDelete();
+
+                \Illuminate\Support\Facades\DB::table('workspace_members')->where('workspace_id', $ws->id)->delete();
+                \Illuminate\Support\Facades\DB::table('workspace_invitations')->where('workspace_id', $ws->id)->delete();
+                \Illuminate\Support\Facades\DB::table('roles')->where('workspace_id', $ws->id)->delete();
+                \Illuminate\Support\Facades\DB::table('subscriptions')->where('workspace_id', $ws->id)->delete();
+                \Illuminate\Support\Facades\DB::table('audit_logs')->where('workspace_id', $ws->id)->delete();
+
+                $ws->forceDelete();
+            });
+            $purgedWorkspaces++;
+        }
 
         $this->info("✅ Purge complete:");
         $this->line("   - Workspaces: {$purgedWorkspaces}");
