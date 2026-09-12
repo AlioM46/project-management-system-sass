@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Sliders, ShieldCheck, CreditCard } from "lucide-react";
 import { User, Sliders, ShieldCheck, CreditCard, Trash2 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -69,17 +68,12 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${
                                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                                         isActive
-                                            ? "bg-white dark:bg-[#0a0a0a] text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200/80 dark:border-white/10"
-                                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
                                             ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-semibold"
                                             : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/5"
                                     }`}
                                 >
-                                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
-                                    <span className="truncate">{item.name}</span>
                                     <Icon
                                         className={`w-4 h-4 shrink-0 transition-colors ${
                                             isActive
@@ -94,10 +88,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                     </nav>
                 </aside>
 
-                {/* Sub-Page Content */}
-                <div className="md:col-span-3 min-w-0">
-                    {children}
-                </div>
                 {/* Main Content Area */}
                 <main className="md:col-span-3 min-w-0">{children}</main>
             </div>
