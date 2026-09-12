@@ -9,6 +9,7 @@ use App\Modules\Projects\Model\Project;
 use App\Modules\Tasks\Model\Task;
 use App\Modules\Workspace\Model\Workspace;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class PurgeDeletedWorkspacesCommand extends Command
 {
@@ -90,7 +91,7 @@ class PurgeDeletedWorkspacesCommand extends Command
 
         $purgedWorkspaces = 0;
         foreach ($workspacesToPurge as $ws) {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($ws) {
+            DB::transaction(function () use ($ws) {
                 $taskIds = Task::withTrashed()->withoutGlobalScopes()->where('workspace_id', $ws->id)->pluck('id');
                 if ($taskIds->isNotEmpty()) {
                     Comment::withTrashed()->whereIn('task_id', $taskIds)->forceDelete();
@@ -99,11 +100,11 @@ class PurgeDeletedWorkspacesCommand extends Command
 
                 Project::withTrashed()->withoutGlobalScopes()->where('workspace_id', $ws->id)->forceDelete();
 
-                \Illuminate\Support\Facades\DB::table('workspace_members')->where('workspace_id', $ws->id)->delete();
-                \Illuminate\Support\Facades\DB::table('workspace_invitations')->where('workspace_id', $ws->id)->delete();
-                \Illuminate\Support\Facades\DB::table('roles')->where('workspace_id', $ws->id)->delete();
-                \Illuminate\Support\Facades\DB::table('subscriptions')->where('workspace_id', $ws->id)->delete();
-                \Illuminate\Support\Facades\DB::table('audit_logs')->where('workspace_id', $ws->id)->delete();
+                DB::table('workspace_members')->where('workspace_id', $ws->id)->delete();
+                DB::table('workspace_invitations')->where('workspace_id', $ws->id)->delete();
+                DB::table('roles')->where('workspace_id', $ws->id)->delete();
+                DB::table('subscriptions')->where('workspace_id', $ws->id)->delete();
+                DB::table('audit_logs')->where('workspace_id', $ws->id)->delete();
 
                 $ws->forceDelete();
             });
@@ -119,4 +120,3 @@ class PurgeDeletedWorkspacesCommand extends Command
         return Command::SUCCESS;
     }
 }
-
