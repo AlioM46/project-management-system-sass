@@ -12,10 +12,13 @@ enum AuditAction: string
     case ProjectUpdated = 'project_updated';
     case ProjectDeleted = 'project_deleted';
     case ProjectRestored = 'project_restored';
+    case ProjectPermanentlyDeleted = 'project_permanently_deleted';
     case TaskCreated = 'task_created';
     case TaskUpdated = 'task_updated';
     case TaskStatusChanged = 'task_status_changed';
     case TaskDeleted = 'task_deleted';
+    case TaskRestored = 'task_restored';
+    case TaskPermanentlyDeleted = 'task_permanently_deleted';
     case TaskAssigneeAdded = 'task_assignee_added';
     case TaskAssigneeRemoved = 'task_assignee_removed';
     case CommentCreated = 'comment_created';

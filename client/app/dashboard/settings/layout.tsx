@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Sliders, ShieldCheck, CreditCard } from "lucide-react";
+import { User, Sliders, ShieldCheck, CreditCard, Trash2 } from "lucide-react";
 
 const NAV_ITEMS = [
     {
@@ -28,6 +28,12 @@ const NAV_ITEMS = [
         name: "Billing & Plans",
         href: "/dashboard/settings/billing",
         icon: CreditCard,
+        exact: false,
+    },
+    {
+        name: "Trash & Recovery",
+        href: "/dashboard/settings/trash",
+        icon: Trash2,
         exact: false,
     },
 ];

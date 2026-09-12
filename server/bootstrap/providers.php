@@ -23,4 +23,5 @@ return [
     NotificationsServiceProvider::class,
     ChatServiceProvider::class,
     \App\Modules\Billing\BillingServiceProvider::class,
+    \App\Modules\Trash\TrashServiceProvider::class,
 ];
