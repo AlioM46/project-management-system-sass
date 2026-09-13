@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('api', ForceJsonResponse::class);
+        $middleware->appendToGroup('api', 'throttle:api');
         $middleware->alias([
             'auth' => Authenticate::class,
             'workspace.context' => MiddlewaresWorkspaceContextMiddleware::class,
